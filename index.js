@@ -5,6 +5,7 @@ var express = require('express'),
 var app = express();
 
 app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/node_modules/xlsjs/dist'));
 
 //display homepage
 app.get('/', function(req, res){
@@ -64,6 +65,6 @@ app.get('/players', function(req, res) {
     });
 });
 
-var port = process.env.PORT || 8000;
+var port = process.env.PORT || 9000;
 app.listen(port);
 console.log("listening on " + port + "!");

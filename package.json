@@ -11,7 +11,8 @@
     "express": "^4.13.3",
     "http": "0.0.0",
     "jquery": "^2.1.4",
-    "setup": "^0.0.3"
+    "setup": "^0.0.3",
+    "xlsjs": "^0.7.5"
   },
   "devDependencies": {},
   "scripts": {

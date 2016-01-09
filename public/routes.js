@@ -23,6 +23,11 @@ boxleagueApp.config(['$routeProvider', function($routeProvider) {
         controllerAs: 'vm'
     }).
 
+    when('/import', {
+        templateUrl: 'pages/import.html',
+        controller: 'importCtrl'
+    }).
+
     when('/boxleague', {
         templateUrl: './box.html',
         controller: 'boxCtrl'

@@ -35,7 +35,7 @@ boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http', function ($sc
     });
 }]);
 
-boxleagueApp.controller('adminCtrl', ['$scope', function ($scope) {
+boxleagueApp.controller('adminCtrl', ['$scope', '$log', function ($scope, $log) {
     var vm = this;
 
     vm.gridOptions = {};
@@ -81,4 +81,10 @@ boxleagueApp.controller('adminCtrl', ['$scope', function ($scope) {
 
         $scope.players = players;
     }
+}]);
+
+boxleagueApp.controller('importCtrl', ['$scope', '$log', function ($scope, $log) {
+    $log.info("import");
+
+    $scope.filename = "";
 }]);
