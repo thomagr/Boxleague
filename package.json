@@ -12,7 +12,8 @@
     "http": "0.0.0",
     "jquery": "^2.1.4",
     "setup": "^0.0.3",
-    "xlsjs": "^0.7.5"
+    "xlsjs": "^0.7.5",
+    "xlsx": "^0.8.0"
   },
   "devDependencies": {},
   "scripts": {

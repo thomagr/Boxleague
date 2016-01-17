@@ -5,7 +5,7 @@ var express = require('express'),
 var app = express();
 
 app.use(express.static(__dirname + '/public'));
-app.use(express.static(__dirname + '/node_modules/xlsjs/dist'));
+app.use(express.static(__dirname + '/node_modules/xlsx/dist'));
 
 //display homepage
 app.get('/', function(req, res){

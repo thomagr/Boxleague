@@ -1,68 +1,86 @@
 <!DOCTYPE html>
 <html lang="en-us" ng-app="boxleagueApp">
-<head>
-    <title>My Boxleague</title>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-    <meta charset="UTF-8">
+    <head>
+        <title>My Boxleague</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <meta charset="UTF-8">
 
-    <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
+        <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
 
-    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
 
-    <link rel="stylesheet" href="http://cdn.rawgit.com/angular-ui/ui-grid.info/gh-pages/release/3.0.0-rc.22/ui-grid.min.css" />
-    <link rel="stylesheet" href="main.css" type="text/css" />
+        <!--<link rel="stylesheet" href="http://cdn.rawgit.com/angular-ui/ui-grid.info/gh-pages/release/3.0.0-rc.22/ui-grid.min.css" />-->
+        <link rel="stylesheet" href="main.css" type="text/css" />
 
-    <style>
-        html, body, input, select, textarea
-        {
-            font-size: 1.05em !important;
-        }
-    </style>
+        <style>
+            html, body, input, select, textarea
+            {
+                font-size: 1.05em !important;
+            }
+        </style>
 
-    <!-- load angular via CDN -->
-    <script src="//code.angularjs.org/1.4.8/angular.min.js"></script>
-    <script src="//code.angularjs.org/1.4.8/angular-route.min.js"></script>
-    <script src="//code.angularjs.org/1.4.8/angular-resource.min.js"></script>
+        <!-- load angular via CDN -->
+        <script src="//code.angularjs.org/1.4.8/angular.min.js"></script>
+        <script src="//code.angularjs.org/1.4.8/angular-route.min.js"></script>
+        <script src="//code.angularjs.org/1.4.8/angular-resource.min.js"></script>
 
-    <script src="https://cdn.rawgit.com/SheetJS/js-xlsx/v0.8.0/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.rawgit.com/SheetJS/js-xlsx/v0.8.0/dist/ods.js"></script>
-    <script src="http://cdn.rawgit.com/angular-ui/ui-grid.info/gh-pages/release/3.0.0-rc.22/ui-grid.min.js"></script>
+        <!--<script src="https://cdn.rawgit.com/SheetJS/js-xlsx/v0.8.0/dist/xlsx.full.min.js"></script>-->
+        <!--<script src="https://cdn.rawgit.com/SheetJS/js-xlsx/v0.8.0/dist/ods.js"></script>-->
+        <!--<script src="http://cdn.rawgit.com/angular-ui/ui-grid.info/gh-pages/release/3.0.0-rc.22/ui-grid.min.js"></script>-->
 
-    <script src="xls.full.min.js"></script>
-    <script src="app.js"></script>
-    <script src="routes.js"></script>
-    <script src="controllers.js"></script>
-    <script src="directives.js"></script>
-</head>
-<body>
+        <script src="xlsx.core.min.js"></script>
+        <script src="app.js"></script>
+        <script src="routes.js"></script>
+        <script src="controllers.js"></script>
+        <script src="directives.js"></script>
+    </head>
+    <body>
+        <!--<div class="container">-->
+            <!--<nav class="navbar navbar-default">-->
+                <!--<ul class="navbar-header" >-->
+                    <!--<li><a class="navbar-brand" href="#/">Boxleague</a></li>-->
+                    <!--<li><a class="navbar-brand" href="#/import">Import</a></li>-->
+                    <!--<li><a class="navbar-brand" href="#/players">Players</a></li>-->
+                <!--</ul>-->
 
-<header>
-    <nav class="navbar navbar-default">
+                <!--<ul class="nav navbar-nav navbar-right">-->
+                    <!--<li><a class="navbar-brand" href="#/forcast">Weather</a></li>-->
+                    <!--<li><a class="navbar-brand" href="#">Help</a></li>-->
+                <!--</ul>-->
+
+            <!--</nav>-->
+        <!--</div>-->
         <div class="container">
-
-            <ul class="nav navbar-nav" >
-                <li><a class="navbar-brand" href="#/">Boxleague</a></li>
-                <li><a class="navbar-brand" href="#/admin">Admin</a></li>
-                <li><a class="navbar-brand" href="#/import">Import</a></li>
-                <li><a class="navbar-brand" href="#/players">Players</a></li>
-            </ul>
-
-            <ul class="nav navbar-nav navbar-right">
-                <li><a class="navbar-brand" href="#/forcast">Weather</a></li>
-                <li><a class="navbar-brand" href="#">Help</a></li>
-            </ul>
-
+            <nav class="navbar navbar-default">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="#">Boxleague</a>
+                    </div>
+                    <div id="navbar" class="navbar-collapse collapse">
+                        <ul class="nav navbar-nav">
+                            <li><a href="#/import">Import</a></li>
+                            <li><a href="#/players">Players</a></li>
+                            <li class="dropdown">
+                        </ul>
+                        <ul class="nav navbar-nav navbar-right">
+                            <li><a href="#/forcast">Weather</a></li>
+                            <li><a href="#">Help</a></li>
+                        </ul>
+                    </div><!--/.nav-collapse -->
+                </div><!--/.container-fluid -->
+            </nav>
         </div>
-    </nav>
-</header>
 
-<div class="container">
-
-    <div ng-view></div>
-
-</div>
-
-</body>
+        <div class="container">
+            <div ng-view></div>
+        </div>
+    </body>
 </html>

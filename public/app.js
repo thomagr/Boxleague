@@ -1,2 +1,2 @@
 // MODULE
-var boxleagueApp = angular.module('boxleagueApp', ['ngRoute', 'ngResource', 'ui.grid']);
+var boxleagueApp = angular.module('boxleagueApp', ['ngRoute', 'ngResource']);

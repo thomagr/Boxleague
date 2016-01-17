@@ -35,56 +35,77 @@ boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http', function ($sc
     });
 }]);
 
-boxleagueApp.controller('adminCtrl', ['$scope', '$log', function ($scope, $log) {
-    var vm = this;
-
-    vm.gridOptions = {};
-
-    vm.reset = reset;
-
-    function reset() {
-        vm.gridOptions.data = [];
-        vm.gridOptions.columnDefs = [];
-        $scope.players = [];
-    };
-
-    $scope.importPlayers = function() {
-
-        var players = [];
-        vm.gridOptions.data.forEach( function(row){
-            var first, last;
-            var name = row.Name.split(" ");
-            if( name.length === 2){
-                first = name[0];
-                last = name[1];
-            } else {
-                last = row.Name;
-            };
-
-            var number = row.Number.split(" / ");
-
-            var mobile, home;
-            if(number.length === 2){
-                home = number[0];
-                mobile = number[1];
-            } else {
-                if( row.Number[0] === '0' && row.Number[1] === '7' ){
-                    mobile = row.Number;
-                } else {
-                    home = row.Number;
-                }
-            }
-
-            player = { name : last + ', ' + first, mobile : mobile, home : home }
-            players.push(player);
-        });
-
-        $scope.players = players;
-    }
-}]);
-
 boxleagueApp.controller('importCtrl', ['$scope', '$log', function ($scope, $log) {
     $log.info("import");
 
+    $scope.changeEvent = "";
     $scope.filename = "";
+    $scope.boxes = [];
+
+    $scope.$watch('changeEvent', function(){
+        if(!$scope.changeEvent){
+            return
+        };
+
+        $scope.filename = $scope.changeEvent.target.files[0].name;
+
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+            $scope.$apply(function () {
+                var data = evt.target.result;
+                var workbook = XLSX.read(data, {type: 'binary'});
+
+                workbook.SheetNames.forEach(function(boxName){
+                    if(boxName.indexOf("Box ") === -1){
+                        return;
+                    };
+
+                    var content = XLSX.utils.sheet_to_csv( workbook.Sheets[boxName]);
+
+                    var games = [];
+                    var matches = content.match(/([a-zA-Z' ]*),v.,([a-zA-Z' ]*)/g);
+                    matches.forEach( function(pairing){
+                        var players = pairing.split(",v.,");
+                        var game = {home: players[0], away: players[1]};
+                        games.push(game);
+                    });
+
+                    var weeks = [];
+                    matches = content.match(/(Week \d,\d*\/\d*\/\d*,\d*.\d*)/g);
+                    matches.forEach( function(weekItem){
+                        var details = weekItem.split(",");
+                        var weekNum = details[0].replace("Week ", "");
+                        var week = {week: weekNum, date: details[1], time: details[2]};
+                        weeks.push(week);
+                    });
+
+                    // hardcoded for now
+                    for(var i=0;i<6;i++){
+                        games[i].week = weeks[i%2];
+                    }
+                    for(var i=6;i<12;i++){
+                        games[i].week = weeks[i%2+2];
+                    }
+                    for(var i=12;i<15;i++){
+                        games[i].week = weeks[4];
+                    }
+                    games.sort(function(a,b){
+                        return a.week.week.replace("Week ","") - b.week.week.replace("Week ","");
+                    });
+
+                    var players = {};
+                    games.forEach(function(game){
+                        players[game.home] = true;
+                        players[game.away] = true;
+                    });
+                    players = Object.keys(players).map(function (key) {return key});
+                    players.sort();
+
+                    $scope.boxes.push({name: boxName, games: games, players: players});
+                });
+            });
+        };
+
+        reader.readAsBinaryString($scope.changeEvent.target.files[0]);
+    })
 }]);

@@ -1,8 +1,26 @@
 <!--http://stackoverflow.com/questions/16579427/html5-file-upload-with-angularjs-->
-<div class="row">
-    <div class="fileUpload btn btn-primary">
-        <span>Choose File ...</span>
-        <input type="file" class="upload" file-input name="filename" />
+
+<div class="fileUpload btn btn-primary">
+    <span>Choose File ...</span>
+    <input type="file" class="upload" file-input name="changeEvent" />
+</div>
+{{filename}}
+
+<div ng-repeat="box in boxes">
+    <div class="row">
+        <div class="col-md-4 col-lg-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{{ box.name }}</h3>
+                </div>
+                <div class="panel-body">
+                    <div ng-repeat="player in box.players">
+                        <ul style="list-style-type:none;line-height:80%;padding:0">
+                            <li>{{player}}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    {{filename}}
 </div>

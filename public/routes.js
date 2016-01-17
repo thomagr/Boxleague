@@ -17,12 +17,6 @@ boxleagueApp.config(['$routeProvider', function($routeProvider) {
         controller: 'forcastCtrl'
     }).
 
-    when('/admin', {
-        templateUrl: 'pages/admin.html',
-        controller: 'adminCtrl',
-        controllerAs: 'vm'
-    }).
-
     when('/import', {
         templateUrl: 'pages/import.html',
         controller: 'importCtrl'
