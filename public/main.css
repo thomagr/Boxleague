@@ -4,21 +4,25 @@
 }
 
 /* For table filter */
- .search {
+.search {
    position: relative;
    font-size: 16px;
- }
+}
 
- .search input {
+.search input {
    width: 250px;
- }
+}
 
- .search input {
+.search input {
     text-indent: 32px;
- }
+}
 
- .search .fa-search {
+.search .fa-search {
    position: absolute;
    top: 5px;
    left: 10px;
- }
+}
+
+.bold {
+    font-weight: bold;
+}

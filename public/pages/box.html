@@ -1,7 +1,51 @@
 <div class="container">
     <h1>{{boxName}}</h1>
 
-    <div ng-repeat="game in box.games">
-        Week {{game.week}} {{game.home}} vs {{game.away}}<br>
-    </div>
+    <!--<div ng-repeat="game in box.games">-->
+        <!--Week {{game.week}} {{game.home}} vs {{game.away}}<br>-->
+    <!--</div>-->
+
+    <table class="table table-bordered table-striped table-condensed table-responsive">
+        <thead>
+            <tr>
+                <th ng-repeat="header in tableHeaders">{{ header }} </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="row in tableRows">
+                <td ng-repeat="column in row track by $index" ng-class="{'bold':$index == 0}">{{getText(column,row,$index)}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Fixtures</h2>
+    <table class="table table-bordered table-striped table-condensed table-responsive">
+        <thead>
+            <tr>
+                <th>Week</th>
+                <th>Fixture</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="game in box.games track by $index">
+                <td style="width:10%">{{game.week.week}}</td>
+                <td style="width:60%">{{game.home}} vs {{game.away}}</td>
+                <td>
+                    <div class="col-md-2">
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="game.score" ng-model="game.score" ng-change="inputScore(game)">
+                            <span class="input-group-btn" ng-if="game.save">
+                                <button class="btn btn-success" type="button">Save</button>
+                            </span>
+                            <span class="input-group-addon label-warning" ng-if="game.error">
+                                {{game.error}}
+                            </span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
 </div>
