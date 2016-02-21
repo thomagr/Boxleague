@@ -1,0 +1,13 @@
+<div class="container">
+    <div class="row" style="margin-top: 20px;">
+        <div  ng-if="boxes">
+            <span ng-repeat="box in boxes">
+                <!--<div ng-class="row | ($index % 3 == 0)">-->
+                    <div class="col-sm-4">
+                        <boxes box="box"></boxes>
+                    </div>
+                <!--</div>-->
+            </span>
+        </div>
+    </div>
+</div>

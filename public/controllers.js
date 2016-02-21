@@ -1,10 +1,6 @@
 // CONTROLLERS
-boxleagueApp.controller('navBarCtrl', ['$scope', function ($scope) {
-    $scope.isCollapsed = true;
-}]);
-
 boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
-    $log.info("welcome");
+    $log.info("forcastCtrl");
 
     $scope.location = $routeParams.location;
     $scope.days = '5';
@@ -32,11 +28,24 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
 }]);
 
 boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', function ($scope, $log) {
-    $log.info("welcome");
+    $log.info("welcomeCtrl");
+}]);
+
+// global scope
+var boxes = [];
+
+boxleagueApp.controller('mainCtrl', ['$scope', '$log', function ($scope, $log) {
+    $log.info("mainCtrl");
+    $scope.boxes = boxes;
+}]);
+
+boxleagueApp.controller('boxesCtrl', ['$scope', '$log', function ($scope, $log) {
+    $log.info("boxesCtrl");
+    $scope.boxes = boxes;
 }]);
 
 boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
-    $log.info("players");
+    $log.info("playersCtrl");
 
     $http.get('/players').success(function(data) {
         $scope.players      = data;
@@ -47,11 +56,11 @@ boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http', function ($sc
 }]);
 
 boxleagueApp.controller('importCtrl', ['$scope', '$log', function ($scope, $log) {
-    $log.info("import");
+    $log.info("importCtrl");
 
     $scope.changeEvent = "";
     $scope.filename = "";
-    $scope.boxes = [];
+    $scope.boxes = boxes; // pre-load
 
     $scope.$watch('changeEvent', function(){
         if(!$scope.changeEvent){
@@ -112,12 +121,30 @@ boxleagueApp.controller('importCtrl', ['$scope', '$log', function ($scope, $log)
                     players = Object.keys(players).map(function (key) {return key});
                     players.sort();
 
-                    var box = {name: boxName, games: games, players: players, template: "pages/boxTemplate.html"};
-                    $scope.boxes.push(box);
+                    var box = {name: boxName, games: games, players: players};
+                    //$scope.boxes.push(box);
+                    boxes.push(box);
                 });
             });
         };
 
         reader.readAsBinaryString($scope.changeEvent.target.files[0]);
     })
+}]);
+
+boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
+    $log.info("boxCtrl");
+
+    function findByName(source, name) {
+      for (var i = 0; i < source.length; i++) {
+        if (source[i].name === name) {
+          return source[i];
+        }
+      }
+      throw "Couldn't find object with name: " + name;
+    }
+
+    $scope.boxName = $routeParams.box;
+    $scope.box = findByName(boxes, $scope.boxName);
+
 }]);

@@ -51,3 +51,13 @@ boxleagueApp.directive("fileInput", [function ($parse) {
     });
   };
 }]);
+
+boxleagueApp.directive("boxes", function() {
+    return {
+        restrict: 'E',
+        templateUrl: 'directives/boxPanel.html',
+        scope: {
+            box: "="
+        }
+    }
+});
