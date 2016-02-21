@@ -1,0 +1,5 @@
+<span>
+    <i>{{ convertToDate({ dt: weatherDay.dt }) | date: dateFormat }}</i>:
+    {{ convertToStandard({ daytimeTemp: weatherDay.main.temp }) }}&deg;C,
+    {{ weatherDay.weather[0].description }}
+</span>

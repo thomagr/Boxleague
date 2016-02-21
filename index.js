@@ -6,6 +6,8 @@ var app = express();
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/node_modules/xlsx/dist'));
+app.use(express.static(__dirname + '/node_modules/angular-dynamic-layout/dist'));
+app.use(express.static(__dirname + '/node_modules/angular-animate'));
 
 //display homepage
 app.get('/', function(req, res){

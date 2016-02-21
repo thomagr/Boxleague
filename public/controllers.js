@@ -1,13 +1,26 @@
 // CONTROLLERS
-boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', function ($scope, $log, $resource) {
+boxleagueApp.controller('navBarCtrl', ['$scope', function ($scope) {
+    $scope.isCollapsed = true;
+}]);
+
+boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
     $log.info("welcome");
 
-    $scope.city = "Saint Albans, England";
+    $scope.location = $routeParams.location;
     $scope.days = '5';
+    $scope.hours = '4';
     $scope.appId = 'dfa92a2daab9476f51718353645f1c85'
-    $scope.weatherAPI = $resource("http://api.openweathermap.org/data/2.5/forecast/daily", { callback: "JSON_CALLBACK" }, { get: { method: "JSONP" }});
 
-    $scope.weatherResult = $scope.weatherAPI.get({ q: $scope.city, cnt: $scope.days, appid: $scope.appId });
+    $scope.dailyWeatherAPI = $resource("http://api.openweathermap.org/data/2.5/forecast/daily", { callback: "JSON_CALLBACK" }, { get: { method: "JSONP" }});
+    $scope.hourlyWeatherAPI = $resource("http://api.openweathermap.org/data/2.5/forecast", { callback: "JSON_CALLBACK" }, { get: { method: "JSONP" }});
+
+    $scope.dailyWeatherAPI.get({ q: $scope.location, cnt: $scope.days, appid: $scope.appId }, function(data){
+            $scope.dailyWeatherResult = data;
+        }).$promise.then( function( data){
+        return $scope.hourlyWeatherAPI.get({ id: $scope.dailyWeatherResult.city.id, cnt: $scope.hours, appid: $scope.appId }, function(data){
+            $scope.hourlyWeatherResult = data;
+        });
+    });
 
     $scope.convertToDegC = function(degK) {
         return Math.round(degK - 273.15);
@@ -26,8 +39,6 @@ boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http', function ($sc
     $log.info("players");
 
     $http.get('/players').success(function(data) {
-        $log.debug(data);
-
         $scope.players      = data;
         $scope.sortType     = 'name'; // set the default sort type
         $scope.sortReverse  = false;  // set the default sort order
@@ -101,7 +112,8 @@ boxleagueApp.controller('importCtrl', ['$scope', '$log', function ($scope, $log)
                     players = Object.keys(players).map(function (key) {return key});
                     players.sort();
 
-                    $scope.boxes.push({name: boxName, games: games, players: players});
+                    var box = {name: boxName, games: games, players: players, template: "pages/boxTemplate.html"};
+                    $scope.boxes.push(box);
                 });
             });
         };

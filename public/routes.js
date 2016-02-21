@@ -12,7 +12,7 @@ boxleagueApp.config(['$routeProvider', function($routeProvider) {
         controller: 'playersCtrl'
     }).
 
-    when('/forcast', {
+    when('/forcast/:location', {
         templateUrl: 'pages/forcast.html',
         controller: 'forcastCtrl'
     }).

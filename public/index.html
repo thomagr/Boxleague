@@ -1,86 +1,67 @@
 <!DOCTYPE html>
 <html lang="en-us" ng-app="boxleagueApp">
+
     <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
         <title>My Boxleague</title>
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-        <meta charset="UTF-8">
 
         <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
         <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
 
-        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
-        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+        <!--<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" />-->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
-        <!--<link rel="stylesheet" href="http://cdn.rawgit.com/angular-ui/ui-grid.info/gh-pages/release/3.0.0-rc.22/ui-grid.min.css" />-->
+        <!-- Application Specific -->
+        <link rel="stylesheet" href="theme.css" type="text/css" />
         <link rel="stylesheet" href="main.css" type="text/css" />
 
-        <style>
-            html, body, input, select, textarea
-            {
-                font-size: 1.05em !important;
-            }
-        </style>
-
         <!-- load angular via CDN -->
-        <script src="//code.angularjs.org/1.4.8/angular.min.js"></script>
-        <script src="//code.angularjs.org/1.4.8/angular-route.min.js"></script>
-        <script src="//code.angularjs.org/1.4.8/angular-resource.min.js"></script>
+        <script src="//code.angularjs.org/1.4.9/angular.min.js"></script>
+        <script src="//code.angularjs.org/1.4.9/angular-route.min.js"></script>
+        <script src="//code.angularjs.org/1.4.9/angular-resource.min.js"></script>
+        <script src="//code.angularjs.org/1.4.9/angular-animate.min.js"></script>
 
-        <!--<script src="https://cdn.rawgit.com/SheetJS/js-xlsx/v0.8.0/dist/xlsx.full.min.js"></script>-->
-        <!--<script src="https://cdn.rawgit.com/SheetJS/js-xlsx/v0.8.0/dist/ods.js"></script>-->
-        <!--<script src="http://cdn.rawgit.com/angular-ui/ui-grid.info/gh-pages/release/3.0.0-rc.22/ui-grid.min.js"></script>-->
+        <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/1.1.2/ui-bootstrap-tpls.min.js"></script>
 
-        <script src="xlsx.core.min.js"></script>
+        <!-- Application Specific -->
         <script src="app.js"></script>
         <script src="routes.js"></script>
         <script src="controllers.js"></script>
         <script src="directives.js"></script>
     </head>
+
     <body>
-        <!--<div class="container">-->
-            <!--<nav class="navbar navbar-default">-->
-                <!--<ul class="navbar-header" >-->
-                    <!--<li><a class="navbar-brand" href="#/">Boxleague</a></li>-->
-                    <!--<li><a class="navbar-brand" href="#/import">Import</a></li>-->
-                    <!--<li><a class="navbar-brand" href="#/players">Players</a></li>-->
-                <!--</ul>-->
+        <nav class="navbar navbar-inverse">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" ng-init="isCollapsed = true" ng-click="isCollapsed = !isCollapsed">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
 
-                <!--<ul class="nav navbar-nav navbar-right">-->
-                    <!--<li><a class="navbar-brand" href="#/forcast">Weather</a></li>-->
-                    <!--<li><a class="navbar-brand" href="#">Help</a></li>-->
-                <!--</ul>-->
+                    <a class="navbar-brand brand" href="#/">My Boxleague</a>
+                </div>
 
-            <!--</nav>-->
-        <!--</div>-->
-        <div class="container">
-            <nav class="navbar navbar-default">
-                <div class="container-fluid">
-                    <div class="navbar-header">
-                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                            <span class="sr-only">Toggle navigation</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                        <a class="navbar-brand" href="#">Boxleague</a>
-                    </div>
-                    <div id="navbar" class="navbar-collapse collapse">
-                        <ul class="nav navbar-nav">
-                            <li><a href="#/import">Import</a></li>
-                            <li><a href="#/players">Players</a></li>
-                            <li class="dropdown">
-                        </ul>
-                        <ul class="nav navbar-nav navbar-right">
-                            <li><a href="#/forcast">Weather</a></li>
-                            <li><a href="#">Help</a></li>
-                        </ul>
-                    </div><!--/.nav-collapse -->
-                </div><!--/.container-fluid -->
-            </nav>
-        </div>
+                <div class="collapse navbar-collapse" uib-collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">
+                    <ul class="nav navbar-nav">
+                        <li><a href="#/"><i class="fa fa-home icon-white"></i> Home</a></li>
+                        <li><a href="#/import"><i class="fa fa-upload icon-white"></i> Import</a></li>
+                        <li><a href="#/players"><i class="fa fa-user icon-white"></i> Players</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="#/forcast/St Albans, England"><i class="fa fa-umbrella icon-white"></i> Weather</a></li>
+                        <li><a href="#/class"><i class="fa fa-power-off icon-white"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
 
-        <div class="container">
-            <div ng-view></div>
-        </div>
+        <div ng-view></div>
+
     </body>
 </html>

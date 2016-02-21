@@ -1,8 +1,23 @@
 // DIRECTIVES
-boxleagueApp.directive("weatherReport", function() {
+boxleagueApp.directive("dailyWeatherReport", function() {
     return {
         restrict: 'E',
-        templateUrl: 'directives/weatherReport.html',
+        templateUrl: 'directives/dailyWeatherReport.html',
+        replace: true,
+        scope: {
+            weatherDay: "=",
+            description: "=",
+            convertToStandard: "&",
+            convertToDate: "&",
+            dateFormat: "@"
+        }
+    }
+});
+
+boxleagueApp.directive("hourlyWeatherReport", function() {
+    return {
+        restrict: 'E',
+        templateUrl: 'directives/hourlyWeatherReport.html',
         replace: true,
         scope: {
             weatherDay: "=",
