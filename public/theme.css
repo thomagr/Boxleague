@@ -1,14 +1,5 @@
-body {/*
-    padding-left: 0px;
-    padding-right: 0px;*/
-}
-
 .navbar-inverse {
     background-image: linear-gradient(to bottom,#777711 0,#000 100%);
-    /*
-    padding-left: 20px;
-    padding-right: 20px;
-    */
 }
 
 .navbar-inverse .brand{

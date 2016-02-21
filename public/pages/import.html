@@ -1,26 +1,30 @@
 <!--http://stackoverflow.com/questions/16579427/html5-file-upload-with-angularjs-->
+<!--http://stackoverflow.com/questions/20137496/angular-js-ng-repeat-for-creating-grid-->
+<div class="container">
 
-<div class="fileUpload btn btn-primary">
-    <span>Choose File ...</span>
-    <input type="file" class="upload" file-input name="changeEvent" />
+    <div class="fileUpload btn btn-default">
+        <input type="file" class="upload" file-input name="changeEvent" />
+    </div>
+
+    <div class="row" style="margin-top: 20px;">
+        <div ng-repeat="box in boxes">
+            <div ng-class="row |($index % 3 == 0)">
+                <div class="col-sm-4">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title">{{ box.name }}</h3>
+                        </div>
+                        <div class="panel-body">
+                            <div ng-repeat="player in box.players">
+                                <ul style="list-style-type:none;line-height:80%;padding:0">
+                                    <li>{{player}}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
-{{filename}}
-
-<!--<div ng-repeat="box in boxes">-->
-    <!--<div class="col-md-4 col-lg-3">-->
-        <!--<div class="panel panel-default">-->
-            <!--<div class="panel-heading">-->
-                <!--<h3 class="panel-title">{{ box.name }}</h3>-->
-            <!--</div>-->
-            <!--<div class="panel-body">-->
-                <!--<div ng-repeat="player in box.players">-->
-                    <!--<ul style="list-style-type:none;line-height:80%;padding:0">-->
-                        <!--<li>{{player}}</li>-->
-                    <!--</ul>-->
-                <!--</div>-->
-            <!--</div>-->
-        <!--</div>-->
-    <!--</div>-->
-<!--</div>-->
-
-<!--<div dynamic-layout items="boxes"></div>-->
