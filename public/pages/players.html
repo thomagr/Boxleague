@@ -1,6 +1,14 @@
-<players-table
-        players="players"
-        sort-type="sortType"
-        sort-reverse="sortReverse"
-        search-name="searchName">
-</players-table>
+<div class="container">
+    <div ng-show="alerts.length" class="row">
+        <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
+    </div>
+
+    <div class="row" style="margin-top: 20px">
+        <players-table
+                players="players"
+                sort-type="sortType"
+                sort-reverse="sortReverse"
+                search-name="searchName">
+        </players-table>
+    </div>
+</div>

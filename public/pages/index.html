@@ -8,15 +8,15 @@
 
         <title>My Boxleague</title>
 
-        <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
-        <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
+        <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16" />
 
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
         <!-- Application Specific -->
-        <link rel="stylesheet" href="theme.css" type="text/css" />
-        <link rel="stylesheet" href="main.css" type="text/css" />
+        <link rel="stylesheet" href="css/theme.css" type="text/css" />
+        <link rel="stylesheet" href="css/main.css" type="text/css" />
 
         <!-- load angular via CDN -->
         <script src="//code.angularjs.org/1.4.9/angular.min.js"></script>
@@ -31,10 +31,10 @@
         <script src="//cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.core.min.js"></script>
 
         <!-- Application Specific -->
-        <script src="app.js"></script>
-        <script src="routes.js"></script>
-        <script src="controllers.js"></script>
-        <script src="directives.js"></script>
+        <script src="scripts/app.js"></script>
+        <script src="scripts/routes.js"></script>
+        <script src="scripts/controllers.js"></script>
+        <script src="scripts/directives.js"></script>
     </head>
 
     <body ng-controller="mainCtrl">
@@ -52,10 +52,9 @@
 
                 <div class="collapse navbar-collapse" uib-collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">
                     <ul class="nav navbar-nav">
-                        <li><a href="#/"><i class="fa fa-home icon-white"></i> Home</a></li>
                         <li><a href="#/import"><i class="fa fa-upload icon-white"></i> Import</a></li>
                         <li><a href="#/rules"><i class="fa fa-book icon-white"></i> Rules</a></li>
-                        <li><a href="#/players"><i class="fa fa-user icon-white"></i> Players</a></li>
+                        <li ng-if="players.length"><a href="#/players"><i class="fa fa-user icon-white"></i> Players</a></li>
                         <li ng-if="boxes.length"><a href="#/boxes"><i class="fa fa-cubes icon-white"></i> Boxes</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">

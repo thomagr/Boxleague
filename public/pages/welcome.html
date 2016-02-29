@@ -1,16 +1,33 @@
 <div class="container">
+    <div ng-show="alerts.length" class="row" style="margin-top: 20px;">
+        <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
+    </div>
+
     <div class="jumbotron">
         <h1>Welcome</h1>
         <p>
-            Use the menu links to navigate to players, boxes, rules etc.
-            In the boxes click in the <strong>fixtures</strong> table to enter a result.
+            Use the menu links above to navigate to players, boxes, rules etc.
+            In your box league click in the <strong>fixtures</strong> table to enter a result.
         </p>
-        <br>
         <p>
             Enjoy!
         </p>
     </div>
-
+    <p>
+        <b>Note:</b> Fixture results can only be entered in the format, set1 set2 [set3], where sets are entered as games:games.
+        Set3 is optional (see <a href="#/rules">Rules</a>), and can be entered either as a full set or a 10 point tie break.
+        <br><br>E.g.
+        <br>6:4 6:4 (straight sets win)
+        <br>7:5 2:6 10:8 (1 set and tiebreak win - full tiebreak score)
+        <br>6:3 2:6 1:0 (1 set and tiebreak win - short tiebreak score)
+        <br>6:3 2:6 6:4 (2 sets win - 3 full sets played)
+        <br><br>The following indicator assistance is available when entering a result:
+        <br><span class="label-warning">&nbsp;?&nbsp;</span> - incomplete score, please complete entry
+        <br><span class="label-warning">&nbsp;!&nbsp;</span> - incorrect score, please edit entry
+        <br><span class="label-warning">&nbsp;*&nbsp;</span> - too many results, please remove incorrect entry
+        <br><span class="label-success">&nbsp;Save&nbsp;</span> - score ready to be saved
+    </p>
+    <br>
     <div style="font-size: 70%">
         <h5>Small Print</h5>
         The website is an experiment only and therefore subject to mistakes, inaccuracies, errors and the like.

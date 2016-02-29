@@ -1,4 +1,67 @@
 // CONTROLLERS
+
+// global scope
+var boxleagues = [];
+var globalBoxes = [];
+var globalPlayers = [];
+
+function convertDocsToPlayers(response){
+    var players = [];
+    response.rows.forEach(function(item){
+        players.push({
+            name: item.doc.first_name + ' ' + item.doc.last_name,
+            first: item.doc.first_name,
+            last: item.doc.last_name,
+            mobile: item.doc.mobile,
+            home: item.doc.home,
+            email: item.doc.email
+        });
+    });
+    return players;
+};
+
+function getPlayers($scope, http){
+
+    if(globalPlayers.length){
+        $scope.players = globalPlayers;
+        return;
+    }
+    var promise = http.get('/service?name=players');
+
+    promise.success(function(response, status){
+        globalPlayers = convertDocsToPlayers(response);
+        $scope.players = globalPlayers;
+    });
+
+    promise.error(function(response, status){
+        scope.alerts.push({ type:"danger",
+            msg: "Request failed with response '" + response + "' and status code: " + status});
+    });
+}
+
+function getBoxleagues($scope, http){
+
+    if(globalBoxes.length){
+        $scope.boxes = globalBoxes;
+        return;
+    }
+
+    var promise = http.get('/service?name=boxleagues');
+
+    promise.success(function(response, status){
+        if(response.rows && response.rows.length){
+            var boxleague = response.rows[0].doc;
+            globalBoxes = boxleague.boxes;
+            $scope.boxes = globalBoxes;
+        }
+    });
+
+    promise.error(function(response, status){
+        scope.alerts.push({ type:"danger",
+            msg: "Request failed with response '" + response + "' and status code: " + status});
+    });
+}
+
 boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
     $log.info("forcastCtrl");
 
@@ -27,40 +90,118 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
     };
 }]);
 
-boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', function ($scope, $log) {
+boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
     $log.info("welcomeCtrl");
+
+    $scope.alerts = [];
+
+    $scope.close = function(index) {
+        $scope.alerts.splice(index, 1);
+    };
 }]);
 
-// global scope
-var boxes = [];
-
-boxleagueApp.controller('mainCtrl', ['$scope', '$log', function ($scope, $log) {
+boxleagueApp.controller('mainCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
     $log.info("mainCtrl");
-    $scope.boxes = boxes;
+
+    getPlayers($scope, $http);
+    getBoxleagues($scope, $http);
 }]);
 
-boxleagueApp.controller('boxesCtrl', ['$scope', '$log', function ($scope, $log) {
+boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
     $log.info("boxesCtrl");
-    $scope.boxes = boxes;
+    getBoxleagues($scope, $http);
 }]);
 
 boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
     $log.info("playersCtrl");
 
-    $http.get('/players').success(function(data) {
-        $scope.players      = data;
-        $scope.sortType     = 'name'; // set the default sort type
-        $scope.sortReverse  = false;  // set the default sort order
-        $scope.searchName   = '';     // set the default search/filter term
-    });
+    $scope.sortType     = 'name'; // set the default sort type
+    $scope.sortReverse  = false;  // set the default sort order
+    $scope.searchName   = '';     // set the default search/filter term
+
+    getPlayers($scope, $http);
 }]);
 
-boxleagueApp.controller('importCtrl', ['$scope', '$log', function ($scope, $log) {
+function getDayClass(data) {
+    var date = data.date,
+        mode = data.mode;
+    if (mode === 'day') {
+        var dayToCheck = new Date(date).setHours(0,0,0,0);
+
+        for (var i = 0; i < $scope.events.length; i++) {
+            var currentDay = new Date($scope.events[i].date).setHours(0,0,0,0);
+
+            if (dayToCheck === currentDay) {
+                return $scope.events[i].status;
+            }
+        }
+    }
+
+    return '';
+}
+
+boxleagueApp.controller('importCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
     $log.info("importCtrl");
 
     $scope.changeEvent = "";
     $scope.filename = "";
-    $scope.boxes = boxes; // pre-load
+    $scope.boxes = globalBoxes; // pre-load
+
+    // For Ajax
+    $scope.alerts = [];
+    $scope.close = function(index) {
+        $scope.alerts.splice(index, 1);
+    };
+
+    // For Dates
+    $scope.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'dd-MM-yyyy', 'shortDate'];
+    $scope.format = $scope.formats[2];
+    $scope.altInputFormats = ['M!/d!/yyyy'];
+
+    $scope.inlineOptions = {
+        customClass: getDayClass,
+        minDate: new Date(),
+        showWeeks: true
+    };
+
+    $scope.dateOptions = {
+        formatYear: 'yy',
+        maxDate: new Date(2020, 5, 22),
+        minDate: new Date(2016, 1, 1),
+        startingDay: 1
+    };
+
+    $scope.startPopUp = {
+        opened: false
+    };
+
+    $scope.openStartPopUp = function() {
+        $scope.startPopUp.opened = true;
+    };
+
+    $scope.endPopUp = {
+        opened: false
+    };
+
+    $scope.openEndPopUp = function() {
+        $scope.endPopUp.opened = true;
+    };
+
+    $scope.submit = function() {
+        console.log("posting boxleague data....");
+
+        var boxleague = { name: $scope.name, start: $scope.startDate, end: $scope.endDate, boxes: $scope.boxes }
+        var promise = $http.post('submitNewBoxleague', JSON.stringify(boxleague));
+
+        promise.success(function(response, status){
+            $scope.alerts.push({ type:"success", msg: "Boxes Saved"});
+        });
+
+        promise.error(function(response, status){
+            $scope.alerts.push({ type:"danger",
+                msg: "Request failed with response '" + response + "' and status code: " + status});
+        });
+    };
 
     $scope.$watch('changeEvent', function(){
         if(!$scope.changeEvent){
@@ -122,7 +263,7 @@ boxleagueApp.controller('importCtrl', ['$scope', '$log', function ($scope, $log)
                     players.sort();
 
                     var box = {name: boxName, games: games, players: players};
-                    boxes.push(box);
+                    globalBoxes.push(box);
                 });
             });
         };
@@ -153,19 +294,24 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
       throw "Couldn't find object with player1: " + player1 + " and player2: " + player2;
     }
 
-//    $scope.scoreText = function(score) {
-//        var text = "";
-//        var sets = Object.keys(score).map(function (key) {return key});
-//        sets.forEach(function(item){
-//            text += score[item] + " ";
-//        });
-//        return text;
-//    }
+    function lookupPlayers(players) {
+        results = [];
+        players.forEach(function(lookup){
+            globalPlayers.forEach(function(player){
+                if(player.first + " " + player.last === lookup){
+                    results.push(player)
+                }
+            });
+        });
+        return results;
+    }
 
     $scope.boxName = $routeParams.box;
-    $scope.box = findBoxByName(boxes, $scope.boxName);
+    $scope.box = findBoxByName(globalBoxes, $scope.boxName);
 
-    players = $scope.box.players;
+    var players = $scope.box.players;
+
+    $scope.players = lookupPlayers(players);
 
     $scope.tableHeaders = [];
     $scope.tableRows = [];
@@ -261,9 +407,9 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
 
         // valid scores
         var ctbdiff = Math.abs(home - away);
-        if (home === 6 && ctbdiff === 2){
+        if (home === 6 && ctbdiff >= 2){
             return 1;
-        } else if (away === 6 && ctbdiff === 2){
+        } else if (away === 6 && ctbdiff >= 2){
             return 1;
         }
 
@@ -286,24 +432,30 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             return 0;
         }
 
+        // valid scores e.g. 1:0
+        if((home === 1 && away === 0) || (home === 0 && away === 1)){
+            return 1;
+        }
+
         // score is not set
         if (home < 10 && away < 10){
             return 0;
         }
 
-        //values are not in range
+        // values are not in range
         if (home < 0 || away < 0){
             return 0;
         }
 
-        // valid scores
-        if(home + away === 1){
+        var ctbdiff = Math.abs(home - away);
+        if (home === 10 && ctbdiff >= 2){
+            return 1;
+        } else if (away === 10 && ctbdiff >= 2){
             return 1;
         }
-        var ctbdiff = Math.abs(home - away);
-        if (home >= 10 && ctbdiff >= 2){
+        if (home > 10 && ctbdiff === 2){
             return 1;
-        } else if (away >= 10 && ctbdiff >= 2){
+        } else if (away > 10 && ctbdiff === 2){
             return 1;
         }
 
@@ -395,13 +547,4 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             game.save = false;
         }
     };
-//
-//    $scope.gameHeaders = [ "Week", "Game", "Score"];
-//    $scope.gameRows = [];
-//
-//    $scope.box.games.forEach(function(game){
-//        var row = { week: game.week.week, fixture: game.home + " vs " + game.away, score: game.score };
-//        $scope.gameRows.push(row);
-//    })
-
 }]);
