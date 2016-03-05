@@ -1,5 +1,6 @@
 <div class="container">
-    <h1>{{boxName}}</h1>
+    <h1>{{boxleagueTitle}}</h1>
+    <h2>{{boxName}}</h2>
 
     <table class="table table-bordered table-striped table-condensed table-responsive">
         <thead>
@@ -15,20 +16,26 @@
     </table>
 
     <h2>Fixtures</h2>
+    <div class="form-group">
+        <div class="search">
+            <span class="fa fa-search"></span>
+            <input placeholder="Search" ng-model="search">
+        </div>
+    </div>
     <table class="table table-bordered table-striped table-condensed table-responsive">
         <thead>
             <tr>
                 <th>Week</th>
                 <th>Fixture</th>
-                <th>Score</th>
+                <th>Score (e.g. 6:3 5:7 10:6)</th>
             </tr>
         </thead>
         <tbody>
-            <tr ng-repeat="game in box.games track by $index">
-                <td style="width:10%">{{game.week.week}}</td>
-                <td style="width:60%">{{game.home}} vs {{game.away}}</td>
+            <tr ng-repeat="game in box.games | filter:fixtureFilter track by $index">
+                <td>{{game.week.week}}</td>
+                <td>{{game.home}} vs {{game.away}}</td>
                 <td>
-                    <div class="input-group">
+                    <div ng-show="login===game.home || login==game.away" class="input-group">
                         <input type="text" class="form-control" value="game.score" ng-model="game.score" ng-change="inputScore(game)">
                         <span class="input-group-btn" ng-if="game.save">
                             <button class="btn btn-success" type="button">Save</button>
@@ -36,6 +43,9 @@
                         <span class="input-group-addon label-warning" ng-if="game.error">
                             {{game.error}}
                         </span>
+                    </div>
+                    <div ng-hide="login===game.home || login==game.away" class="input-group">
+                    {{game.score}}
                     </div>
                 </td>
             </tr>
@@ -50,5 +60,9 @@
                     sort-reverse="sortReverse"
                     search-name="searchName">
             </players-table>
+    </div>
+
+    <h2>Entering Scores</h2>
+    <div ng-include src="'pages/setshelp.html'">
     </div>
 </div>

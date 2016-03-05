@@ -1,9 +1,6 @@
 <div class="container">
-    <div ng-show="alerts.length" class="row">
-        <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
-    </div>
-
-    <div class="row" style="margin-top: 20px">
+    <div class="row">
+    <h1>Players</h1>
         <players-table
                 players="players"
                 sort-type="sortType"

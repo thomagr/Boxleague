@@ -1,12 +1,11 @@
 <div class="container">
-    <div class="row" style="margin-top: 20px;">
+    <h1>{{boxleague.name}}</h1>
+    <div class="row">
         <div  ng-if="boxes">
             <span ng-repeat="box in boxes">
-                <!--<div ng-class="row | ($index % 3 == 0)">-->
-                    <div class="col-sm-4">
-                        <boxes box="box"></boxes>
-                    </div>
-                <!--</div>-->
+                <div class="col-sm-4">
+                    <boxes box="box"></boxes>
+                </div>
             </span>
         </div>
     </div>

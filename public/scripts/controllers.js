@@ -1,66 +1,5 @@
 // CONTROLLERS
-
-// global scope
-var boxleagues = [];
-var globalBoxes = [];
-var globalPlayers = [];
-
-function convertDocsToPlayers(response){
-    var players = [];
-    response.rows.forEach(function(item){
-        players.push({
-            name: item.doc.first_name + ' ' + item.doc.last_name,
-            first: item.doc.first_name,
-            last: item.doc.last_name,
-            mobile: item.doc.mobile,
-            home: item.doc.home,
-            email: item.doc.email
-        });
-    });
-    return players;
-};
-
-function getPlayers($scope, http){
-
-    if(globalPlayers.length){
-        $scope.players = globalPlayers;
-        return;
-    }
-    var promise = http.get('/service?name=players');
-
-    promise.success(function(response, status){
-        globalPlayers = convertDocsToPlayers(response);
-        $scope.players = globalPlayers;
-    });
-
-    promise.error(function(response, status){
-        scope.alerts.push({ type:"danger",
-            msg: "Request failed with response '" + response + "' and status code: " + status});
-    });
-}
-
-function getBoxleagues($scope, http){
-
-    if(globalBoxes.length){
-        $scope.boxes = globalBoxes;
-        return;
-    }
-
-    var promise = http.get('/service?name=boxleagues');
-
-    promise.success(function(response, status){
-        if(response.rows && response.rows.length){
-            var boxleague = response.rows[0].doc;
-            globalBoxes = boxleague.boxes;
-            $scope.boxes = globalBoxes;
-        }
-    });
-
-    promise.error(function(response, status){
-        scope.alerts.push({ type:"danger",
-            msg: "Request failed with response '" + response + "' and status code: " + status});
-    });
-}
+var login = "Graham Thomas";
 
 boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
     $log.info("forcastCtrl");
@@ -93,33 +32,23 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
 boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
     $log.info("welcomeCtrl");
 
-    $scope.alerts = [];
-
     $scope.close = function(index) {
         $scope.alerts.splice(index, 1);
     };
 }]);
 
-boxleagueApp.controller('mainCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
-    $log.info("mainCtrl");
 
-    getPlayers($scope, $http);
-    getBoxleagues($scope, $http);
-}]);
-
-boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
+boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$http' ,'$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("boxesCtrl");
-    getBoxleagues($scope, $http);
+    $scope.boxes = $rootScope.boxleague.boxes;
 }]);
 
-boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
+boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http' ,'$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("playersCtrl");
 
     $scope.sortType     = 'name'; // set the default sort type
     $scope.sortReverse  = false;  // set the default sort order
     $scope.searchName   = '';     // set the default search/filter term
-
-    getPlayers($scope, $http);
 }]);
 
 function getDayClass(data) {
@@ -140,18 +69,11 @@ function getDayClass(data) {
     return '';
 }
 
-boxleagueApp.controller('importCtrl', ['$scope', '$log', '$http', function ($scope, $log, $http) {
+boxleagueApp.controller('importCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("importCtrl");
 
     $scope.changeEvent = "";
     $scope.filename = "";
-    $scope.boxes = globalBoxes; // pre-load
-
-    // For Ajax
-    $scope.alerts = [];
-    $scope.close = function(index) {
-        $scope.alerts.splice(index, 1);
-    };
 
     // For Dates
     $scope.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'dd-MM-yyyy', 'shortDate'];
@@ -215,6 +137,7 @@ boxleagueApp.controller('importCtrl', ['$scope', '$log', '$http', function ($sco
             $scope.$apply(function () {
                 var data = evt.target.result;
                 var workbook = XLSX.read(data, {type: 'binary'});
+                $rootScope.boxleague.boxes = [];
 
                 workbook.SheetNames.forEach(function(boxName){
                     if(boxName.indexOf("Box ") === -1){
@@ -263,7 +186,7 @@ boxleagueApp.controller('importCtrl', ['$scope', '$log', '$http', function ($sco
                     players.sort();
 
                     var box = {name: boxName, games: games, players: players};
-                    globalBoxes.push(box);
+                    $rootScope.boxleague.boxes.push(box);
                 });
             });
         };
@@ -272,8 +195,15 @@ boxleagueApp.controller('importCtrl', ['$scope', '$log', '$http', function ($sco
     })
 }]);
 
-boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
+boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', function ($scope, $log, $resource, $routeParams, $rootScope) {
     $log.info("boxCtrl");
+
+    $scope.login = login;
+    $scope.search = "";
+
+    $scope.fixtureFilter = function (item) {
+        return $scope.search.length === 0 | item.home.indexOf($scope.search) >= 0 || item.away.indexOf($scope.search) >=0 ;
+    };
 
     function findBoxByName(source, name) {
         for (var i = 0; i < source.length; i++) {
@@ -281,7 +211,8 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
                 return source[i];
             }
         }
-      throw "Couldn't find object with name: " + name;
+        console.log("Couldn't find object with name: " + name);
+        window.location.href = '/';
     }
 
     function findGameByPlayers(source, player1, player2) {
@@ -297,7 +228,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
     function lookupPlayers(players) {
         results = [];
         players.forEach(function(lookup){
-            globalPlayers.forEach(function(player){
+            $rootScope.players.forEach(function(player){
                 if(player.first + " " + player.last === lookup){
                     results.push(player)
                 }
@@ -307,7 +238,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
     }
 
     $scope.boxName = $routeParams.box;
-    $scope.box = findBoxByName(globalBoxes, $scope.boxName);
+    $scope.box = findBoxByName($rootScope.boxleague.boxes, $scope.boxName);
 
     var players = $scope.box.players;
 

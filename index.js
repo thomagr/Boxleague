@@ -1,86 +1,88 @@
 var express = require('express'),
     http = require('http'),
+    path = require('path'),
     bodyParser = require('body-parser'),
-    Cloudant = require('cloudant');
+    cookieParser = require('cookie-parser'),
+    Cloudant = require('cloudant'),
+    passport = require('passport'),
+    session = require('express-session'),
+    uuid = require('node-uuid'),
+    LocalStrategy = require('passport-local').Strategy;
+
+//==================================================================
+// Define the strategy to be used by PassportJS
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+    console.log('checking password');
+    if (username === "admin" && password === "admin"){ // stupid example
+      console.log('user %s has logged in', username);
+      return done(null, {name: username});
+    }
+
+    return done(null, false, { message: 'Incorrect login details.' });
+  }
+));
+
+// Serialized and deserialized methods when got from session
+passport.serializeUser(function(user, done) {
+    done(null, user);
+});
+
+passport.deserializeUser(function(user, done) {
+    done(null, user);
+});
+
+// Define a middleware function to be used for every secured routes
+var auth = function(req, res, next){
+  console.log('checking isAuthenticated');
+  if (!req.isAuthenticated()){
+        console.log('is Authenticated false');
+        res.send(401);
+  }
+  else {
+        console.log('is Authenticated true');
+        next();
+  };
+};
+//==================================================================
 
 var app = express();
+
+// Default logger on all calls
+app.use(function(req, res, next) {
+    var now = new Date();
+    console.log('Request  : %s', now);
+    console.log('req.query: %s', req.query);
+    console.log('req.url  : %s', req.url);
+    console.log('req.user : %s', req.user);
+    next();
+});
+
+// all environments
+app.set('port', process.env.PORT || 9000);
+app.use(cookieParser());
+//app.use(bodyParser());
+//app.use(express.methodOverride());
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true
+}));
+app.use(passport.initialize()); // Add passport initialization
+app.use(passport.session());    // Add passport initialization
+//app.use(app.router);
 
 // client
 app.use(express.static(__dirname + '/public/pages'));
 app.use(express.static(__dirname + '/public'));
 
-// client APIs
-app.use(express.static(__dirname + '/node_modules/xlsx/dist'));
-app.use(express.static(__dirname + '/node_modules/angular-dynamic-layout/dist'));
-app.use(express.static(__dirname + '/node_modules/angular-animate'));
-
 // for posts
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-// client homepage
-app.get('/', function(req, res){
-    console.log( 'app.get(/)' );
-    res.sendFile(__dirname + '/public/index.html');
-});
-
-// Default logger on all calls
-app.use(function(req, res, next) {
-    var now = new Date();
-    console.log('Request: %s', now);
-    console.log(req.query);
-    console.log(req.url);
-    //console.log(req);
-    next();
-});
-
 //===============CLOUDANT===============
 var user = "thomagr";
 var password = "EJS-13grt";
-
-//// service requests for redonly access to the database
-//app.get('/players', function(req, res) {
-//    console.log('app.get(/players)');
-//
-//    if(players.length){
-//        res.send(players);
-//        return console.log('Sending player cache');
-//    }
-//
-//    Cloudant({
-//        account: user,
-//        password: password
-//    }, function (er, cloudant) {
-//        if (er) {
-//            res.status(500).send(er.message);
-//            return console.log('Error login: %s', er.message);
-//        }
-//        var db = cloudant.use("players");
-//        db.list({include_docs: true}, function (err, body) {
-//            if (err)
-//                return console.log('Error list: %s', err.message);
-//
-//            // convert docs to an array of players and store in cache
-//            var data = body.rows;
-//
-//            for (var i=0; i < data.length; i++){
-//
-//                players.push({
-//                    name: data[i].doc.last_name + ', ' + data[i].doc.first_name,
-//                    mobile: data[i].doc.mobile,
-//                    home: data[i].doc.home,
-//                    email: data[i].doc.email
-//                });
-//            }
-//
-//            players.sort(function(a,b){
-//                return a.name.localeCompare(b.name)
-//            });
-//
-//            res.send(players);
-//        });
-//    });
-//});
 
 var cache = {};
 
@@ -106,8 +108,38 @@ function loadCache( cache, name, data ) {
     cache[ name ] = data;
 }
 
+var genuuid = uuid.v4();
+
+//=============================Routes=================================
+// route to homepage
+app.get('/', function(req, res){
+    console.log( 'app.get(/)' );
+    res.sendFile(__dirname + '/public/index.html');
+});
+
+// route to test if the user is logged in or not
+app.get('/loggedin', function(req, res) {
+  console.log('/loggedin');
+  console.log('req.user: ' + req.user);
+  res.send(req.isAuthenticated() ? req.user : '0');
+});
+
+// route to log in
+app.post('/login', passport.authenticate('local'), function(req, res) {
+  console.log('/login');
+  console.log('sending req.user: %s', req.user);
+  res.send(req.user);
+});
+
+// route to log out
+app.post('/logout', function(req, res){
+  console.log('/logout');
+  req.logOut();
+  res.send(200);
+});
+
 // service requests for readonly access to the database
-app.get('/service', function(req, res) {
+app.get('/service', auth, function(req, res) {
     console.log( 'app.get(/service)' );
     console.log(req.query);
 
@@ -163,7 +195,7 @@ app.get('/service', function(req, res) {
     });
 });
 
-app.post('/submitNewBoxleague', function(req, res) {
+app.post('/submitNewBoxleague', auth, function(req, res) {
     console.log( 'app.post(/submitNewBoxleague)' );
 
     if (!req.body) {
@@ -206,6 +238,6 @@ app.post('/submitNewBoxleague', function(req, res) {
     });
 });
 
-var port = process.env.PORT || 9000;
-app.listen(port);
-console.log("listening on " + port + "!");
+http.createServer(app).listen(app.get('port'), function(){
+  console.log('Express server listening on port ' + app.get('port'));
+});
