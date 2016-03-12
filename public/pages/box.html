@@ -1,11 +1,11 @@
-<div class="container">
+<div class="container" ng-show="tableRows">
     <h1>{{boxleagueTitle}}</h1>
     <h2>{{boxName}}</h2>
 
     <table class="table table-bordered table-striped table-condensed table-responsive">
         <thead>
             <tr>
-                <th ng-repeat="header in tableHeaders">{{ header }} </th>
+                <th ng-repeat="header in tableHeaders">{{header}} </th>
             </tr>
         </thead>
         <tbody>
@@ -27,7 +27,7 @@
             <tr>
                 <th>Week</th>
                 <th>Fixture</th>
-                <th>Score (e.g. 6:3 5:7 10:6)</th>
+                <th style="width:200px">Score (e.g. 6:3 5:7 10:6)</th>
             </tr>
         </thead>
         <tbody>
@@ -36,7 +36,9 @@
                 <td>{{game.home}} vs {{game.away}}</td>
                 <td>
                     <div ng-show="login===game.home || login==game.away" class="input-group">
-                        <input type="text" class="form-control" value="game.score" ng-model="game.score" ng-change="inputScore(game)">
+                        <input type="text" class="form-control" value="game.score"
+                               ng-model="game.score" ng-change="inputScore(game)"
+                        >
                         <span class="input-group-btn" ng-if="game.save">
                             <button class="btn btn-success" type="button">Save</button>
                         </span>

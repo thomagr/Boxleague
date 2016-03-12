@@ -52,7 +52,12 @@
 
                 <div class="collapse navbar-collapse" uib-collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">
                     <ul ng-show="isAuth" class="nav navbar-nav">
-                        <li><a href="#/import"><i class="fa fa-upload icon-white"></i> Import</a></li>
+                        <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-upload icon-white"></i> Import <span class="caret"></span></a>
+                            <ul uib-dropdown-menu>
+                                <li><a href="#/importBoxleague">Boxleague</a></li>
+                                <li><a href="#/importPlayers">Players</a></li>
+                            </ul>
+                        </li>
                         <li><a href="#/rules"><i class="fa fa-book icon-white"></i> Rules</a></li>
                         <li><a href="#/players"><i class="fa fa-user icon-white"></i> Players</a></li>
                         <li><a href="#/boxes"><i class="fa fa-cubes icon-white"></i> Boxes</a></li>
@@ -64,11 +69,11 @@
                 </div>
             </div>
         </nav>
-
-        <div ng-show="alerts.length" class="row">
-            <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
+        <div class="container">
+            <div ng-show="alerts.length" class="row">
+                <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
+            </div>
         </div>
-
         <div ng-view></div>
 
     </body>

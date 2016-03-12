@@ -1,18 +1,13 @@
 <!--http://stackoverflow.com/questions/16579427/html5-file-upload-with-angularjs-->
 <!--http://stackoverflow.com/questions/20137496/angular-js-ng-repeat-for-creating-grid-->
 <div class="container">
-
-    <div ng-show="alerts.length" class="row" style="margin-top: 20px;">
-        <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
-    </div>
-
     <div ng-hide="boxes.length" class="row" style="margin-top: 20px;">
         <div class="fileUpload btn btn-default">
             <input type="file" class="upload" file-input name="changeEvent" />
         </div>
     </div>
 
-    <div class="row" style="margin-top: 20px;">
+    <div ng-show="boxes.length" class="row" style="margin-top: 20px;">
         <form class="form-inline">
             <input type="text" class="form-control" placeholder="Boxleague" ng-model="name">
             <div class="input-group">

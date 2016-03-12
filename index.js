@@ -229,7 +229,7 @@ app.post('/submitNewBoxleague', auth, function(req, res) {
             return console.log('Error login: %s', er.message);
         }
 
-        var database = cloudant.use('boxleagues');
+        var database = cloudant.use('staging');
 
         database.insert(boxleague, function(er, body) {
             if (er)

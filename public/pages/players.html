@@ -1,11 +1,11 @@
 <div class="container">
-    <div class="row">
-    <h1>Players</h1>
+    <div ng-show="players" class="row">
+        <h1>Players</h1>
         <players-table
-                players="players"
-                sort-type="sortType"
-                sort-reverse="sortReverse"
-                search-name="searchName">
+            players="players"
+            sort-type="sortType"
+            sort-reverse="sortReverse"
+            search-name="searchName">
         </players-table>
     </div>
 </div>

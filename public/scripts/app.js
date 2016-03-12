@@ -85,9 +85,17 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }
     }).
 
-    when('/import', {
-        templateUrl: 'pages/import.html',
-        controller: 'importCtrl',
+    when('/importPlayers', {
+        templateUrl: 'pages/importPlayers.html',
+        controller: 'importPlayersCtrl',
+        resolve: {
+          loggedin: checkLoggedin
+        }
+    }).
+
+    when('/importBoxleague', {
+        templateUrl: 'pages/importBoxleague.html',
+        controller: 'importBoxleagueCtrl',
         resolve: {
           loggedin: checkLoggedin
         }
@@ -95,7 +103,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
 
     when('/boxes', {
         templateUrl: 'pages/boxes.html',
-        controller: 'boxesCtrl',
+        controller: 'boxCtrl',
         resolve: {
           loggedin: checkLoggedin
         }
@@ -149,43 +157,33 @@ function convertDocsToPlayers(response){
     return players;
 };
 
-function getPlayers($scope, http){
-
-    if( $scope.players && $scope.players.length ){
-        return;
-    }
+function getPlayers(http, success, error){
 
     var promise = http.get('/service?name=players');
 
     promise.success(function(response, status){
-        $scope.players = convertDocsToPlayers(response);
+        success(convertDocsToPlayers(response));
     });
 
     promise.error(function(response, status){
-        $scope.alerts = $scope.alerts || [];
-        $scope.alerts.push({ type:"danger",
-            msg: "Request failed with response '" + response + "' and status code: " + status});
+        error( { type:"danger", msg: "Request failed with response '" + response + "' and status code: " + status} )
     });
 }
 
-function getBoxleagues($scope, http){
-
-    if( $scope.boxleague ){
-        return;
-    }
+function getBoxleague(http, success, error){
 
     var promise = http.get('/service?name=boxleagues');
 
     promise.success(function(response, status){
         if(response.rows && response.rows.length){
-            $scope.boxleague = response.rows[0].doc;
+            success(response.rows[0].doc);
+        } else {
+            error( { type:"warning", msg: "no boxleages loaded"} )
         }
     });
 
     promise.error(function(response, status){
-        $scope.alerts = $scope.alerts || [];
-        $scope.alerts.push({ type:"danger",
-            msg: "Request failed with response '" + response + "' and status code: " + status});
+        error( { type:"danger", msg: "Request failed with response '" + response + "' and status code: " + status} )
     });
 }
 
@@ -201,9 +199,8 @@ boxleagueApp.controller('mainCtrl', function($scope, $rootScope, $http, $locatio
       $rootScope.alerts.splice(index, 1);
   };
 
-  getBoxleagues($rootScope, $http);
-  getPlayers($rootScope, $http);
-
+  //$rootScope.players = [];
+  //$rootScope.boxleague = {};
   $rootScope.isAuth = false;
 
   // Register the login() function
