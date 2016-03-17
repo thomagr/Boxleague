@@ -1,5 +1,4 @@
 // CONTROLLERS
-var login = "Graham Thomas";
 
 boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
     $log.info("forcastCtrl");
@@ -47,6 +46,46 @@ boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', '$http', function ($sc
     };
 }]);
 
+boxleagueApp.controller('playerCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
+    function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
+    $log.info("playerCtrl");
+
+    $scope.id = $routeParams.id;
+
+    var success = function(players){
+        $rootScope.players = players;
+        players.forEach(function(player){
+            if(player._id === $scope.id){
+                $scope.player = player;
+                if($scope.player.name === $rootScope.login){
+                    $scope.edit = true;
+                }
+            }
+        });
+    }
+
+    var error = function(msg){
+        $rootScope.alerts.push(msg);
+    }
+    getArray('players', $http, success, error);
+
+    $scope.submit = function() {
+        console.log("posting data ...");
+
+        var data = {database: 'players', doc: $scope.player};
+        var promise = $http.post('submitDoc', JSON.stringify(data));
+
+        promise.success(function(response, status){
+            $scope.alerts.push({ type:"success", msg: " Saved"});
+        });
+
+        promise.error(function(response, status){
+            $scope.alerts.push({ type:"danger",
+                msg: "Request failed with response '" + response + "' and status code: " + status});
+        });
+    };
+}]);
+
 boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http' ,'$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("playersCtrl");
 
@@ -57,7 +96,7 @@ boxleagueApp.controller('playersCtrl', ['$scope', '$log', '$http' ,'$rootScope',
     var error = function(msg){
         $rootScope.alerts.push(msg);
     }
-    getPlayers($http, success, error);
+    getArray('players', $http, success, error);
 
     $scope.sortType     = 'name'; // set the default sort type
     $scope.sortReverse  = false;  // set the default sort order
@@ -126,20 +165,58 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
         $scope.endPopUp.opened = true;
     };
 
-    $scope.submit = function() {
-        console.log("posting boxleague data....");
+    var findPlayer = function(name){
+        for(var i=0; i<$rootScope.players.length; i++){
+            if(name === $rootScope.players[i].name){
+                return($rootScope.players[i])
+            };
+        };
+        // TBD - this should be a throw as we have a missing player
+        //throw "Couldn't find player: " + name;
+        // replace the return with throw
+        return {name:name, _id: "unknown"};
+    };
 
-        var boxleague = { name: $scope.name, start: $scope.startDate, end: $scope.endDate, boxes: $scope.boxes }
-        var promise = $http.post('submitNewBoxleague', JSON.stringify(boxleague));
+    $scope.submit = function() {
+        console.log("posting boxleague data ...");
+
+        // iterate over the boxes and extract the games
+        var games = [];
+        $scope.boxes.forEach(function(box){
+            box.games.forEach(function(game){
+                games.push(game);
+            });
+        });
+
+        // join games with their player ids
+        games.forEach(function(game){
+            game.homeId = findPlayer(game.home)._id;
+            game.awayId = findPlayer(game.away)._id;
+        });
+
+        var data = {database: 'games', data: games};
+        var promise = $http.post('submitDocs', JSON.stringify(data));
 
         promise.success(function(response, status){
-            $scope.alerts.push({ type:"success", msg: "Boxes Saved"});
+            $scope.alerts.push({ type:"success", msg: " Saved"});
         });
 
         promise.error(function(response, status){
             $scope.alerts.push({ type:"danger",
                 msg: "Request failed with response '" + response + "' and status code: " + status});
         });
+
+//        var boxleague = {name: $scope.name, start: $scope.startDate, end: $scope.endDate, boxes: $scope.boxes}
+//        var promise = $http.post('submitNewBoxleague', JSON.stringify(boxleague));
+//
+//        promise.success(function(response, status){
+//            $scope.alerts.push({type:"success", msg: "Boxes Saved"});
+//        });
+//
+//        promise.error(function(response, status){
+//            $scope.alerts.push({type:"danger",
+//                msg: "Request failed with response '" + response + "' and status code: " + status});
+//        });
     };
 
     $scope.$watch('changeEvent', function(){
@@ -168,31 +245,33 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                     var matches = content.match(/([a-zA-Z' ]*),v.,([a-zA-Z' ]*)/g);
                     matches.forEach( function(pairing){
                         var players = pairing.split(",v.,");
-                        var game = {home: players[0], away: players[1], score: "", origScore: ""};
+                        var game = {home: findPlayer(players[0]).name, away: findPlayer(players[1]).name, score: ""};
                         games.push(game);
                     });
 
+                    // parse out the week information and use the date and time to create the game time
                     var weeks = [];
                     matches = content.match(/(Week \d,\d*\/\d*\/\d*,\d*.\d*)/g);
                     matches.forEach( function(weekItem){
                         var details = weekItem.split(",");
                         var weekNum = details[0].replace("Week ", "");
-                        var week = {week: weekNum, date: details[1], time: details[2]};
+                        var week = {week: weekNum, date: details[1], time: details[2].replace('.',':')};
                         weeks.push(week);
                     });
 
                     // hardcoded for now
                     for(var i=0;i<6;i++){
-                        games[i].week = weeks[i%2];
+                        games[i].schedule = new Date(weeks[i%2].date + " " + weeks[i%2].time);
                     }
                     for(var i=6;i<12;i++){
-                        games[i].week = weeks[i%2+2];
+                        games[i].schedule = new Date(weeks[i%2+2].date + " " + weeks[i%2+2].time);
                     }
                     for(var i=12;i<15;i++){
-                        games[i].week = weeks[4];
+                        games[i].schedule = new Date(weeks[4].date + " " + weeks[4].time);
                     }
                     games.sort(function(a,b){
-                        return a.week.week.replace("Week ","") - b.week.week.replace("Week ","");
+                        //return a.week.week.replace("Week ","") - b.week.week.replace("Week ","");
+                        return a.schedule - b.schedule;
                     });
 
                     var players = {};
@@ -222,30 +301,27 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
     $scope.filename = "";
 
     var currentPlayers = [];
-
-    var success = function(players){
-        $rootScope.players = players;
-        players.forEach(function(player){
-            currentPlayers.push(player.name);
-        });
-    }
-
-    var error = function(msg){
-        $rootScope.alerts.push(msg);
-    }
-    getPlayers($http, success, error);
+    $rootScope.players.forEach(function(player){
+        currentPlayers.push(player)
+    });
 
     $scope.submit = function() {
-        console.log("posting player data....");
+        console.log("posting player data ...");
 
-        var promise = $http.post('submitNewPlayers', JSON.stringify($scope.players));
+        // clean data
+        var data = [];
+        $scope.newPlayers.forEach(function(player){
+            data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
+        })
+
+        var promise = $http.post('submitNewPlayers', JSON.stringify(data));
 
         promise.success(function(response, status){
-            $scope.alerts.push({ type:"success", msg: "Players Saved"});
+            $rootScope.alerts.push({ type:"success", msg: "Players Saved"});
         });
 
         promise.error(function(response, status){
-            $scope.alerts.push({ type:"danger",
+            $rootScope.alerts.push({ type:"danger",
                 msg: "Request failed with response '" + response + "' and status code: " + status});
         });
     };
@@ -274,12 +350,9 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
                     if(details[0].length === 0 || details[1].length === 0){
                         return
                     }
-                    var name = details[0].split(' ');
-                    var first = name[0];
-                    var last = name.splice(1, name.length-1).join(' ');
-                    name = first + ' ' + last;
+                    var name = details[0];
                     var mobile = details[1];
-                    var player = {first: first, last: last, name: name, mobile: mobile};
+                    var player = {name: name, mobile: mobile};
 
                     if(currentPlayers.indexOf(name) === -1){
                         $scope.newPlayers.push(player);
@@ -291,42 +364,26 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
     })
 }]);
 
+boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
+    function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
+    $log.info("boxesCtrl");
+
+    $scope.boxleague = $rootScope.boxleague;
+}]);
+
 boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
     function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
     $log.info("boxCtrl");
 
-    $scope.login = login;
+    $scope.login = $rootScope.login;
     $scope.search = "";
-
     $scope.boxName = $routeParams.box;
 
-    var error = function(msg){
-        $rootScope.alerts.push(msg);
-    }
+    $scope.players = $rootScope.players;
+    $scope.games = $rootScope.games;
+    $scope.boxleague = $rootScope.boxleague;
 
-    var successPlayers = function(players){
-        $scope.players = players;
-        $rootScope.players = players;
-
-        setUp();
-    }
-
-    var successBoxleague = function(boxleague){
-        $scope.boxleague = boxleague;
-        $rootScope.boxleague = boxleague;
-
-        if($rootScope.players){
-            successPlayers($rootScope.players);
-        } else {
-            getPlayers($http, successPlayers, error);
-        }
-    }
-
-    if($rootScope.boxleague){
-        successBoxleague($rootScope.boxleague);
-    } else {
-        getBoxleague($http, successBoxleague, error);
-    }
+    setUp();
 
     function findBoxByName(source, name) {
         for (var i = 0; i < source.length; i++) {
@@ -347,11 +404,11 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
       throw "Couldn't find object with player1: " + player1 + " and player2: " + player2;
     }
 
-    function lookupPlayers(players) {
+    function lookupPlayers(lookup) {
         results = [];
-        players.forEach(function(lookup){
+        lookup.forEach(function(item){
             $rootScope.players.forEach(function(player){
-                if(player.first + " " + player.last === lookup){
+                if(player.name === item){
                     results.push(player)
                 }
             });
@@ -360,9 +417,10 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
     }
 
     function setUp(){
-        if( !$scope.boxleague || !$scope.boxleague.boxes || !$scope.boxName )
-            throw "boxleague, boxleague.boxes or boxName not specified";
 
+        if(!$scope.boxleague){
+            return;
+        }
         $scope.box = findBoxByName($scope.boxleague.boxes, $scope.boxName);
 
         var players = $scope.box.players;

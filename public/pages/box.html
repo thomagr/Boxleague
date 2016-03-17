@@ -1,70 +1,83 @@
-<div class="container" ng-show="tableRows">
-    <h1>{{boxleagueTitle}}</h1>
-    <h2>{{boxName}}</h2>
+<div ng-show="tableRows">
 
-    <table class="table table-bordered table-striped table-condensed table-responsive">
-        <thead>
+    <div class="row">
+        <h1>{{boxleagueTitle}}</h1>
+        <h2>{{boxName}}</h2>
+        <table class="table table-bordered table-striped table-condensed table-responsive">
+            <thead>
             <tr>
-                <th ng-repeat="header in tableHeaders">{{header}} </th>
+                <th ng-repeat="header in tableHeaders">{{header}}</th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             <tr ng-repeat="row in tableRows">
-                <td ng-repeat="column in row track by $index" ng-class="{'bold':$index == 0}">{{getText(column,row,$index)}}</td>
+                <td ng-repeat="column in row track by $index" ng-class="{'bold':$index == 0}">
+                    {{getText(column,row,$index)}}
+                </td>
             </tr>
-        </tbody>
-    </table>
-
-    <h2>Fixtures</h2>
-    <div class="form-group">
-        <div class="search">
-            <span class="fa fa-search"></span>
-            <input placeholder="Search" ng-model="search">
-        </div>
+            </tbody>
+        </table>
     </div>
-    <table class="table table-bordered table-striped table-condensed table-responsive">
-        <thead>
+
+    <div class="row">
+        <h2>Fixtures</h2>
+
+        <div class="form-group">
+            <div class="search">
+                <span class="fa fa-search"></span>
+                <input placeholder="Search" ng-model="search">
+            </div>
+        </div>
+        <table class="table table-bordered table-striped table-condensed table-responsive">
+            <thead>
             <tr>
-                <th>Week</th>
-                <th>Fixture</th>
-                <th style="width:200px">Score (e.g. 6:3 5:7 10:6)</th>
+                <th>Date</th>
+                <th>Game</th>
+                <th style="width:200px">Score</th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             <tr ng-repeat="game in box.games | filter:fixtureFilter track by $index">
-                <td>{{game.week.week}}</td>
+                <td>{{game.schedule | date : 'ddMMMyy HH:mm' }}</td>
                 <td>{{game.home}} vs {{game.away}}</td>
                 <td>
                     <div ng-show="login===game.home || login==game.away" class="input-group">
                         <input type="text" class="form-control" value="game.score"
                                ng-model="game.score" ng-change="inputScore(game)"
                         >
-                        <span class="input-group-btn" ng-if="game.save">
-                            <button class="btn btn-success" type="button">Save</button>
-                        </span>
-                        <span class="input-group-addon label-warning" ng-if="game.error">
-                            {{game.error}}
-                        </span>
+                            <span class="input-group-btn" ng-if="game.save">
+                                <button class="btn btn-success" type="button">Save</button>
+                            </span>
+                            <span class="input-group-addon label-warning" ng-if="game.error">
+                                {{game.error}}
+                            </span>
                     </div>
                     <div ng-hide="login===game.home || login==game.away" class="input-group">
-                    {{game.score}}
+                        {{game.score}}
                     </div>
                 </td>
             </tr>
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 
-    <div ng-show="players.length">
-        <h2>Players</h2>
+    <div class="row">
+        <div ng-show="players.length">
+            <h2>Players</h2>
             <players-table
                     players="players"
                     sort-type="sortType"
                     sort-reverse="sortReverse"
                     search-name="searchName">
             </players-table>
+        </div>
     </div>
 
-    <h2>Entering Scores</h2>
-    <div ng-include src="'pages/setshelp.html'">
+    <div class="row">
+        <h2>Entering Scores</h2>
+
+        <div ng-include src="'pages/setshelp.html'">
+        </div>
     </div>
+
 </div>

@@ -1,33 +1,34 @@
 // MODULE
 var boxleagueApp = angular.module('boxleagueApp', ['ngRoute', 'ngResource', 'ui.bootstrap']);
 
-
 // ROUTES
 boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", function($routeProvider, $locationProvider, $httpProvider) {
     //================================================
     // Check if the user is connected
     //================================================
-    var checkLoggedin = function($q, $timeout, $http, $location, $rootScope){
-      // Initialize a new promise
-      var deferred = $q.defer();
+    var checkLoggedin = function($q, $timeout, $http, $location, $rootScope) {
+        // Initialize a new promise
+        var deferred = $q.defer();
 
-      // Make an AJAX call to check if the user is logged in
-      $http.get('/loggedin').success(function(user){
-        // Authenticated
-        if (user !== '0')
-          /*$timeout(deferred.resolve, 0);*/
-          deferred.resolve();
+        // Make an AJAX call to check if the user is logged in
+        $http.get('/loggedin').success(function(response) {
+            // Authenticated
+            if (response !== '0') {
+                $rootScope.login = response.name;
+                deferred.resolve();
+            }
+            // Not Authenticated
+            else {
+                $rootScope.alerts.push({
+                    type: "danger",
+                    msg: "Please log in"
+                });
+                deferred.reject();
+                $location.url('/login');
+            }
+        });
 
-        // Not Authenticated
-        else {
-          $rootScope.message = 'You need to log in.';
-          //$timeout(function(){deferred.reject();}, 0);
-          deferred.reject();
-          $location.url('/login');
-        }
-      });
-
-      return deferred.promise;
+        return deferred.promise;
     };
     //================================================
 
@@ -35,20 +36,19 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
     // Add an interceptor for AJAX errors
     //================================================
     $httpProvider.interceptors.push(function($q, $location, $rootScope) {
-      return {
-        response: function(response) {
-          // do something on success
-          $rootScope.isAuth = true;
-          return response;
-        },
-        responseError: function(response) {
-          if (response.status === 401){
-            $location.url('/login');
-            $rootScope.isAuth = false;
-            return $q.reject(response);
-          }
-        }
-      };
+        return {
+            response: function(response) {
+                $rootScope.isAuth = true;
+                return response;
+            },
+            responseError: function(response) {
+                if (response.status === 401) {
+                    $location.url('/login');
+                    $rootScope.isAuth = false;
+                    return $q.reject(response);
+                }
+            }
+        };
     });
     //================================================
 
@@ -60,7 +60,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         templateUrl: 'pages/welcome.html',
         controller: 'welcomeCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
         }
     }).
 
@@ -73,7 +73,15 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         templateUrl: 'pages/players.html',
         controller: 'playersCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
+        }
+    }).
+
+    when('/player/:id', {
+        templateUrl: 'pages/player.html',
+        controller: 'playerCtrl',
+        resolve: {
+            loggedin: checkLoggedin
         }
     }).
 
@@ -81,7 +89,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         templateUrl: 'pages/forcast.html',
         controller: 'forcastCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
         }
     }).
 
@@ -89,7 +97,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         templateUrl: 'pages/importPlayers.html',
         controller: 'importPlayersCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
         }
     }).
 
@@ -97,15 +105,15 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         templateUrl: 'pages/importBoxleague.html',
         controller: 'importBoxleagueCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
         }
     }).
 
     when('/boxes', {
         templateUrl: 'pages/boxes.html',
-        controller: 'boxCtrl',
+        controller: 'boxesCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
         }
     }).
 
@@ -113,7 +121,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         templateUrl: 'pages/rules.html',
         controller: 'welcomeCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
         }
     }).
 
@@ -121,7 +129,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         templateUrl: 'pages/box.html',
         controller: 'boxCtrl',
         resolve: {
-          loggedin: checkLoggedin
+            loggedin: checkLoggedin
         }
     }).
 
@@ -131,59 +139,91 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
 
 }]);
 
-boxleagueApp.run(function($rootScope, $http){
-    $rootScope.message = '';
+boxleagueApp.run(function($rootScope, $http) {
+
+    var error = function(msg){
+        $rootScope.alerts.push(msg);
+    }
+
+    var successPlayers = function(players){
+        $rootScope.alerts.push({type: "success", msg: "loaded players"});
+        $rootScope.players = players;
+    }
+
+    if(!$rootScope.players){
+        getArray('players', $http, successPlayers, error);
+    }
+
+    var successGames = function(games){
+        $rootScope.alerts.push({type: "success", msg: "loaded games"});
+        $rootScope.games = games;
+    }
+
+    if(!$rootScope.games){
+        getArray('games', $http, successGames, error);
+    }
+
+    var successBoxleague = function(boxleague){
+        $rootScope.alerts.push({type: "success", msg: "loaded boxleague"});
+        $rootScope.boxleague = boxleague;
+    }
+
+    if(!$rootScope.boxleague){
+        getObject('boxleague', $http, successBoxleague, error);
+    }
 
     // Logout function is available in any pages
-    $rootScope.logout = function(){
-      $rootScope.message = 'Logged out.';
-      $rootScope.isAuth = false;
-      $http.post('/logout');
+    $rootScope.logout = function() {
+        $rootScope.message = 'Logged out.';
+        $rootScope.isAuth = false;
+        $http.post('/logout');
     };
 });
 
-function convertDocsToPlayers(response){
-    var players = [];
-    response.rows.forEach(function(item){
-        players.push({
-            name: item.doc.first_name + ' ' + item.doc.last_name,
-            first: item.doc.first_name,
-            last: item.doc.last_name,
-            mobile: item.doc.mobile,
-            home: item.doc.home,
-            email: item.doc.email
-        });
-    });
-    return players;
-};
+function getArray(name, http, success, error) {
 
-function getPlayers(http, success, error){
+    var promise = http.get('/service?name=' + name);
 
-    var promise = http.get('/service?name=players');
-
-    promise.success(function(response, status){
-        success(convertDocsToPlayers(response));
-    });
-
-    promise.error(function(response, status){
-        error( { type:"danger", msg: "Request failed with response '" + response + "' and status code: " + status} )
-    });
-}
-
-function getBoxleague(http, success, error){
-
-    var promise = http.get('/service?name=boxleagues');
-
-    promise.success(function(response, status){
-        if(response.rows && response.rows.length){
-            success(response.rows[0].doc);
+    promise.success(function(response, status) {
+        if (response.rows && response.rows.length) {
+            var arr = [];
+            response.rows.forEach(function(item) {
+                arr.push(item.doc);
+            });
+            success(arr);
         } else {
-            error( { type:"warning", msg: "no boxleages loaded"} )
+            error({type: "warning", msg: "no " + name + " found"});
         }
     });
 
-    promise.error(function(response, status){
-        error( { type:"danger", msg: "Request failed with response '" + response + "' and status code: " + status} )
+    promise.error(function(response, status) {
+        error({
+            type: "danger",
+            msg: "Request failed with response '" + response + "' and status code: " + status
+        })
+    });
+}
+
+function getObject(name, http, success, error) {
+
+    var promise = http.get('/service?name=' + name);
+
+    promise.success(function(response, status) {
+        if (response.rows && response.rows.length) {
+            success(response.rows[0].doc);
+        } else {
+            error({
+                type: "warning",
+                msg: "no " + name + " found"
+            });
+        }
+    });
+
+    promise.error(function(response, status) {
+        error({
+            type: "danger",
+            msg: "Request failed with response '" + response + "' and status code: " + status
+        })
     });
 }
 
@@ -191,33 +231,41 @@ function getBoxleague(http, success, error){
  * Login controller
  **********************************************************************/
 boxleagueApp.controller('mainCtrl', function($scope, $rootScope, $http, $location) {
-  // This object will be filled by the form
-  $scope.user = {};
+    $scope.user = {};
 
-  $rootScope.alerts = [];
-  $rootScope.close = function(index) {
-      $rootScope.alerts.splice(index, 1);
-  };
+    $rootScope.alerts = [];
 
-  //$rootScope.players = [];
-  //$rootScope.boxleague = {};
-  $rootScope.isAuth = false;
+    $rootScope.close = function(index) {
+        $rootScope.alerts.splice(index, 1);
+    };
 
-  // Register the login() function
-  $scope.login = function(){
-    $http.post('/login', {
-      username: $scope.user.username,
-      password: $scope.user.password,
-    })
-    .success(function(user){
-      // No error: authentication OK
-      $rootScope.isAuth = true;
-      $location.url('/');
-    })
-    .error(function(){
-      // Error: authentication failed
-      $rootScope.isAuth = false;
-      $location.url('/login');
-    });
-  };
+    $rootScope.isAuth = false;
+
+    // Register the login() function
+    $scope.login = function() {
+        if(!$scope.username || !$scope.password){
+            return;
+        }
+
+        var promise = $http.post('/login', {
+            username: $scope.username,
+            password: $scope.password,
+        });
+
+        promise.success(function(response) {
+            $rootScope.isAuth = true;
+            $rootScope.login = response.name;
+            $location.url('/');
+        });
+
+        promise.error(function(response, status) {
+            $rootScope.isAuth = false;
+            var msg = {
+                type: "danger",
+                msg: "The username or password entered is incorrect."
+            }
+            $rootScope.alerts.push(msg);
+            $location.url('/login');
+        });
+    };
 });

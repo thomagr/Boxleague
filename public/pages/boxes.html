@@ -1,10 +1,13 @@
-<div class="container" ng-show="boxleague">
-    <h1>{{boxleague.name}}</h1>
-    <div class="row">
-        <span ng-repeat="box in boxleague.boxes">
-            <div class="col-sm-4">
-                <boxes box="box"></boxes>
-            </div>
-        </span>
+<div class="row">
+    <div ng-show="boxleague">
+        <h1>{{boxleague.name}}</h1>
+
+        <div class="row">
+            <span ng-repeat="box in boxleague.boxes">
+                <div class="col-sm-4">
+                    <boxes box="box"></boxes>
+                </div>
+            </span>
+        </div>
     </div>
 </div>

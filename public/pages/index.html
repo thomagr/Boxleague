@@ -1,80 +1,82 @@
 <!DOCTYPE html>
 <html lang="en-us" ng-app="boxleagueApp">
 
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>My Boxleague</title>
+    <title>My Boxleague</title>
 
-        <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32" />
-        <link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16" />
+    <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32"/>
+    <link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16"/>
 
-        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/twitter-bootstrap/3.3.6/css/bootstrap.min.css" />
-        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/twitter-bootstrap/3.3.6/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
-        <!-- Application Specific -->
-        <link rel="stylesheet" href="css/theme.css" type="text/css" />
-        <link rel="stylesheet" href="css/main.css" type="text/css" />
+    <!-- Application Specific -->
+    <link rel="stylesheet" href="css/theme.css" type="text/css"/>
+    <link rel="stylesheet" href="css/main.css" type="text/css"/>
 
-        <!-- load angular via CDN -->
-        <script src="//code.angularjs.org/1.4.9/angular.min.js"></script>
-        <script src="//code.angularjs.org/1.4.9/angular-route.min.js"></script>
-        <script src="//code.angularjs.org/1.4.9/angular-resource.min.js"></script>
-        <script src="//code.angularjs.org/1.4.9/angular-animate.min.js"></script>
+    <!-- load angular via CDN -->
+    <script src="//code.angularjs.org/1.4.9/angular.min.js"></script>
+    <script src="//code.angularjs.org/1.4.9/angular-route.min.js"></script>
+    <script src="//code.angularjs.org/1.4.9/angular-resource.min.js"></script>
+    <script src="//code.angularjs.org/1.4.9/angular-animate.min.js"></script>
 
-        <!-- Collapse UI components -->
-        <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/1.1.2/ui-bootstrap-tpls.min.js"></script>
+    <!-- Collapse UI components -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/1.1.2/ui-bootstrap-tpls.min.js"></script>
 
-        <!-- XLS file import -->
-        <script src="//cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.core.min.js"></script>
+    <!-- XLS file import -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.core.min.js"></script>
 
-        <!-- Application Specific -->
-        <script src="scripts/app.js"></script>
-        <script src="scripts/routes.js"></script>
-        <script src="scripts/controllers.js"></script>
-        <script src="scripts/directives.js"></script>
-    </head>
+    <!-- Application Specific -->
+    <script src="scripts/app.js"></script>
+    <script src="scripts/routes.js"></script>
+    <script src="scripts/controllers.js"></script>
+    <script src="scripts/directives.js"></script>
+</head>
 
-    <body ng-controller="mainCtrl">
-        <nav class="navbar navbar-inverse">
-            <div class="container-fluid">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" ng-init="isCollapsed = true" ng-click="isCollapsed = !isCollapsed">
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
+<body ng-controller="mainCtrl">
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" ng-init="isCollapsed = true"
+                        ng-click="isCollapsed = !isCollapsed">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
 
-                    <a class="navbar-brand brand" href="#/">My Boxleague</a>
-                </div>
-
-                <div class="collapse navbar-collapse" uib-collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">
-                    <ul ng-show="isAuth" class="nav navbar-nav">
-                        <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-upload icon-white"></i> Import <span class="caret"></span></a>
-                            <ul uib-dropdown-menu>
-                                <li><a href="#/importBoxleague">Boxleague</a></li>
-                                <li><a href="#/importPlayers">Players</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="#/rules"><i class="fa fa-book icon-white"></i> Rules</a></li>
-                        <li><a href="#/players"><i class="fa fa-user icon-white"></i> Players</a></li>
-                        <li><a href="#/boxes"><i class="fa fa-cubes icon-white"></i> Boxes</a></li>
-                    </ul>
-                    <ul ng-show="isAuth" class="nav navbar-nav navbar-right">
-                        <li><a href="#/forcast/St Albans, England"><i class="fa fa-umbrella icon-white"></i> Weather</a></li>
-                        <li><a href="#/class" ng-click="logout()"><i class="fa fa-power-off icon-white"></i> Logout</a></li>
-                    </ul>
-                </div>
+                <a class="navbar-brand brand" href="#/">My Boxleague</a>
             </div>
-        </nav>
-        <div class="container">
-            <div ng-show="alerts.length" class="row">
-                <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
+
+            <div class="collapse navbar-collapse" uib-collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">
+                <ul ng-show="isAuth" class="nav navbar-nav">
+                    <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-upload icon-white"></i> Import <span
+                            class="caret"></span></a>
+                        <ul uib-dropdown-menu>
+                            <li><a href="#/importBoxleague">Boxleague</a></li>
+                            <li><a href="#/importPlayers">Players</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#/rules"><i class="fa fa-book icon-white"></i> Rules</a></li>
+                    <li><a href="#/players"><i class="fa fa-users icon-white"></i> Players</a></li>
+                    <li><a href="#/boxes"><i class="fa fa-cubes icon-white"></i> Boxes</a></li>
+                </ul>
+                <ul ng-show="isAuth" class="nav navbar-nav navbar-right">
+                    <li><a href="#/forcast/St Albans, England"><i class="fa fa-umbrella icon-white"></i> Weather</a></li>
+                    <li><a href="#/settings"><i class="fa fa-cog icon-white"></i> Settings</a></li>
+                    <li><a href="#/class" ng-click="logout()"><i class="fa fa-power-off icon-white"></i> Logout</a></li>
+                </ul>
             </div>
         </div>
+    </nav>
+    <div class="container">
+        <div ng-show="alerts.length" class="row">
+            <uib-alert ng-repeat="alert in alerts" type="{{alert.type}}" close="close($index)">{{alert.msg}}</uib-alert>
+        </div>
         <div ng-view></div>
-
-    </body>
+    </div>
+</body>
 </html>

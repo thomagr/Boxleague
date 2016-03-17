@@ -1,9 +1,9 @@
 <!--http://stackoverflow.com/questions/16579427/html5-file-upload-with-angularjs-->
 <!--http://stackoverflow.com/questions/20137496/angular-js-ng-repeat-for-creating-grid-->
-<div class="container">
+<div>
     <div ng-hide="newPlayers" class="row" style="margin-top: 20px;">
         <div class="fileUpload btn btn-default">
-            <input type="file" class="upload" file-input name="changeEvent" />
+            <input type="file" class="upload" file-input name="changeEvent"/>
         </div>
     </div>
 
@@ -13,7 +13,7 @@
         </form>
     </div>
 
-    <div ng-show="newPlayers" class="row">
+    <div ng-show="newPlayers" class="row" style="margin-top: 20px;">
         <h1>New Players</h1>
         <players-table
                 players="newPlayers"
@@ -23,7 +23,7 @@
         </players-table>
     </div>
 
-    <div ng-show="players" class="row">
+    <div ng-show="players" class="row" style="margin-top: 20px;">
         <h1>Current Players</h1>
         <players-table
                 players="players"
