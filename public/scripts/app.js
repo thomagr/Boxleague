@@ -141,37 +141,37 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
 
 boxleagueApp.run(function($rootScope, $http) {
 
-    var error = function(msg){
-        $rootScope.alerts.push(msg);
-    }
-
-    var successPlayers = function(players){
-        $rootScope.alerts.push({type: "success", msg: "loaded players"});
-        $rootScope.players = players;
-    }
-
-    if(!$rootScope.players){
-        getArray('players', $http, successPlayers, error);
-    }
-
-    var successGames = function(games){
-        $rootScope.alerts.push({type: "success", msg: "loaded games"});
-        $rootScope.games = games;
-    }
-
-    if(!$rootScope.games){
-        getArray('games', $http, successGames, error);
-    }
-
-    var successBoxleague = function(boxleague){
-        $rootScope.alerts.push({type: "success", msg: "loaded boxleague"});
-        $rootScope.boxleague = boxleague;
-    }
-
-    if(!$rootScope.boxleague){
-        getObject('boxleague', $http, successBoxleague, error);
-    }
-
+//    var error = function(msg){
+//        $rootScope.alerts.push(msg);
+//    }
+//
+//    var successPlayers = function(players){
+//        $rootScope.alerts.push({type: "success", msg: "loaded players"});
+//        $rootScope.players = players;
+//    }
+//
+//    if(!$rootScope.players){
+//        getArray('players', $http, successPlayers, error);
+//    }
+//
+//    var successGames = function(games){
+//        $rootScope.alerts.push({type: "success", msg: "loaded games"});
+//        $rootScope.games = games;
+//    }
+//
+//    if(!$rootScope.games){
+//        getArray('games', $http, successGames, error);
+//    }
+//
+//    var successBoxleague = function(boxleague){
+//        $rootScope.alerts.push({type: "success", msg: "loaded boxleague"});
+//        $rootScope.boxleague = boxleague;
+//    }
+//
+//    if(!$rootScope.boxleague){
+//        getObject('boxleagues', $http, successBoxleague, error);
+//    }
+//
     // Logout function is available in any pages
     $rootScope.logout = function() {
         $rootScope.message = 'Logged out.';
@@ -181,6 +181,7 @@ boxleagueApp.run(function($rootScope, $http) {
 });
 
 function getArray(name, http, success, error) {
+    console.log('getArray /service?name=' + name);
 
     var promise = http.get('/service?name=' + name);
 
@@ -192,6 +193,29 @@ function getArray(name, http, success, error) {
             });
             success(arr);
         } else {
+            error({type: "warning", msg: "No " + name + " found"});
+        }
+    });
+
+    promise.error(function(response, status) {
+        error({
+            type: "danger",
+            msg: "Request failed with response '" + response + "' and status code: " + status
+        })
+    });
+
+    return promise;
+}
+
+function getObject(name, http, success, error) {
+    console.log('getObject /service?name=' + name);
+
+    var promise = http.get('/service?name=' + name);
+
+    promise.success(function(response, status) {
+        if (response.rows && response.rows.length) {
+            success(response.rows[0].doc);
+        } else {
             error({type: "warning", msg: "no " + name + " found"});
         }
     });
@@ -202,29 +226,8 @@ function getArray(name, http, success, error) {
             msg: "Request failed with response '" + response + "' and status code: " + status
         })
     });
-}
 
-function getObject(name, http, success, error) {
-
-    var promise = http.get('/service?name=' + name);
-
-    promise.success(function(response, status) {
-        if (response.rows && response.rows.length) {
-            success(response.rows[0].doc);
-        } else {
-            error({
-                type: "warning",
-                msg: "no " + name + " found"
-            });
-        }
-    });
-
-    promise.error(function(response, status) {
-        error({
-            type: "danger",
-            msg: "Request failed with response '" + response + "' and status code: " + status
-        })
-    });
+    return promise;
 }
 
 /**********************************************************************
@@ -256,6 +259,7 @@ boxleagueApp.controller('mainCtrl', function($scope, $rootScope, $http, $locatio
             $rootScope.isAuth = true;
             $rootScope.login = response.name;
             $location.url('/');
+            boxleagueApp.run();
         });
 
         promise.error(function(response, status) {

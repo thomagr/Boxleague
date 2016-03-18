@@ -37,7 +37,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="game in box.games | filter:fixtureFilter track by $index">
+            <tr ng-repeat="game in games | filter:fixtureFilter track by $index">
                 <td>{{game.schedule | date : 'ddMMMyy HH:mm' }}</td>
                 <td>{{game.home}} vs {{game.away}}</td>
                 <td>
@@ -46,7 +46,7 @@
                                ng-model="game.score" ng-change="inputScore(game)"
                         >
                             <span class="input-group-btn" ng-if="game.save">
-                                <button class="btn btn-success" type="button">Save</button>
+                                <button class="btn btn-success" type="button" ng-click="save(game._id)">Save</button>
                             </span>
                             <span class="input-group-addon label-warning" ng-if="game.error">
                                 {{game.error}}

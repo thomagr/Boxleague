@@ -1,3 +1,7 @@
+.navbar {
+    border-radius: 0px;
+}
+
 .navbar-inverse {
     background-image: linear-gradient(to bottom,#777711 0,#000 100%);
 }

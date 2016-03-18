@@ -6,6 +6,8 @@
 </div>
 
 <table class="table table-bordered table-striped table-condensed table-responsive">
+<!--<div id="page-wrap">-->
+<!--<table>-->
     <thead>
     <tr>
         <td>
@@ -31,7 +33,7 @@
         </td>
         <td>
             <a href ng-click="sortType = 'email'; sortReverse = !sortReverse">
-                email
+                Email
                 <span ng-show="sortType == 'email' && !sortReverse" class="fa fa-caret-down"></span>
                 <span ng-show="sortType == 'email' && sortReverse" class="fa fa-caret-up"></span>
             </a>
@@ -47,3 +49,7 @@
     </tr>
     </tbody>
 </table>
+</div>
+<!--<p ng-repeat="player in players | orderBy:sortType:sortReverse | filter:searchName">-->
+    <!--{{player.name }} {{player.mobile}} {{player.home}} {{player.email}}-->
+<!--</p>-->

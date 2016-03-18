@@ -333,7 +333,7 @@ app.post('/submitDoc', auth, function(req, res) {
             if (er) {
                 res.status(er.statusCode).send(er.reason);
             } else {
-                res.status(200).send("saved");
+                res.status(200).send(data);
             }
         });
     });
