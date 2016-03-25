@@ -7,7 +7,7 @@
     <!--<meta name="viewport" content="width=device-width, initial-scale=1">-->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-    <title>My Boxleague</title>
+    <title>Boxleague</title>
 
     <link rel="icon" type="image/png" href="images/favicon-32x32.png" sizes="32x32"/>
     <link rel="icon" type="image/png" href="images/favicon-16x16.png" sizes="16x16"/>
@@ -53,7 +53,7 @@
             </div>
             <div class="collapse navbar-collapse" uib-collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">
                 <ul ng-show="isAuth" class="nav navbar-nav">
-                    <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-upload icon-white"></i> Import <span
+                    <li ng-show="admin" uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-upload icon-white"></i> Import <span
                             class="caret"></span></a>
                         <ul uib-dropdown-menu>
                             <li><a href="#/importBoxleague">Boxleague</a></li>

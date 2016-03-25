@@ -8,7 +8,8 @@ var express = require('express'),
     passport = require('passport'),
     session = require('express-session'),
     uuid = require('node-uuid'),
-    LocalStrategy = require('passport-local').Strategy;
+    LocalStrategy = require('passport-local').Strategy,
+    request = require('request');
 
 //==================================================================
 // Define the strategy to be used by PassportJS
@@ -16,7 +17,7 @@ passport.use(new LocalStrategy(
     function(username, password, done) {
         console.log('checking password');
         var player = findByName(cache, username);
-        if ( player && /*username === "admin" &&*/ password === "admin") { // stupid example
+        if ( player && /*username === "admin" &&*/ password === "t3nn1s") { // stupid example
             console.log('user %s has logged in', username);
             return done(null, {
                 name: username
@@ -162,22 +163,23 @@ app.post('/logout', function(req, res) {
     res.status(200).end();
 });
 
-Cloudant({
-    account: user,
-    password: password
-}, function(er, cloudant) {
+// Loading players in initialisation is required to validate logins
+Cloudant({account: user, password: password}, function(er, cloudant) {
     if (er) {
-        return console.log('Error login: %s', er.message);
+        console.log('Error login: %s', er.reason);
+        res.status(500).send(er.reason);
+        return;
     }
 
     // use a database object
     var database = cloudant.use("players");
 
-    database.list({
-        include_docs: true
-    }, function(er, body) {
-        if (er)
-            return console.log('Error list: %s', er.message);
+    database.list({include_docs: true}, function(er, body) {
+        if (er) {
+            console.log('Error login: %s', er.reason);
+            res.status(er.statusCode).send(er.reason);
+            return;
+        }
 
         loadCache(cache, 'players', body);
     });
@@ -212,83 +214,91 @@ app.get('/service', auth, function(req, res) {
     } else if (typeof cache[id] != 'undefined') {
         console.log('from id cache');
         res.send(cache[id]);
-    } else
-        Cloudant({
-            account: user,
-            password: password
-        }, function(er, cloudant) {
+    } else {
+        Cloudant({ account: user, password: password }, function(er, cloudant) {
             if (er) {
-                res.status(500).send(er.message);
-                return console.log('Error login: %s', er.message);
+                console.log('Error login: %s', er.reason);
+                res.status(500).send(er.reason);
+                return;
             }
 
-            if (typeof name == 'undefined')
-                return res.status(400).send('error service name not defined');
+            if (typeof name == 'undefined') {
+                res.status(400).send('error service name not defined');
+                return;
+            }
 
             // use a database object
             var database = cloudant.use(name);
 
             // if id is not defined then get the list
             if (typeof id == 'undefined') {
-                database.list({
-                    include_docs: true
-                }, function(er, body) {
-                    if (er)
-                        return console.log('Error list: %s', er.message);
+                database.list({include_docs: true}, function(er, body) {
+                    if (er) {
+                        console.log('Error login: %s', er.reason);
+                        res.status(er.statusCode).send(er.reason);
+                        return;
+                    }
                     loadCache(cache, name, body);
                     res.send(body);
                 });
             } else {
                 // use the id and get it
                 database.get(id, function(er, body) {
-                    if (er)
-                        return console.log('Error get: %s', er.message);
+                    if (er) {
+                        console.log('Error login: %s', er.reason);
+                        res.status(er.statusCode).send(er.reason);
+                        return;
+                    }
                     loadCache(cache, id, body);
                     res.send(body);
                 });
             }
         });
+    }
 });
 
 app.post('/submitNewBoxleague', auth, function(req, res) {
     console.log('app.post(/submitNewBoxleague)');
 
     if (!req.body) {
-        return res.status(400).send('missing boxleague data');
+        res.status(400).send('missing boxleague data');
+        return;
     }
 
     var boxleague = req.body;
 
     if (!boxleague.end) {
-        return res.status(400).send('missing boxleague end date');
+        res.status(400).send('missing boxleague end date');
+        return;
     }
 
     if (!boxleague.start) {
-        return res.status(400).send('missing boxleague start date');
+        res.status(400).send('missing boxleague start date');
+        return;
     }
 
     if (!boxleague.name) {
-        return res.status(400).send('missing boxleague name');
+        res.status(400).send('missing boxleague name');
+        return;
     }
 
     if (!boxleague.boxes && !boxleague.boxes.length) {
-        return res.status(400).send('missing boxleague boxes data');
+        res.status(400).send('missing boxleague boxes data');
+        return;
     }
 
-    Cloudant({
-        account: user,
-        password: password
-    }, function(er, cloudant) {
+    Cloudant({account: user, password: password}, function(er, cloudant) {
         if (er) {
-            res.status(500).send(er.message);
-            return console.log('Error login: %s', er.message);
+            console.log('Error login: %s', er.reason);
+            res.status(500).send(er.reason);
+            return;
         }
 
         var database = cloudant.use('boxleague');
 
         database.insert(boxleague, function(er, body) {
             if (er) {
-                res.status(500).send(er.message);
+                res.status(400).send(er.message);
             } else {
                 res.status(200).end();
             }
@@ -300,30 +310,30 @@ app.post('/submitDoc', auth, function(req, res) {
     console.log('app.post(/submitDoc)');
 
     if (!req.body) {
-        return res.status(400).send('missing data');
+        res.status(400).send('missing data');
+        return;
     }
 
     if (!req.body.database) {
-        return res.status(400).send('missing database');
+        res.status(400).send('missing database');
+        return;
     }
     var databaseName = req.body.database;
 
     if (!req.body.doc) {
-        return res.status(400).send('missing doc');
+        res.status(400).send('missing doc');
+        return;
     }
     var doc = req.body.doc;
 
-    Cloudant({
-        account: user,
-        password: password
-    }, function(er, cloudant) {
+    Cloudant({account: user, password: password}, function(er, cloudant) {
         if (er) {
-            res.status(500).send(er.message);
-            return console.log('Error login: %s', er.message);
+            console.log('Error login: %s', er.reason);
+            res.status(500).send(er.reason);
+            return;
         }
 
         var database = cloudant.use(databaseName);
-        deleteCache(cache, databaseName);
 
         console.log(doc);
 
@@ -333,6 +343,19 @@ app.post('/submitDoc', auth, function(req, res) {
             if (er) {
                 res.status(er.statusCode).send(er.reason);
             } else {
+                console.log(databaseName);
+                //console.log(JSON.stringify(cache[databaseName]));
+                // update the local cache
+                if(cache[databaseName] && cache[databaseName].rows){
+                    cache[databaseName].rows.forEach(function(item){
+                        if(item.doc._id === data.id){
+                            console.log('Before: ' + JSON.stringify(item));
+                            item.doc = doc;
+                            item.doc._rev = data.rev;
+                            console.log('After: ' + JSON.stringify(item));
+                        }
+                    });
+                };
                 res.status(200).send(data);
             }
         });
@@ -343,33 +366,32 @@ app.post('/submitDocs', auth, function(req, res) {
     console.log('app.post(/submitDocs)');
 
     if (!req.body) {
-        return res.status(400).send('missing body');
+        res.status(400).send('missing body');
+        return;
     }
 
     if (!req.body.database) {
-        return res.status(400).send('missing database');
+        res.status(400).send('missing database');
+        return;
     }
     var databaseName = req.body.database;
 
     if (!req.body.data) {
-        return res.status(400).send('missing data');
+        res.status(400).send('missing data');
+        return;
     }
     var data = req.body.data
 
-    Cloudant({
-        account: user,
-        password: password
-    }, function(er, cloudant) {
+    Cloudant({account: user, password: password}, function(er, cloudant) {
         if (er) {
-            res.status(500).send(er.message);
-            return console.log('Error login: %s', er.message);
+            console.log('Error login: %s', er.reason);
+            res.status(500).send(er.reason);
+            return;
         }
 
         var database = cloudant.use(databaseName);
         deleteCache(cache, databaseName);
-        var docs = {
-            docs: data
-        };
+        var docs = {docs: data};
 
         console.log(docs);
 
@@ -403,32 +425,88 @@ app.post('/submitNewPlayers', auth, function(req, res) {
         });
     })
 
-    Cloudant({
-        account: user,
-        password: password
-    }, function(er, cloudant) {
+    Cloudant({account: user, password: password}, function(er, cloudant) {
         if (er) {
-            res.status(500).send(er.message);
-            return console.log('Error login: %s', er.message);
+            console.log('Error login: %s', er.reason);
+            res.status(500).send(er.reason);
+            return;
         }
 
         var database = cloudant.use(databaseName);
         deleteCache(cache, databaseName);
-        var docs = {
-            docs: data
-        };
+        var docs = {docs: data};
 
         console.log(docs);
 
-        database.bulk(docs, function(er, body) {
+        database.bulk(docs, function(er, data) {
             if (er) {
-                res.status(500).send(er.message);
+                res.status(er.statusCode).send(er.reason);
             } else {
-                res.send(200).end();
+                res.status(200).send(data);
             }
         });
     });
 });
+
+var weatherDaily = [];
+var weatherHourly = [];
+var appId = 'dfa92a2daab9476f51718353645f1c85';
+
+app.get('/weatherDaily', auth, function(req, res) {
+    console.log('app.get(/weatherDaily)');
+    console.log(req.query);
+
+    var location = req.query.location;
+    var days = '5';
+
+    if(weatherDaily[location]){
+        console.log('sending from cache');
+        res.status(200).send(weatherDaily[location]);
+        return;
+    };
+
+    var requestUrl = 'http://api.openweathermap.org/data/2.5/forecast/daily?q=' + location + '&cnt=' + days + '&appid=' + appId + '&format=json';
+
+    request(requestUrl, function (er, response, data) {
+        if (er) {
+            res.status(500).send(er.reason);
+        } else {
+            weatherDaily[location] = data;
+            res.status(200).send(data);
+        }
+    });
+});
+
+app.get('/weatherHourly', auth, function(req, res) {
+    console.log('app.get(/weatherHourly)');
+    console.log(req.query);
+
+    var location = req.query.location;
+    var hours = '5';
+
+    if(weatherHourly[location]){
+        console.log('sending from cache');
+        res.status(200).send(weatherHourly[location]);
+        return;
+    };
+
+    var requestUrl = 'http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&cnt=' + hours + '&appid=' + appId + '&format=json';
+
+    request(requestUrl, function (er, response, data) {
+        if (er) {
+            res.status(500).send(er.reason);
+        } else {
+            weatherHourly[location] = data;
+            res.status(200).send(data);
+        }
+    });
+});
+// reset the weather cache every hour
+setInterval(function(){
+    console.log('refreshing weather cache');
+    weatherDaily = [];
+    weatherHourly = [];
+}, 1000 * 60 * 60);
 
 http.createServer(app).listen(app.get('port'), function() {
     console.log('Express server listening on port ' + app.get('port'));

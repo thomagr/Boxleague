@@ -1,6 +1,6 @@
 // CONTROLLERS
 
-boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', function ($scope, $log, $resource, $routeParams) {
+boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', '$http', '$timeout', function ($scope, $log, $resource, $routeParams, $http, $timeout) {
     $log.info("forcastCtrl");
 
     $scope.location = $routeParams.location;
@@ -8,16 +8,16 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
     $scope.hours = '4';
     $scope.appId = 'dfa92a2daab9476f51718353645f1c85'
 
-    $scope.dailyWeatherAPI = $resource("http://api.openweathermap.org/data/2.5/forecast/daily", { callback: "JSON_CALLBACK" }, { get: { method: "JSONP" }});
-    $scope.hourlyWeatherAPI = $resource("http://api.openweathermap.org/data/2.5/forecast", { callback: "JSON_CALLBACK" }, { get: { method: "JSONP" }});
-
-    $scope.dailyWeatherAPI.get({ q: $scope.location, cnt: $scope.days, appid: $scope.appId }, function(data){
-            $scope.dailyWeatherResult = data;
-        }).$promise.then( function( data){
-        return $scope.hourlyWeatherAPI.get({ id: $scope.dailyWeatherResult.city.id, cnt: $scope.hours, appid: $scope.appId }, function(data){
-            $scope.hourlyWeatherResult = data;
-        });
-    });
+//    $scope.dailyWeatherAPI = $resource("http://api.openweathermap.org/data/2.5/forecast/daily", { callback: "JSON_CALLBACK" }, { get: { method: "JSONP" }});
+//    $scope.hourlyWeatherAPI = $resource("http://api.openweathermap.org/data/2.5/forecast", { callback: "JSON_CALLBACK" }, { get: { method: "JSONP" }});
+//
+//    $scope.dailyWeatherAPI.get({ q: $scope.location, cnt: $scope.days, appid: $scope.appId }, function(data){
+//            $scope.dailyWeatherResult = data;
+//        }).$promise.then( function( data){
+//        return $scope.hourlyWeatherAPI.get({ id: $scope.dailyWeatherResult.city.id, cnt: $scope.hours, appid: $scope.appId }, function(data){
+//            $scope.hourlyWeatherResult = data;
+//        });
+//    });
 
     $scope.convertToDegC = function(degK) {
         return Math.round(degK - 273.15);
@@ -26,6 +26,33 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
     $scope.convertToDate = function(dt) {
         return new Date(dt * 1000);
     };
+
+    $timeout(function(){
+    var hourlyPromise = $http.get('/weatherHourly?location=' + $scope.location);
+    hourlyPromise.success(function(response, status) {
+        $scope.hourlyWeatherResult = response;
+    });
+    hourlyPromise.error(function(response, status) {
+        error({
+            type: "danger",
+            msg: "Request failed with response '" + response + "' and status code: " + status
+        })
+    });
+    }, 1000);
+
+    $timeout(function(){
+    var dailyPromise = $http.get('/weatherDaily?location=' + $scope.location);
+    dailyPromise.success(function(response, status) {
+        $scope.dailyWeatherResult = response;
+    });
+    dailyPromise.error(function(response, status) {
+        error({
+            type: "danger",
+            msg: "Request failed with response '" + response + "' and status code: " + status
+        })
+    });
+    }, 2000);
+
 }]);
 
 boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
@@ -33,6 +60,36 @@ boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', '$http', '$rootScope',
 
     // reset on the welcome screen only
     $rootScope.alerts = [];
+}]);
+
+boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$http', '$rootScope', '$location', function ($scope, $log, $http, $rootScope, $location) {
+    $log.info("settingsCtrl");
+
+    var findPlayer = function(name){
+        for(var i=0; i<$rootScope.players.length; i++){
+            if(name === $rootScope.players[i].name){
+                return($rootScope.players[i])
+            };
+        };
+        throw "Couldn't find player: " + name;
+    };
+
+    var changeLocation = function(){
+        $location.url('/player/' + findPlayer($rootScope.login)._id );
+    };
+
+    var success = function(players){
+        $rootScope.players = players;
+        changeLocation();
+    };
+    var error = function(msg){
+        $rootScope.alerts.push(msg);
+    };
+    if(!$rootScope.players){
+        getArray('players', $http, success, error);
+    } else {
+        changeLocation();
+    }
 }]);
 
 boxleagueApp.controller('playerCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
@@ -70,7 +127,8 @@ boxleagueApp.controller('playerCtrl', ['$scope', '$log', '$resource', '$routePar
 
         promise.error(function(response, status){
             $scope.alerts.push({ type:"danger",
-                msg: "Request failed with response '" + response + "' and status code: " + status});
+                msg: "Save failed with error '" + response + "'. Refreshing page, please check and try again." });
+            getArray('players', $http, success, error);
         });
     };
 }]);
@@ -518,28 +576,35 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         var promise = $http.post('submitDoc', JSON.stringify(data));
 
         promise.success(function(response, status){
-            //$scope.alerts.push({ type:"success", msg: "Saved game"});
             game._rev = response.rev;
             game.save = false;
         });
 
         promise.error(function(response, status){
             $scope.alerts.push({ type:"danger",
-                msg: "Saving game request failed with response '" + response + "' and status code: " + status});
+                msg: "Save failed with error '" + response + "'. Refreshing page, please check and try again." });
+        var promise = getArray('games', $http, successLoadGames, error);
+            promise.then(function(){
+                refresh();
+            });
         });
     }
 
-    $scope.login = $rootScope.login;
-    $scope.search = "";
-    $scope.boxName = $routeParams.box;
+    var refresh = function(){
+        $scope.login = $rootScope.login;
+        $scope.search = "";
+        $scope.boxName = $routeParams.box;
 
-    $q.all(promises).then(function(){
         var box = findBoxByName($rootScope.boxleague.boxes, $scope.boxName);
         var players = lookupPlayers(box.playerIds);
         var games = lookupGames(box.games);
 
         setUp(box, players, games);
-     });
+    }
+
+    $q.all(promises).then(function(){
+        refresh();
+    });
 
     function findGameById(source, id){
         for (var i = 0; i < source.length; i++) {

@@ -47,6 +47,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
                     $rootScope.isAuth = false;
                     return $q.reject(response);
                 }
+                return $q.reject(response);
             }
         };
     });
@@ -72,6 +73,14 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
     when('/players', {
         templateUrl: 'pages/players.html',
         controller: 'playersCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
+    }).
+
+    when('/settings', {
+        templateUrl: 'pages/player.html',
+        controller: 'settingsCtrl',
         resolve: {
             loggedin: checkLoggedin
         }
@@ -258,6 +267,7 @@ boxleagueApp.controller('mainCtrl', function($scope, $rootScope, $http, $locatio
         promise.success(function(response) {
             $rootScope.isAuth = true;
             $rootScope.login = response.name;
+            $rootScope.admin = $rootScope.login === 'Graham Thomas';
             $location.url('/');
             boxleagueApp.run();
         });
