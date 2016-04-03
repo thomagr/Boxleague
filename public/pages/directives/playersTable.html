@@ -17,6 +17,13 @@
                 <span ng-show="sortType == 'name' && sortReverse" class="fa fa-caret-up"></span>
             </a>
         </td>
+        <!--<td>-->
+            <!--<a href ng-click="sortType = 'name'; sortReverse = !sortReverse">-->
+                <!--Id-->
+                <!--<span ng-show="sortType == 'name' && !sortReverse" class="fa fa-caret-down"></span>-->
+                <!--<span ng-show="sortType == 'name' && sortReverse" class="fa fa-caret-up"></span>-->
+            <!--</a>-->
+        <!--</td>-->
         <td>
             <a href ng-click="sortType = 'mobile'; sortReverse = !sortReverse">
                 Mobile
@@ -42,7 +49,8 @@
     </thead>
     <tbody>
     <tr ng-repeat="player in players | orderBy:sortType:sortReverse | filter:searchName">
-        <td>{{player.name }}</td>
+        <td><a href="#/player/{{player._id}}">{{player.name }}</a></td>
+        <!--<td><a href="#/player/{{player._id}}">{{player._id }}</a></td>-->
         <td><span ng-show="player.mobile"><a href="sms:{{player.mobile}}">{{ player.mobile }}</a></span></td>
         <td><span ng-show="player.home"><a href="tel:{{player.home}}">{{ player.home }}</a></span></td>
         <td><span ng-show="player.email"><a href="mailto:{{player.email}}">{{ player.email }}</a></span></td>

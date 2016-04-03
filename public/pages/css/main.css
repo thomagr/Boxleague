@@ -23,10 +23,6 @@
    left: 10px;
 }
 
-.bold {
-    font-weight: bold;
-}
-
 // for handling mobile devices
 @media (max-width: 767px) {
     .navbar-mobile {

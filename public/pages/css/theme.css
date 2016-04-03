@@ -17,3 +17,65 @@
 h1,h2,h3,h4 {
     color: Olive;
 }
+
+/* For Modal */
+.scoretitle {
+    background-image: linear-gradient(to bottom,#777711 0,#000 100%);
+    color:white;
+    text-align: center;
+}
+
+.scoreboard {
+    margin: auto;
+}
+
+.scoreline {
+    text-align: center;
+}
+
+.scoreInput {
+    /*text-align: center;*/
+    width:100%;
+    cursor: pointer;
+}
+
+.scoreDiv:hover {
+    border: 2px double olive;
+}
+
+.scoreDiv {
+    border: 2px double transparent;
+}
+
+.scoreReadonly {
+    /*text-align: center;*/
+    width:100%;
+    cursor: pointer;
+}
+
+.scoreNoGame {
+    color: transparent;
+background: repeating-linear-gradient(
+  45deg,
+  White ,
+  White 5px,
+  WhiteSmoke  5px,
+  WhiteSmoke  10px
+);
+}
+
+.scoreButton {
+    width:100%;
+    height:20px;
+    background-color: Transparent;
+    border: none;
+    outline: none;
+}
+
+.rowTitle {
+    font-weight: bold;
+}
+
+.scoreEmptyTarget:hover {
+    width:100%;
+}

@@ -1,10 +1,4 @@
 <div ng-show="tableRows">
-    <span class="input-group-btn">
-        <button class="btn btn-success" type="button" ng-click="decrement">-</button>
-        <span ng-model="value"></span>
-        <button class="btn btn-success" type="button" ng-click="increment">+</button>
-    </span>
-
     <div class="row">
         <h1>{{boxleagueTitle}}</h1>
         <h2>{{boxName}}</h2>
@@ -16,8 +10,18 @@
             </thead>
             <tbody>
             <tr ng-repeat="row in tableRows">
-                <td ng-repeat="column in row track by $index" ng-class="{'bold':$index == 0}">
-                    {{getText(column,row,$index)}}
+                <td ng-repeat="column in row track by $index" ng-class="{rowTitle: $index === 0}">
+                    <div ng-if="readOnly(column,row,$index)" ng-class="{scoreNoGame: getCellScore(column,row,$index) === 'x'}">
+                        {{getCellScore(column,row,$index)}}
+                    </div>
+                    <div ng-if="!readOnly(column,row,$index)" ng-click="openByGrid(column,row,$index)" class="scoreDiv">
+                        <div ng-if="getCellScore(column,row,$index)" class="scoreInput">
+                            {{getCellScore(column,row,$index)}}
+                        </div>
+                        <div ng-if="!getCellScore(column,row,$index)">
+                            <button class="scoreButton">{{getCellScore(column,row,$index)}}</button>
+                        </div>
+                    </div>
                 </td>
             </tr>
             </tbody>
@@ -42,35 +46,38 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="game in games | filter:fixtureFilter track by $index">
+            <tr ng-repeat="game in boxGames | filter:fixtureFilter track by $index">
                 <td>{{game.schedule | date : 'ddMMMyy HH:mm' }}</td>
-                <td>{{game.home}} vs {{game.away}}</td>
-                <td>
-                    <div ng-show="login===game.home || login==game.away" class="input-group">
-                        <input type="text" class="form-control" value="game.score"
-                               ng-model="game.score" ng-change="inputScore(game)"
-                        >
-                            <span class="input-group-btn" ng-if="game.save">
-                                <button class="btn btn-success" type="button" ng-click="save(game._id)">Save</button>
-                            </span>
-                            <span class="input-group-addon label-warning" ng-if="game.error">
-                                {{game.error}}
-                            </span>
-                    </div>
-                    <div ng-hide="login===game.home || login==game.away" class="input-group">
-                        {{game.score}}
-                    </div>
-                </td>
+                <td>{{game.home.name}} vs {{game.away.name}}</td>
+                <td width="15%">{{game.score}}</td>
+                <!--<td width="15%">-->
+                    <!--{{game.score}}-->
+                    <!--&lt;!&ndash;<div ng-show="login===game.home || login==game.away" class="input-group" ng-click="openByFixture(game)">&ndash;&gt;-->
+                        <!--&lt;!&ndash;&lt;!&ndash;<input type="text" class="form-control" value="game.score"&ndash;&gt;&ndash;&gt;-->
+                               <!--&lt;!&ndash;&lt;!&ndash;ng-model="game.score" ng-change="inputScore(game)"&ndash;&gt;&ndash;&gt;-->
+                        <!--&lt;!&ndash;&lt;!&ndash;&gt;&ndash;&gt;&ndash;&gt;-->
+                            <!--&lt;!&ndash;&lt;!&ndash;<span class="input-group-btn" ng-if="game.save">&ndash;&gt;&ndash;&gt;-->
+                                <!--&lt;!&ndash;&lt;!&ndash;<button class="btn btn-success" type="button" ng-click="save(game._id)">Save</button>&ndash;&gt;&ndash;&gt;-->
+                            <!--&lt;!&ndash;&lt;!&ndash;</span>&ndash;&gt;&ndash;&gt;-->
+                            <!--&lt;!&ndash;&lt;!&ndash;<span class="input-group-addon label-warning" ng-if="game.error">&ndash;&gt;&ndash;&gt;-->
+                                <!--&lt;!&ndash;&lt;!&ndash;{{game.error}}&ndash;&gt;&ndash;&gt;-->
+                            <!--&lt;!&ndash;&lt;!&ndash;</span>&ndash;&gt;&ndash;&gt;-->
+                        <!--&lt;!&ndash;&lt;!&ndash;<input type="text" value="{{game.score}}" size="13" class="score" disabled >&ndash;&gt;&ndash;&gt;-->
+                    <!--&lt;!&ndash;</div>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<div ng-hide="login===game.home || login==game.away" class="input-group">&ndash;&gt;-->
+                        <!--&lt;!&ndash;{{game.score}}&ndash;&gt;-->
+                    <!--&lt;!&ndash;</div>&ndash;&gt;-->
+                <!--</td>-->
             </tr>
             </tbody>
         </table>
     </div>
 
     <div class="row">
-        <div ng-show="players.length">
+        <div ng-show="boxPlayers">
             <h2>Players</h2>
             <players-table
-                    players="players"
+                    players="boxPlayers"
                     sort-type="sortType"
                     sort-reverse="sortReverse"
                     search-name="searchName">
@@ -84,5 +91,4 @@
         <div ng-include src="'pages/setshelp.html'">
         </div>
     </div>
-
 </div>

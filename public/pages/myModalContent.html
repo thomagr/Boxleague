@@ -1,0 +1,41 @@
+<div class="modal-header">
+    <h3 class="modal-title scoretitle";>Scoreboard</h3>
+</div>
+<div class="modal-body">
+    <table class="scoreboard">
+        <tr>
+            <td class="scoreline">
+                <h4>{{home.name}}</h4>
+            </td>
+            <td class="scoreline" width="10%">
+            </td>
+            <td class="scoreline" width="45%">
+                <h4>{{away.name}}</h4>
+            </td>
+        </tr>
+        <tr ng-repeat="set in sets">
+            <td class="scoreline">
+                <div class="btn-group-horizontal">
+                    <button type="button" class="btn btn-default" ng-click="set.game1 = decrement(set.game1)"><span class="score">-</span></button>
+                    <button type="button" class="btn btn-default" disabled><span class="score"><b>{{set.game1}}</b></span></button>
+                    <button type="button" class="btn btn-default" ng-click="set.game1 = increment(set.game1, $index)"><span class="score">+</span></button>
+                </div>
+            </td>
+            <td class="scoreline">
+                <h4>{{set.name}}</h4>
+            </td>
+            <td class="scoreline">
+                <div class="btn-group-horizontal">
+                    <button type="button" class="btn btn-default" ng-click="set.game2 = decrement(set.game2)"><span class="score">-</span></button>
+                    <button type="button" class="btn btn-default" disabled><span class="score"><b>{{set.game2}}</b></span></button>
+                    <button type="button" class="btn btn-default" ng-click="set.game2 = increment(set.game2, $index)"><span class="score">+</span></button>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" type="button" ng-click="reset()" style="float:left">Reset</button>
+    <button class="btn" ng-class="{'btn-success': !notValidScore(), 'btn-default': notValidScore()}" type="button" ng-click="ok()" ng-disabled="notValidScore()">Save</button>
+    <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+</div>
