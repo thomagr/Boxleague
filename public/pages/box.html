@@ -46,8 +46,8 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="game in boxGames | filter:fixtureFilter track by $index">
-                <td>{{game.schedule | date : 'ddMMMyy HH:mm' }}</td>
+            <tr ng-repeat="game in boxGames | orderBy:'schedule' | filter:fixtureFilter">
+                <td>{{game.schedule | date : 'dd MMM yyyy' }}</td>
                 <td>{{game.home.name}} vs {{game.away.name}}</td>
                 <td width="15%">{{game.score}}</td>
                 <!--<td width="15%">-->

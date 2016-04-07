@@ -5,10 +5,9 @@
         <input type="file" class="upload" file-input name="changeEvent"/>
     </div>
 </div>
-
-<div ng-show="boxleague" class="row" style="margin-top: 20px;">
+<div class="row" style="margin-top: 20px;">
     <form class="form-inline">
-        <input type="text" class="form-control" placeholder="Boxleague" ng-model="boxleagueName">
+        <input type="text" class="form-control" placeholder="Boxleague" ng-model="boxleagueName" ng-required="true">
 
         <div class="input-group">
             <input placeholder="Start Date" type="text" class="form-control" uib-datepicker-popup="{{format}}"
@@ -29,9 +28,10 @@
             </span>
         </div>
         <button type="submit" class="btn btn-success" ng-click="submit()">Save</button>
+        <button type="button" class="btn btn-info" ng-click="reset()">Reset</button>
     </form>
 </div>
-
+<h1>{{boxleagueName}}</h1>
 <div class="row" style="margin-top: 20px">
     <div ng-if="boxleague.boxes">
         <span ng-repeat="box in boxleague.boxes">

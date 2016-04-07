@@ -3,7 +3,7 @@
         <h1>{{boxleague.name}}</h1>
 
         <div class="row">
-            <span ng-repeat="box in boxleague.boxes">
+            <span ng-repeat="box in boxleague.boxes | orderBy:sortElement">
                 <div class="col-sm-4">
                     <boxes box="box"></boxes>
                 </div>

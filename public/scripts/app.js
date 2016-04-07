@@ -73,6 +73,14 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         controller: 'mainCtrl'
     }).
 
+    when('/myBox', {
+        controller: 'myBoxCtrl',
+        templateUrl: 'pages/login.html',
+        resolve: {
+            loggedin: checkLoggedin
+        }
+    }).
+
     when('/players', {
         templateUrl: 'pages/players.html',
         controller: 'playersCtrl',
@@ -105,7 +113,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }
     }).
 
-    when('/importPlayers', {
+    when('/importPlayersSpreadsheet', {
         templateUrl: 'pages/importPlayers.html',
         controller: 'importPlayersCtrl',
         resolve: {
@@ -113,9 +121,25 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }
     }).
 
-    when('/importBoxleague', {
+    when('/importPlayersFile', {
+        templateUrl: 'pages/importPlayers.html',
+        controller: 'importPlayersFileCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
+    }).
+
+    when('/importBoxleagueSpreadsheet', {
         templateUrl: 'pages/importBoxleague.html',
         controller: 'importBoxleagueCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
+    }).
+
+    when('/importBoxleagueFile', {
+        templateUrl: 'pages/importBoxleague.html',
+        controller: 'importBoxleagueFileCtrl',
         resolve: {
             loggedin: checkLoggedin
         }
@@ -162,8 +186,10 @@ boxleagueApp.run(function($rootScope, $http, $q) {
                 $rootScope.alerts.push(msg);
             }
 
-            var successBoxleague = function(boxleague){
+            var successBoxleague = function(boxleagues){
                 //$rootScope.alerts.push({type: "success", msg: "loaded boxleague"});
+
+                var boxleague = boxleagues[boxleagues.length-1];
 
                 // dereference all of the player and game ids
                 boxleague.boxes.forEach(function(box, index, arr){
@@ -216,11 +242,92 @@ boxleagueApp.run(function($rootScope, $http, $q) {
                         return getArray('games', $http, successGames, error)
                     })
                     .then(function(){
-                        return getObject('boxleagues', $http, successBoxleague, error)
+                        return getArray('boxleagues', $http, successBoxleague, error)
                     });
             } else {
                 return Promise.resolve("success");
             }
+    };
+
+      $rootScope.saveImportedBoxleague = function(boxleague, games, players) {
+        console.log("posting boxleague data ...");
+
+        // delete the _id as the database will be creating this
+        delete boxleague._id;
+         delete boxleague["$$hashKey"];
+        // delete the boxes as we will add these later in a controlled way
+        var boxes = boxleague.boxes;
+        delete boxleague.boxes;
+
+        var data = {database: 'boxleagues', doc: boxleague};
+        var promise = $http.post('submitDoc', JSON.stringify(data));
+
+        promise.success(function(response){
+            $rootScope.alerts.push({ type:"success", msg: "#1 Saved initial boxleague"});
+
+            boxleague._id = response.id;
+            boxleague._rev = response.rev;
+
+            // delete the game _id as the database will be creating these
+            // swap the player details for the player name
+            // add the new boxleague details
+            games.forEach(function(game,index,array){
+                delete array[index]._id;
+                delete array[index]["$$hashKey"];
+                array[index].home = game.home.name;
+                array[index].away = game.away.name;
+                array[index].boxleague = boxleague.name;
+                array[index].boxleagueId = boxleague._id;
+            });
+
+            var data = {database: 'games', data: games};
+            var promise = $http.post('submitDocs', JSON.stringify(data));
+
+            promise.success(function(response){
+                $rootScope.alerts.push({ type:"success", msg: "#2 Saved boxleague games"});
+
+                for(var i=0;i<response.length;i++){
+                    games[i]._id = response[i].id;
+                }
+
+                // update the boxes with game ids
+                // swap the player details array for the player name
+                // add the new boxleague name and id
+                boxes.forEach(function(box,index,array){
+                    delete array[index].games;
+                    delete array[index]["$$hashKey"];
+                    array[index].gameIds = findIdsMatchingName(games, box.name);
+                    array[index].players = box.players.map(function(item){return item.name});
+                });
+
+                // now save the boxleague for the second time with the boxes containing players and games
+                boxleague.boxes = boxes;
+
+                var data = {database: 'boxleagues', doc: boxleague};
+                var promise = $http.post('submitDoc', JSON.stringify(data));
+
+                promise.success(function(response, status){
+                    $rootScope.alerts.push({ type:"success", msg: "#3 Saved boxleague boxes"});
+                    $rootScope.boxleague = boxleague;
+                    $rootScope.games = games;
+                });
+
+                promise.error(function(response, status){
+                    $rootScope.alerts.push({ type:"danger",
+                        msg: "Saving boxleage with boxes request failed with response '" + response + "' and status code: " + status});
+                });
+            });
+
+            promise.error(function(response, status){
+                $rootScope.alerts.push({ type:"danger",
+                    msg: "Saving games request failed with response '" + response + "' and status code: " + status});
+            });
+        });
+
+        promise.error(function(response, status){
+            $rootScope.alerts.push({ type:"danger",
+                msg: "Saving initial boxleague request failed with response '" + response + "' and status code: " + status});
+        });
     };
 
     // Logout function is available in any pages
@@ -228,6 +335,27 @@ boxleagueApp.run(function($rootScope, $http, $q) {
         $rootScope.message = 'Logged out.';
         //$rootScope.isAuth = false;
         $http.post('/logout');
+    };
+
+    $rootScope.saveNewPlayers = function(newPlayers) {
+        console.log("posting player data ...");
+
+        // clean data
+        var data = [];
+        newPlayers.forEach(function(player){
+            data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
+        })
+
+        var promise = $http.post('submitNewPlayers', JSON.stringify(data));
+
+        promise.success(function(response, status){
+            $rootScope.alerts.push({ type:"success", msg: "Players Saved"});
+        });
+
+        promise.error(function(response, status){
+            $rootScope.alerts.push({ type:"danger",
+                msg: "Request failed with response '" + response + "' and status code: " + status});
+        });
     };
 });
 
@@ -309,8 +437,8 @@ boxleagueApp.controller('mainCtrl', function($scope, $rootScope, $http, $locatio
         promise.success(function(response) {
             //$rootScope.isAuth = true;
             $rootScope.login = response.name;
-            $location.url('/');
-            boxleagueApp.run();
+            $location.url('/myBox');
+            //boxleagueApp.run();
         });
 
         promise.error(function(response, status) {

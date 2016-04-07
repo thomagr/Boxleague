@@ -55,11 +55,23 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
 
 }]);
 
-boxleagueApp.controller('welcomeCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
+boxleagueApp.controller('welcomeCtrl', ['$scope', '$rootScope', '$log', function ($scope, $rootScope, $log) {
     $log.info("welcomeCtrl");
 
-    // reset on the welcome screen only
-    //$rootScope.alerts = [];
+    $rootScope.alerts = [];
+}]);
+
+boxleagueApp.controller('myBoxCtrl', ['$scope', '$rootScope', '$log', '$location', function ($scope, $rootScope, $log, $location) {
+    $log.info("myBoxCtrl");
+
+    $rootScope.alerts = [];
+    $rootScope.init().then(function(){
+        $rootScope.boxleague.boxes.forEach(function(box){
+            if(box.players.map(function(item){return item.name}).indexOf($rootScope.login) !== -1){
+                 $location.url('/box/' + box.name );
+            }
+        })
+    })
 }]);
 
 boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$http', '$rootScope', '$location', function ($scope, $log, $http, $rootScope, $location) {
@@ -185,172 +197,134 @@ function getDayClass(data) {
     return '';
 }
 
+function check(object, type){
+    switch(type){
+        case "array":
+            if(!object instanceof Array){
+                throw "object is not of type " + type;
+            }
+            break;
+        case "Date":
+            if(!object instanceof Date){
+                throw "object is not of type " + type;
+            }
+            break;
+        default:
+            if(typeof object !== type){
+                    throw "object is not of type " + type;
+            }
+    }
+}
+
+function createBoxleague(id, name, start, end, boxes){
+
+    check(id, "string");
+    check(name, "string");
+    check(start, "Date");
+    check(end, "Date");
+    check(boxes, "array");
+
+    return {
+        _id: id,
+
+        name:  name,
+
+        // dates
+        start: start,
+        end:   end,
+
+        // boxes
+        boxes: boxes
+    }
+}
+
+function createGame(id, homeId, homeDetails, awayId, awayDetails, boxleagueName, boxleagueId, boxName){
+
+    check(id, "string");
+    check(homeId, "string");
+    check(homeDetails, "object");
+    check(homeDetails.name, "string");
+    check(awayId, "string");
+    check(awayDetails, "object");
+    check(awayDetails.name, "string");
+    check(boxleagueName, "string");
+    check(boxleagueId, "string");
+    check(boxName, "string");
+
+    return {
+        _id: id,
+
+        // players
+        homeId: homeId,
+        home:   homeDetails,
+        awayId: awayId,
+        away:   awayDetails,
+
+        // boxleague
+        boxleague:   boxleagueName,
+        boxleagueId: boxleagueId,
+
+        // box
+        box: boxName
+    }
+}
+
 boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("importBoxleagueCtrl");
 
-    var success = function(players){
-        $rootScope.players = players;
-    }
-    var error = function(msg){
-        $rootScope.alerts.push(msg);
-    }
-    if(!$rootScope.players){
-        getArray('players', $http, success, error);
-    }
+    $rootScope.init().then(function(){
+        if($rootScope.boxleague){
+            $scope.boxleagueName = $rootScope.boxleague.name;
+            $scope.startDate = $rootScope.boxleague.start;
+            $scope.endDate = $rootScope.boxleague.end;
+        }
+    });
 
     $scope.changeEvent = "";
     $scope.filename = "";
-    $scope.boxleague = $rootScope.boxleague;
-    if($scope.boxleague){
-        $scope.boxes = $scope.boxleague.boxes;
-    }
 
-    // For Dates
+    // For Dates dialog
     $scope.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'dd-MM-yyyy', 'shortDate'];
     $scope.format = $scope.formats[2];
     $scope.altInputFormats = ['M!/d!/yyyy'];
-
     $scope.inlineOptions = {
         customClass: getDayClass,
         minDate: new Date(),
         showWeeks: true
     };
-
     $scope.dateOptions = {
         formatYear: 'yy',
         maxDate: new Date(2020, 5, 22),
         minDate: new Date(2016, 1, 1),
-        startingDay: 1
+        startingDay: 1,
+        initDate: new Date
     };
-
     $scope.startPopUp = {
         opened: false
     };
-
     $scope.openStartPopUp = function() {
         $scope.startPopUp.opened = true;
     };
-
     $scope.endPopUp = {
         opened: false
     };
-
     $scope.openEndPopUp = function() {
         $scope.endPopUp.opened = true;
     };
+    // end for Dates dialog
 
-    $scope.submit = function() {
-        console.log("posting boxleague data ...");
+    $scope.reset = function(){
+        delete $rootScope.games;
+        delete $rootScope.boxleague;
+        delete $scope.boxleagueName;
+        $scope.startDate = new Date;
+        $scope.endDate = new Date;
+    }
 
-        // save the boxleague
-        var boxleague = {name: $scope.boxleagueName, start: $scope.startDate, end: $scope.endDate};
-
-        var data = {database: 'boxleagues', doc: boxleague};
-        var promise = $http.post('submitDoc', JSON.stringify(data));
-
-        promise.success(function(response){
-            $rootScope.alerts.push({ type:"success", msg: "#1 Saved initial boxleague"});
-
-            boxleague._id = response.id;
-            boxleague._rev = response.rev;
-
-            // create a new list of game objects containing player ids
-            var games = [];
-            $rootScope.games.forEach(function(game){
-                var clone = {};
-
-                // add the player references
-                clone.homeId = findByName($rootScope.players, game.home)._id;
-                clone.home = game.home;
-                clone.awayId = findByName($rootScope.players, game.away)._id;
-                clone.away = game.away;
-
-                // add the boxleague references
-                clone.boxleague = boxleague.name;
-                clone.boxleagueId = boxleague._id;
-
-                // add the box name
-                clone.name = game.name;
-
-                // add the scheduled play date
-                clone.schedule = game.schedule;
-
-                games.push(clone);
-            });
-
-            var data = {database: 'games', data: games};
-            var promise = $http.post('submitDocs', JSON.stringify(data));
-
-            promise.success(function(response){
-                $rootScope.alerts.push({ type:"success", msg: "#2 Saved boxleague games"});
-
-                for(var i=0;i<response.length;i++){
-                    games[i]._id = response[i].id;
-                }
-
-                // create a new list of box objects containing player and game ids
-                var boxes = [];
-                $rootScope.boxleague.boxes.forEach(function(box){
-                    var ids = [];
-                    box.players.forEach(function(player){
-                        ids.push(findByName($rootScope.players, player)._id);
-                    });
-                    boxes.push({name: box.name, playerIds: ids, gameIds: findMatchingNames(games, box.name)});
-                });
-
-                // now save the boxleague for the second time with the boxes containing players and games
-                boxleague.boxes = boxes;
-
-                var data = {database: 'boxleagues', doc: boxleague};
-                var promise = $http.post('submitDoc', JSON.stringify(data));
-
-                promise.success(function(response, status){
-                    $rootScope.alerts.push({ type:"success", msg: "#3 Saved boxleague boxes"});
-                });
-
-                promise.error(function(response, status){
-                    $rootScope.alerts.push({ type:"danger",
-                        msg: "Saving boxleage with boxes request failed with response '" + response + "' and status code: " + status});
-                });
-            });
-
-            promise.error(function(response, status){
-                $rootScope.alerts.push({ type:"danger",
-                    msg: "Saving games request failed with response '" + response + "' and status code: " + status});
-            });
-        });
-
-        promise.error(function(response, status){
-            $rootScope.alerts.push({ type:"danger",
-                msg: "Saving initial boxleague request failed with response '" + response + "' and status code: " + status});
-        });
-
-//        var boxleague = {name: $scope.name, start: $scope.startDate, end: $scope.endDate, boxes: $scope.boxes}
-
-//        var data = {database: 'games', data: games};
-//        var promise = $http.post('submitDocs', JSON.stringify(data));
-//
-//        promise.success(function(response, status){
-//            $scope.alerts.push({ type:"success", msg: " Saved"});
-//        });
-//
-//        promise.error(function(response, status){
-//            $scope.alerts.push({ type:"danger",
-//                msg: "Request failed with response '" + response + "' and status code: " + status});
-//        });
-
-//        var boxleague = {name: $scope.name, start: $scope.startDate, end: $scope.endDate, boxes: $scope.boxes}
-//        var promise = $http.post('submitNewBoxleague', JSON.stringify(boxleague));
-//
-//        promise.success(function(response, status){
-//            $scope.alerts.push({type:"success", msg: "Boxes Saved"});
-//        });
-//
-//        promise.error(function(response, status){
-//            $scope.alerts.push({type:"danger",
-//                msg: "Request failed with response '" + response + "' and status code: " + status});
-//        });
-    };
+    $scope.submit = function(){
+        var boxleague = createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, $rootScope.boxleague.boxes);
+        $rootScope.saveImportedBoxleague(boxleague, $rootScope.games, $rootScope.players);
+    }
 
     $scope.$watch('changeEvent', function(){
         if(!$scope.changeEvent){
@@ -366,8 +340,13 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                 var data = evt.target.result;
                 var workbook = XLSX.read(data, {type: 'binary'});
 
-                $rootScope.boxleague = {boxName: "Import", boxes: []};
-                var idCount = 0; // temport ids for games
+                // add some default values is not provided
+                $scope.boxleagueName = $scope.boxleagueName || "Import";
+                $scope.startDate = $scope.startDate || new Date;
+                $scope.endDate = $scope.endDate || new Date;
+
+                $rootScope.boxleague = createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, []);
+                var idCount = 0; // temp ids for games
 
                 workbook.SheetNames.forEach(function(boxName){
 
@@ -387,24 +366,16 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                         if(players[0] === "Anthony Dore") { players[0] = "Antony Dore"};
                         if(players[1] === "Anthony Dore") { players[1] = "Antony Dore"};
 
-                        var game = {
-                            // temp id
-                            _id: idCount++,
+                        var game = createGame(idCount.toString(),
+                            findByName($rootScope.players, players[0])._id,
+                            findByName($rootScope.players, players[0]),
+                            findByName($rootScope.players, players[1])._id,
+                            findByName($rootScope.players, players[1]),
+                            $rootScope.boxleague.name,
+                            $rootScope.boxleague._id,
+                            boxName);
 
-                            // players
-                            homeId: findByName($rootScope.players, players[0])._id,
-                            home: players[0],
-                            awayId: findByName($rootScope.players, players[1])._id,
-                            away: players[1],
-
-                            // boxleague
-                            boxleague: $rootScope.boxleague.name,
-                            boxleagueId: $rootScope.boxleague._id,
-
-                            // box
-                            name: boxName
-                        };
-
+                        idCount++;
                         $rootScope.games.push(game);
                         games.push(game);
                     });
@@ -434,25 +405,27 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                         return a.schedule - b.schedule;
                     });
 
-                    var players = {};
+                    var playerNames = {};
                     games.forEach(function(game){
-                        players[game.home] = true;
-                        players[game.away] = true;
+                        playerNames[game.home.name] = true;
+                        playerNames[game.away.name] = true;
                     });
-                    players = Object.keys(players).map(function (key) {return key});
-                    players.sort();
+                    playerNames = Object.keys(playerNames).map(function (key) {return key});
+                    playerNames.sort();
 
                     var ids = [];
-                    players.forEach(function(player){
+                    var players = [];
+                    playerNames.forEach(function(player){
                         ids.push(findByName($rootScope.players, player)._id);
+                        players.push(findByName($rootScope.players, player));
                     });
 
-                    var box = {name: boxName, games: games, players: players, playerIds: ids, games: findMatchingNames(games, boxName)};
+                    var box = {name: boxName, games: games, players: players, playerIds: ids, gameIds: findIdsMatchingName(games, boxName)};
                     //$scope.boxes.push(box);
                     //$rootScope.boxleague.boxes = $scope.boxes;
                     $rootScope.boxleague.boxes.push(box);
                 });
-                $scope.boxleague = $rootScope.boxleague;
+                //$scope.boxleague = $rootScope.boxleague;
             });
         };
 
@@ -460,47 +433,301 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
     })
 }]);
 
+boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
+    $log.info("importBoxleagueFileCtrl");
+
+    $rootScope.init().then(function(){
+        if($rootScope.boxleague){
+            $scope.boxleagueName = $rootScope.boxleague.name;
+            $scope.startDate = $rootScope.boxleague.start;
+            $scope.endDate = $rootScope.boxleague.end;
+        } else {
+            $scope.boxleagueName = "Import";
+            $scope.startDate = new Date;
+            $scope.endDate = new Date;
+        }
+    });
+
+    $scope.changeEvent = "";
+    $scope.filename = "";
+
+    // For Dates dialog
+    $scope.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'dd-MM-yyyy', 'shortDate'];
+    $scope.format = $scope.formats[2];
+    $scope.altInputFormats = ['M!/d!/yyyy'];
+    $scope.inlineOptions = {
+        customClass: getDayClass,
+        minDate: new Date(),
+        showWeeks: true
+    };
+    $scope.dateOptions = {
+        formatYear: 'yy',
+        maxDate: new Date(2020, 5, 22),
+        minDate: new Date(2016, 1, 1),
+        startingDay: 1,
+        initDate: new Date
+    };
+    $scope.startPopUp = {
+        opened: false
+    };
+    $scope.openStartPopUp = function() {
+        $scope.startPopUp.opened = true;
+    };
+    $scope.endPopUp = {
+        opened: false
+    };
+    $scope.openEndPopUp = function() {
+        $scope.endPopUp.opened = true;
+    };
+    // end for Dates dialog
+
+    $scope.reset = function(){
+        delete $rootScope.games;
+        delete $rootScope.boxleague;
+        delete $scope.boxleagueName;
+        $scope.startDate = new Date;
+        $scope.endDate = new Date;
+    }
+
+    var findPlayersInBox = function(source, box){
+        var players = [];
+        source.forEach(function(item){
+            if(item.box === box){
+                players.push(item.name);
+            }
+        });
+        if(players.length === 0){
+            throw "Couldn't find players in box: " + box;
+        }
+        return players;
+    };
+
+    $scope.submit = function(){
+        var boxleague = createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, $rootScope.boxleague.boxes);
+        $rootScope.saveImportedBoxleague(boxleague, $rootScope.games, $rootScope.players);
+    }
+
+    $scope.$watch('changeEvent', function(){
+        if(!$scope.changeEvent){
+            return
+        };
+
+        $scope.filename = $scope.changeEvent.target.files[0].name;
+        $rootScope.games = [];
+
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+            $scope.$apply(function () {
+                var data = evt.target.result;
+
+                // add some default values is not provided
+                $scope.boxleagueName = $scope.boxleagueName || "Import";
+                $scope.startDate = $scope.startDate || new Date;
+                $scope.endDate = $scope.endDate || new Date;
+
+                $rootScope.boxleague = createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, []);
+
+                var playersAndBox = [];
+                var boxNames = [];
+                var lines = data.split('\n');
+                lines.forEach(function(line){
+                    if(!line || line.length === 0) {
+                        return;
+                    }
+                    var items = line.split(",");
+                    playersAndBox.push({name: items[0], box: items[1]});
+                    if(boxNames.indexOf(items[1]) === -1){
+                        boxNames.push(items[1]);
+                    }
+                });
+
+                var idCount = 0; // temp id for games
+                var games = [];
+                boxNames.forEach(function(boxName){
+                    var boxPlayers = findPlayersInBox(playersAndBox, boxName);
+
+                    if(boxPlayers.length !== 6){
+                        throw "Box " + name + " does not have the correct number of players";
+                    }
+
+                    // build the list of games from the players
+                    for(var i=0;i<6;i++){
+                        for(var j=i+1;j<6;j++){
+                            var game = createGame(idCount.toString(),
+                                findByName($rootScope.players, boxPlayers[i])._id,
+                                findByName($rootScope.players, boxPlayers[i]),
+                                findByName($rootScope.players, boxPlayers[j])._id,
+                                findByName($rootScope.players, boxPlayers[j]),
+                                $rootScope.boxleague.name,
+                                $rootScope.boxleague._id,
+                                boxName);
+
+                            idCount++;
+                            games.push(game);
+                        }
+                    }
+                });
+
+                // check if a play exists already in the array of games
+                var findPlayer = function(games, player){
+                    for(var i=0;i<games.length;i++){
+                        if(games[i].home === player || games[i].away === player){
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                // create size distinct(players) game sets
+                var findDistinct = function(games, size){
+                    var start = 0;
+                    var results = [];
+                    while(results.length !== size && start < games.length - 1){
+                        results = []; // reset
+                        results.push(games[start++]);
+                        for(var i=0;i<games.length;i++){
+                            if(!findPlayer(results, games[i].home) && !findPlayer(results, games[i].away)){
+                                results.push(games[i]);
+                                if(results.length === size){
+                                    return results;
+                                }
+                            }
+                        }
+                    }
+                    throw "Could not find distinct games"
+                }
+
+                // return the difference between these arrays (what's left)
+                var difference = function(a1, a2) {
+                    var result = [];
+                    var map = a2.map(function(item){return item._id});
+                    for (var i = 0; i < a1.length; i++) {
+                        if (map.indexOf(a1[i]._id) === -1) {
+                            result.push(a1[i]);
+                        }
+                    }
+                    return result;
+                }
+
+                boxNames.forEach(function(boxName){
+                    var boxGames = findObjectsMatchingName(games, boxName);
+
+                    // create 5 weeks of games of 3 games per week
+                    var date = new Date($scope.startDate);
+                    var toBePlayed = boxGames;
+                    var newGames = [];
+                    for(var i=0;i<5;i++)
+                    {
+                        var tmp = findDistinct(toBePlayed, 3);
+                        toBePlayed = difference(toBePlayed, tmp);
+                        tmp.forEach(function(game){
+                            game.schedule = new Date(date);
+                            newGames.push(game);
+                        });
+                        date.setDate(date.getDate() + 7);
+                    }
+                    boxGames = newGames;
+
+                    var playerNames = [];
+                    boxGames.forEach(function(game){
+                        if(playerNames.indexOf(game.home.name) === -1){
+                            playerNames.push(game.home.name);
+                        }
+                        if(playerNames.indexOf(game.away.name) === -1){
+                            playerNames.push(game.away.name);
+                        }
+                    });
+
+                    var boxPlayers = [];
+                    playerNames.forEach(function(player){
+                        boxPlayers.push(findByName($rootScope.players, player));
+                    });
+
+                    var box = {
+                        name: boxName,
+                        players: boxPlayers,
+                        playerIds: boxPlayers.map(function(item){return item._id}),
+                        games: boxGames,
+                        gameIds: boxGames.map(function(item){return item._id})
+                        };
+
+                    $rootScope.boxleague.boxes.push(box);
+                });
+                $rootScope.games = games;
+            });
+        };
+
+        reader.readAsBinaryString($scope.changeEvent.target.files[0]);
+    })
+}]);
+
+boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
+    $log.info("importPlayersFileCtrl");
+
+    $scope.changeEvent = "";
+    $scope.filename = "";
+
+    $rootScope.init().then(function(){
+        $scope.currentPlayers = $rootScope.players;
+    });
+
+    $scope.submit = function() {
+        $rootScope.saveNewPlayers($scope.newPlayers);
+    };
+
+    $scope.$watch('changeEvent', function(){
+        if(!$scope.changeEvent){
+            return
+        };
+
+        $scope.filename = $scope.changeEvent.target.files[0].name;
+
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+            $scope.$apply(function () {
+                var data = evt.target.result;
+
+                $scope.newPlayers = [];
+
+                var line = data.split('\n');
+                line.forEach( function(item){
+                    var details = item.split(',');
+                    // skip if missing name
+                    if(details[0].length === 0 ){
+                        return
+                    }
+                    var name = details[0];
+                    var mobile = details[1];
+                    var home = details[2];
+                    var email = details[3];
+
+                    var player = {name: name, mobile: mobile, home: home, email: email};
+
+                    var currentMap = $scope.currentPlayers.map(function(x){return x.name});
+                    var newMap = $scope.newPlayers.map(function(x){return x.name});
+
+                    if(currentMap.indexOf(name) === -1 && newMap.indexOf(name) === -1){
+                        $scope.newPlayers.push(player);
+                    }
+                });
+            });
+        };
+        reader.readAsBinaryString($scope.changeEvent.target.files[0]);
+    })
+}]);
 
 boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("importPlayersCtrl");
 
     $scope.changeEvent = "";
     $scope.filename = "";
-    $scope.currentPlayers = [];
 
-    var success = function(players){
-        $rootScope.players = players;
-
-        $rootScope.players.forEach(function(player){
-            $scope.currentPlayers.push(player)
-        });
-    }
-    var error = function(msg){
-        $rootScope.alerts.push(msg);
-    }
-    if(!$rootScope.players){
-        getArray('players', $http, success, error);
-    }
+    $rootScope.init().then(function(){
+        $scope.currentPlayers = $rootScope.players;
+    });
 
     $scope.submit = function() {
-        console.log("posting player data ...");
-
-        // clean data
-        var data = [];
-        $scope.newPlayers.forEach(function(player){
-            data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
-        })
-
-        var promise = $http.post('submitNewPlayers', JSON.stringify(data));
-
-        promise.success(function(response, status){
-            $rootScope.alerts.push({ type:"success", msg: "Players Saved"});
-        });
-
-        promise.error(function(response, status){
-            $rootScope.alerts.push({ type:"danger",
-                msg: "Request failed with response '" + response + "' and status code: " + status});
-        });
+        $rootScope.saveNewPlayers($scope.newPlayers);
     };
 
     $scope.$watch('changeEvent', function(){
@@ -544,30 +771,21 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
     })
 }]);
 
+
 boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
     function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
     $log.info("boxesCtrl");
 
     $rootScope.init();
 
-//    var error = function(msg){
-//        $rootScope.alerts.push(msg);
-//    }
-//
-//    var successLoadPlayers = function(players){
-//        $rootScope.players = players;
-//    }
-//    if(!$rootScope.players){
-//        getArray('players', $http, successLoadPlayers, error);
-//    }
-//
-//    var successLoadBoxleague = function(boxleagues){
-//        $rootScope.boxleague = boxleagues;
-//    }
-//    if(!$rootScope.boxleague){
-//        getObject('boxleagues', $http, successLoadBoxleague, error);
-//    }
-
+    // sort order, if we have boxes use the box number
+    $scope.sortElement = function(item){
+        if(item.name.indexOf("Box ") !== -1){
+            return parseInt(item.name.replace("Box ", ""));
+        } else {
+            return item.name;
+        }
+    }
 }]);
 
 boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance, game) {
@@ -663,17 +881,21 @@ cleanScore = function(score){
     return score;
 }
 
-var findMatchingNames = function(source, name){
-    var ids = [];
+var findObjectsMatchingName = function(source, name){
+    var results = [];
     source.forEach(function(item){
-        if(item.name === name){
-            ids.push(item._id);
+        if(item.box === name){
+            results.push(item);
         }
     });
-    if(ids.length === 0){
+    if(results.length === 0){
         throw "Couldn't find item with name: " + name;
     }
-    return ids;
+    return results;
+};
+
+var findIdsMatchingName = function(source, name){
+    return findObjectsMatchingName(source,name).map(function(item){return item._id});
 };
 
 function findById(source, id){
@@ -686,12 +908,20 @@ function findById(source, id){
 }
 
 function findByName(source, name){
+    if(!source){
+        throw "No source provided";
+    }
+
+    if(!name){
+        throw "No name provided";
+    }
+
     for (var i = 0; i < source.length; i++) {
         if (source[i].name === name) {
             return source[i];
         }
     }
-    throw "Couldn't find object with name: " + name;
+    throw "Couldn't find object with name: " + JSON.stringify(name);
 }
 
 boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$q', '$uibModal',
@@ -739,6 +969,12 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         //console.log(JSON.stringify(row[index]));
 
         if(index === 0){
+            return true;
+        }
+        if(row[index].home === "Free Week"){
+            return true;
+        }
+        if(row[index].away === "Free Week"){
             return true;
         }
         if(row[index].home === $rootScope.login){
