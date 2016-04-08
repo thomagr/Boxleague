@@ -1,5 +1,4 @@
-// DIRECTIVES
-boxleagueApp.directive("dailyWeatherReport", function() {
+boxleagueApp.directive("dailyWeatherReport", function () {
     return {
         restrict: 'E',
         templateUrl: 'directives/dailyWeatherReport.html',
@@ -14,7 +13,7 @@ boxleagueApp.directive("dailyWeatherReport", function() {
     }
 });
 
-boxleagueApp.directive("hourlyWeatherReport", function() {
+boxleagueApp.directive("hourlyWeatherReport", function () {
     return {
         restrict: 'E',
         templateUrl: 'directives/hourlyWeatherReport.html',
@@ -29,35 +28,39 @@ boxleagueApp.directive("hourlyWeatherReport", function() {
     }
 });
 
-boxleagueApp.directive("playersTable", function() {
+boxleagueApp.directive("genericTable", function () {
     return {
         restrict: 'E',
-        templateUrl: 'directives/playersTable.html',
+        templateUrl: 'directives/table.html',
         scope: {
             sortType: "=",
             sortReverse: "=",
             searchName: "=",
-            players: "="
+            toTitleCase: "=",
+            sortColumn: "=",
+            rows: "=",
+            columns: "="
         }
     }
 });
 
 boxleagueApp.directive("fileInput", [function ($parse) {
-    return function( scope, elm, attrs ) {
-    elm.bind('change', function( evt ) {
-        scope.$apply(function() {
-            scope[ attrs.name ] = evt;
+    return function (scope, elm, attrs) {
+        elm.bind('change', function (evt) {
+            scope.$apply(function () {
+                scope[attrs.name] = evt;
+            });
         });
-    });
-  };
+    };
 }]);
 
-boxleagueApp.directive("boxes", function() {
+boxleagueApp.directive("boxes", function () {
     return {
         restrict: 'E',
         templateUrl: 'directives/boxPanel.html',
         scope: {
-            box: "="
+            box: "=",
+            boxleague: "="
         }
     }
 });

@@ -1,4 +1,4 @@
-<a ng-href="#/box/{{ box.name }}" style="display: block;text-decoration: none;">
+<a ng-href="#/boxleague/{{boxleague}}/box/{{box.name}}" style="display: block;text-decoration: none;">
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">{{box.name}}</h3>
@@ -6,7 +6,7 @@
         <div class="panel-body">
             <div ng-repeat="player in box.players">
                 <ul style="list-style-type:none;line-height:80%;padding:0">
-                    <li>{{player.name}}</li>
+                    <li>{{player}}</li>
                 </ul>
             </div>
         </div>

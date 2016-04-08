@@ -33,6 +33,18 @@
             </td>
         </tr>
     </table>
+    <div style="text-align: center;">
+        <h4 style="display:inline">Played</h4>
+        <div class="input-group" style="display:inline-flex">
+            <input placeholder="Date" type="text" class="form-control" uib-datepicker-popup="{{format}}"
+                   ng-model="date" is-open="startPopUp.opened" datepicker-options="dateOptions"
+                   ng-required="true" close-text="Close" alt-input-formats="altInputFormats"/>
+                <span class="input-group-btn">
+                    <button type="button" class="btn btn-default" ng-click="openStartPopUp()"><i
+                            class="glyphicon glyphicon-calendar"></i></button>
+                </span>
+        </div>
+    </div>
 </div>
 <div class="modal-footer">
     <button class="btn btn-primary" type="button" ng-click="reset()" style="float:left">Reset</button>

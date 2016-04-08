@@ -1,0 +1,14 @@
+<div class="row">
+    <div ng-show="rows">
+        <h1>{{toTitleCase(title)}}</h1>
+        <generic-table
+                rows="rows"
+                columns="columns"
+                sort-type="sortType"
+                sort-reverse="sortReverse"
+                search-name="searchName"
+                to-title-case="toTitleCase"
+                sort-column="sortColumn">
+        </generic-table>
+    </div>
+</div>

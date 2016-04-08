@@ -5,7 +5,7 @@
         <div class="row">
             <span ng-repeat="box in boxleague.boxes | orderBy:sortElement">
                 <div class="col-sm-4">
-                    <boxes box="box"></boxes>
+                    <boxes box="box" boxleague="boxleague._id"></boxes>
                 </div>
             </span>
         </div>

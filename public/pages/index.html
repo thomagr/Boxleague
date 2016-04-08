@@ -34,7 +34,7 @@
 
     <!-- Application Specific -->
     <script src="scripts/app.js"></script>
-    <script src="scripts/routes.js"></script>
+    <script src="scripts/config.js"></script>
     <script src="scripts/controllers.js"></script>
     <script src="scripts/directives.js"></script>
 </head>
@@ -63,8 +63,17 @@
                         </ul>
                     </li>
                     <li><a href="#/rules"><i class="fa fa-book icon-white"></i> Rules</a></li>
-                    <li><a href="#/players"><i class="fa fa-users icon-white"></i> Players</a></li>
-                    <li><a href="#/boxes"><i class="fa fa-cubes icon-white"></i> Boxes</a></li>
+                    <li><a href="#/myBox"><i class="fa fa-cube icon-white"></i> My box</a></li>
+                    <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-cubes icon-white"></i> League<span
+                            class="caret"></span></a>
+                        <ul uib-dropdown-menu>
+                            <li><a href="#/myBox"><i class="fa fa-cube"></i> My box</a></li>
+                            <li><a href="#/boxleague"><i class="fa fa-cubes"></i> Boxes</a></li>
+                            <li><a href="#/table/boxleagues"><i class="fa fa-server"></i> Boxleagues</a></li>
+                            <li><a href="#/table/games"><i class="fa fa-calendar"></i> Games</a></li>
+                            <li><a href="#/table/players"><i class="fa fa-users"></i> Players</a></li>
+                        </ul>
+                    </li>
                 </ul>
                 <ul ng-show="isAuth" class="nav navbar-nav navbar-right">
                     <li><a href="#/forcast/St Albans, England"><i class="fa fa-umbrella icon-white"></i> Weather</a></li>

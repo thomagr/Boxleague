@@ -1,0 +1,21 @@
+<div class="form-group">
+    <div class="search">
+        <span class="fa fa-search"></span>
+        <input placeholder="Search" ng-model="searchName">
+    </div>
+</div>
+
+<table class="table table-bordered table-striped table-condensed table-responsive">
+    <tr>
+        <th ng-repeat="column in columns track by $index">
+            <a href ng-click="sortColumn(column)">
+                {{toTitleCase(column)}}
+                <span ng-show="sortType == column && !sortReverse" class="fa fa-caret-down"></span>
+                <span ng-show="sortType == column && sortReverse" class="fa fa-caret-up"></span>
+            </a>
+        </th>
+    </tr>
+    <tr ng-repeat="row in rows | orderBy:sortType:sortReverse | filter:searchName">
+        <td  ng-repeat="column in columns">{{ row[column] | formatString }}</a></span></td>
+    </tr>
+</table>

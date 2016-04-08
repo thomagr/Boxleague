@@ -29,65 +29,37 @@
     </div>
 
     <div class="row">
-        <h2>Fixtures</h2>
-
-        <div class="form-group">
-            <div class="search">
-                <span class="fa fa-search"></span>
-                <input placeholder="Search" ng-model="search">
-            </div>
+        <div ng-show="boxGames">
+            <h2>Games</h2>
+            <generic-table
+                    rows="boxGames"
+                    columns="boxColumns"
+                    sort-type="boxSortType"
+                    sort-reverse="boxSortReverse"
+                    search-name="boxSearchName"
+                    to-title-case="toTitleCase"
+                    sort-column="sortBoxColumn">
+            </generic-table>
         </div>
-        <table class="table table-bordered table-striped table-condensed table-responsive">
-            <thead>
-            <tr>
-                <th>Date</th>
-                <th>Game</th>
-                <th style="width:200px">Score</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr ng-repeat="game in boxGames | orderBy:'schedule' | filter:fixtureFilter">
-                <td>{{game.schedule | date : 'dd MMM yyyy' }}</td>
-                <td>{{game.home.name}} vs {{game.away.name}}</td>
-                <td width="15%">{{game.score}}</td>
-                <!--<td width="15%">-->
-                    <!--{{game.score}}-->
-                    <!--&lt;!&ndash;<div ng-show="login===game.home || login==game.away" class="input-group" ng-click="openByFixture(game)">&ndash;&gt;-->
-                        <!--&lt;!&ndash;&lt;!&ndash;<input type="text" class="form-control" value="game.score"&ndash;&gt;&ndash;&gt;-->
-                               <!--&lt;!&ndash;&lt;!&ndash;ng-model="game.score" ng-change="inputScore(game)"&ndash;&gt;&ndash;&gt;-->
-                        <!--&lt;!&ndash;&lt;!&ndash;&gt;&ndash;&gt;&ndash;&gt;-->
-                            <!--&lt;!&ndash;&lt;!&ndash;<span class="input-group-btn" ng-if="game.save">&ndash;&gt;&ndash;&gt;-->
-                                <!--&lt;!&ndash;&lt;!&ndash;<button class="btn btn-success" type="button" ng-click="save(game._id)">Save</button>&ndash;&gt;&ndash;&gt;-->
-                            <!--&lt;!&ndash;&lt;!&ndash;</span>&ndash;&gt;&ndash;&gt;-->
-                            <!--&lt;!&ndash;&lt;!&ndash;<span class="input-group-addon label-warning" ng-if="game.error">&ndash;&gt;&ndash;&gt;-->
-                                <!--&lt;!&ndash;&lt;!&ndash;{{game.error}}&ndash;&gt;&ndash;&gt;-->
-                            <!--&lt;!&ndash;&lt;!&ndash;</span>&ndash;&gt;&ndash;&gt;-->
-                        <!--&lt;!&ndash;&lt;!&ndash;<input type="text" value="{{game.score}}" size="13" class="score" disabled >&ndash;&gt;&ndash;&gt;-->
-                    <!--&lt;!&ndash;</div>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<div ng-hide="login===game.home || login==game.away" class="input-group">&ndash;&gt;-->
-                        <!--&lt;!&ndash;{{game.score}}&ndash;&gt;-->
-                    <!--&lt;!&ndash;</div>&ndash;&gt;-->
-                <!--</td>-->
-            </tr>
-            </tbody>
-        </table>
     </div>
 
     <div class="row">
         <div ng-show="boxPlayers">
             <h2>Players</h2>
-            <players-table
-                    players="boxPlayers"
-                    sort-type="sortType"
-                    sort-reverse="sortReverse"
-                    search-name="searchName">
-            </players-table>
+            <generic-table
+                    rows="boxPlayers"
+                    columns="playerColumns"
+                    sort-type="playerSortType"
+                    sort-reverse="playerSortReverse"
+                    search-name="playerSearchName"
+                    to-title-case="toTitleCase"
+                    sort-column="sortPlayerColumn">
+            </generic-table>
         </div>
     </div>
 
     <div class="row">
         <h2>Entering Scores</h2>
-
         <div ng-include src="'pages/setshelp.html'">
         </div>
     </div>

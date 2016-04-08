@@ -22,10 +22,10 @@
     </players-table>
 </div>
 
-<div ng-show="players" class="row" style="margin-top: 20px;">
+<div ng-show="currentPlayers" class="row" style="margin-top: 20px;">
     <h1>Current Players</h1>
     <players-table
-            players="players"
+            players="currentPlayers"
             sort-type="sortType"
             sort-reverse="sortReverse"
             search-name="searchName">
