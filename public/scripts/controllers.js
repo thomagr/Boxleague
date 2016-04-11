@@ -176,6 +176,10 @@ function findByName(source, name) {
 }
 // Has someone won correctly
 function isCompleteScore(score) {
+    if(!score || !score.length){
+        return 0;
+    }
+
     if (score === "W:0" || score === "0:W") {
         return 1;
     }
@@ -336,7 +340,9 @@ function isSetScore(score) {
 
 boxleagueApp.filter('formatString', function($filter){
     return function(input) {
-        if (input && input.substring(0, 3) === "201" && input.indexOf('Z', input.length - 1) !== -1) {
+        if(input instanceof Date){
+            return $filter('date')(input, 'dd MMM yyyy');
+        } else if (typeof input === "string" && input.substring(0, 3) === "201" && input.indexOf('Z', input.length - 1) !== -1) {
             return $filter('date')(input, 'dd MMM yyyy')
         } else {
             return input;
@@ -547,13 +553,23 @@ boxleagueApp.controller('myBoxCtrl', ['$scope', '$rootScope', '$log', '$location
 boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance, game) {
 
     $scope.score = game.score;
-    $scope.date = new Date(game.date);
+    if(game.date instanceof Date){
+        $scope.date = game.date;
+    } else if(typeof game.date == "string" && game.date.length){
+        $scope.date = new Date(game.date);
+    } else {
+        $scope.date = game.date;
+    }
+    // if(game.date && game.date.length || typeof game.date === 'object'){
+    //     $scope.date = new Date(game.date);
+    // }
+
     $scope.home = game.home;
     $scope.away = game.away;
 
     $scope.reset = function () {
         $scope.score = "";
-        delete $scope.Date;
+        $scope.date = "";
         load();
     }
 
@@ -620,6 +636,12 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
     $scope.ok = function () {
         game.score = cleanScore(setsToScore($scope.sets));
         game.date = $scope.date;
+        // if($scope.date instanceof Date){
+        //     game.date = JSON.stringify($scope.date);
+        // } else {
+        //     game.date = $scope.date;
+        // }
+
         $uibModalInstance.close(game);
     };
 
@@ -633,15 +655,15 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
     $scope.altInputFormats = ['M!/d!/yyyy'];
     $scope.inlineOptions = {
         customClass: getDayClass,
-        minDate: new Date(),
+        minDate: new Date(2016, 1, 1),
         showWeeks: true
     };
     $scope.dateOptions = {
         formatYear: 'yy',
         maxDate: new Date(2020, 5, 22),
         minDate: new Date(2016, 1, 1),
-        startingDay: 1,
-        initDate: new Date
+        startingDay: 1
+        //initDate: new Date
     };
     $scope.startPopUp = {
         opened: false
@@ -700,58 +722,128 @@ boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$resource', '$routePara
         }
     }
 }]);
-boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$q', '$uibModal',
-    function ($scope, $log, $resource, $routeParams, $rootScope, $http, $q, $uibModal) {
-        $log.info("boxCtrl");
+boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$q', '$uibModal', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $q, $uibModal) {
+    $log.info("boxCtrl");
 
-        $scope.boxName = $routeParams.box;
-        $scope.id = $routeParams.id;
+    $scope.boxName = $routeParams.box;
+    $scope.id = $routeParams.id;
 
-        var error = function(response){
-            $rootScope.alerts.push({
-                type: "warning",
-                msg: "Read " + table + " failed with error '" + response.data
-            });
+    var error = function(response){
+        $rootScope.alerts.push({
+            type: "warning",
+            msg: "Read " + table + " failed with error '" + response.data
+        });
+    }
+    $http.get('/boxleague/' + $scope.id).then(function (response) {
+        $scope.boxleague = response.data;
+        $http.get('/players').then(function (response) {
+            $scope.players = response.data;
+            $http.get('/games').then(function (response) {
+                $scope.games = response.data;
+                $scope.boxleague.boxes.forEach(function (box, index, arr) {
+                    arr[index].players = [];
+                    box.playerIds.forEach(function (id) {
+                        arr[index].players.push(findById($scope.players, id));
+                    });
+                    arr[index].games = [];
+                    box.gameIds.forEach(function (id) {
+                        arr[index].games.push(findById($scope.games, id));
+                    });
+                });
+                setUpBox();
+            }, error)
+        }, error);
+    }, error);
+
+    var calculateLeaderboard = function(games){
+        $scope.leaderboard = [];
+        var findInLeaderboard = function(player){
+            for(var i=0;i<$scope.leaderboard.length;i++){
+                if($scope.leaderboard[i].name === player) {
+                    return $scope.leaderboard[i];
+                }
+            }
+            $scope.leaderboard.push({name: player, score: 0, played: 0, won: 0, lost: 0});
+            return $scope.leaderboard[$scope.leaderboard.length-1];
+        }
+        games.forEach(function(game){
+            var score = calculateScore(game.score);
+            if(score.home > 0 || score.away > 0) {
+                var home = findInLeaderboard(game.home);
+                var away = findInLeaderboard(game.away);
+                home.played++;
+                away.played++;
+                home.score += score.home;
+                away.score += score.away;
+                
+                if(score.home > score.away){
+                    home.won++;
+                    away.lost++;
+                } else {
+                    away.won++;
+                    home.lost++;
+                }
+            }
+        });
+    }
+
+    var calculateScore = function(score){
+
+        // validate we have a score
+        if(!isCompleteScore(score) || !isSetsScore(score)){
+            return {home: 0, away:0};
         }
 
-        $http.get('/boxleague/' + $scope.id).then(function (response) {
-            $scope.boxleague = response.data;
-            $http.get('/players').then(function (response) {
-                $scope.players = response.data;
-                $http.get('/games').then(function (response) {
-                    $scope.games = response.data;
-                    $scope.boxleague.boxes.forEach(function (box, index, arr) {
-                        arr[index].players = [];
-                        box.playerIds.forEach(function (id) {
-                            arr[index].players.push(findById($scope.players, id));
-                        });
-                        arr[index].games = [];
-                        box.gameIds.forEach(function (id) {
-                            arr[index].games.push(findById($scope.games, id));
-                        });
-                    });
-                    setUpBox();
-                }, error)
-            }, error);
-        }, error);
+        var setsString = score.split(" ");
+        var sets = [];
+        setsString.forEach(function(set){
+            var gameString = set.split(":");
+            sets.push([parseInt(gameString[0]), parseInt(gameString[1])]);
+        });
 
-        // modal pop-up
-        $scope.openByGrid = function (column, row, index) {
-            // if the colum is not a score column then return
-            switch (typeof column) {
-                case 'string':
-                    return;
-                case 'object':
-                    break;
-                default:
-                    return;
+        var home = 0, away = 0;
+        if(sets.length === 2){
+            if(sets[0][0] > sets[0][1]){
+                home = 18;
+                away =  sets[0][1];
+                away += sets[1][1];
+            } else {
+                away = 18;
+                home =  sets[0][0];
+                home += sets[1][0];
             }
-            ;
+        } else if( sets.length === 3){
+            if(sets[2][0] > sets[2][1]){
+                home = 12;
+                away =  Math.min(6, sets[0][1]);
+                away += Math.min(6, sets[1][1]);
+            } else {
+                away = 12;
+                home =  Math.min(6, sets[0][0]);
+                home += Math.min(6, sets[1][0]);
+            }
+        }
 
-            // if the row login is not the logged in person ignore
-            if (row[index].home != $rootScope.login && row[index].away != $rootScope.login) {
+        return {home: home, away: away};
+    }
+
+    // modal pop-up
+    $scope.openByGrid = function (column, row, index) {
+        // if the colum is not a score column then return
+        switch (typeof column) {
+            case 'string':
                 return;
-            }
+            case 'object':
+                break;
+            default:
+                return;
+        }
+        ;
+
+        // if the row login is not the logged in person ignore
+        if (row[index].home != $rootScope.login && row[index].away != $rootScope.login) {
+            return;
+        }
 //
 //        var score;
 //        if(row[index].game.home === row[index].home){
@@ -760,260 +852,257 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
 //            score = reverse(row[index].game.score);
 //        }
 
-            open(row[index].game);
-        };
+        open(row[index].game);
+    };
+    // modal pop-up
+    $scope.openByFixture = function (game) {
+        // if the row login is not the logged in person ignore
+        if (game.home != $rootScope.login && game.away != $rootScope.login) {
+            return;
+        }
 
-        // modal pop-up
-        $scope.openByFixture = function (game) {
-            // if the row login is not the logged in person ignore
-            if (game.home != $rootScope.login && game.away != $rootScope.login) {
+        open(game);
+    };
+    var open = function (game) {
+        var modalInstance = $uibModal.open({
+            animation: true,
+            templateUrl: 'myModalContent.html',
+            controller: 'ModalInstanceCtrl',
+            resolve: {
+                game: function () {
+                    return game;
+                }
+            }
+        });
+
+        modalInstance.result.then(function (game) {
+            if (!game) {
                 return;
-            }
-
-            open(game);
-        };
-
-        $scope.readOnly = function (column, row, index) {
-            //console.log(JSON.stringify(row[index]));
-
-            if (index === 0) {
-                return true;
-            }
-            if (row[index].home === "Free Week") {
-                return true;
-            }
-            if (row[index].away === "Free Week") {
-                return true;
-            }
-            if (row[index].home === $rootScope.login) {
-                return false;
-            }
-            if (row[index].away === $rootScope.login) {
-                return false;
-            }
-            return true;
-        };
-
-        var open = function (game) {
-            var modalInstance = $uibModal.open({
-                animation: true,
-                templateUrl: 'myModalContent.html',
-                controller: 'ModalInstanceCtrl',
-                resolve: {
-                    game: function () {
-                        return game;
-                    }
-                }
-            });
-
-            modalInstance.result.then(function (game) {
-                if (!game) {
-                    return;
-                }
-                ;
-
-                $scope.save(game._id);
-            }, function () {
-                $log.info('Modal dismissed at: ' + new Date());
-            });
-        };
-        // end pop-up
-
-        $scope.save = function (id) {
-            console.log('submit game ' + id);
-
-            var game = findById($scope.games, id);
-            // clean data before save
-            game = clone(game);
-            delete game["$$hashKey"];
-            game.score = cleanScore(game.score);
-            // game.home = game.home.name;
-            // game.away = game.away.name;
-
-            var promise = $http.post('/game/' + game._id, JSON.stringify(game));
-
-            promise.success(function (response) {
-                game = findById($scope.games, id);
-                game._rev = response.rev;
-                $rootScope.alerts.push({type: "success", msg: " Saved"});
-            });
-
-            promise.error(function (response) {
-                $rootScope.alerts.push({
-                    type: "danger",
-                    msg: "Save failed with error '" + response + "'. Refresh the page, check and try again."
-                });
-            });
-        }
-
-        var setUpBox = function () {
-            $scope.box = findByName($scope.boxleague.boxes, $scope.boxName);
-            $scope.boxPlayers = $scope.box.players;
-            $scope.boxGames = $scope.box.games;
-
-            $scope.tableHeaders = [];
-            $scope.tableRows = [];
-            $scope.tableHeaders.push($scope.box.name);
-
-            // for the games table
-            var columns = getColumns($scope.boxGames);
-            var filter = filterColumns(columns);
-            filter = removeColumn(filter, "boxleague");
-            filter = removeColumn(filter, "box");
-            filter = removeColumn(filter, "schedule");
-            filter.unshift("schedule");
-            $scope.boxColumns = filter;
-            $scope.boxSortType = "schedule";
-            $scope.boxSortReverse = false;
-            $scope.boxSearchName = "";
-            $scope.sortBoxColumn = function (column){
-                $scope.boxSortType = column;
-                $scope.boxSortReverse = !$scope.boxSortReverse;
-                return(column);
-            }
-
-            // for the players table
-            var columns = getColumns($scope.boxPlayers);
-            var filter = filterColumns(columns);
-            $scope.playerColumns = filter;
-            $scope.playerSortType = "name";
-            $scope.playerSortReverse = false;
-            $scope.playerSearchName = "";
-            $scope.sortPlayerColumn = function (column){
-                $scope.playerSortType = column;
-                $scope.playerSortReverse = !$scope.playerSortReverse;
-                return(column);
-            }
-
-            $scope.toTitleCase = function (str){
-                return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
-            }
-
-            // set-up the boxleage table
-            $scope.boxPlayers.forEach(function (player1) {
-                var row = [];
-                row.push(player1.name);
-                $scope.tableRows.push(row);
-                $scope.tableHeaders.push(player1.name);
-
-                $scope.boxPlayers.forEach(function (player2) {
-                    try {
-                        var game = findGameByPlayers($scope.boxGames, player1, player2);
-                        row.push({game: game, home: player1.name, away: player2.name});
-                    }
-                    catch (err) {
-                        row.push("");
-                    }
-                })
-            });
-        }
-
-        function findGameByPlayers(games, player1, player2) {
-            for (var i = 0; i < games.length; i++) {
-                if ((games[i].homeId === player1._id && games[i].awayId === player2._id) ||
-                    (games[i].homeId === player2._id && games[i].awayId === player1._id)) {
-                    return (games[i]);
-                }
-            }
-            throw "findGameByPlayers couldn't find game with player1: " + player1._id + " and player2: " + player2._id;
-        }
-
-        $scope.fixtureFilter = function (item) {
-            return $scope.search.length === 0 | item.home.name.indexOf($scope.search) >= 0 || item.away.name.indexOf($scope.search) >= 0;
-        };
-
-        var reverse = function(score) {
-            if (!score) {
-                return "";
-            }
-            var sets = score.split(" ");
-            var text = "";
-            sets.forEach(function (item) {
-                var games = item.split(":");
-                var game1 = games[1] || "";
-                var game0 = games[0] || "";
-                text += game1;
-                if (game0.length) {
-                    text += ":" + game0;
-                }
-                text += " ";
-            })
-            return text;
-        }
-
-        $scope.getCellScore = function (column, row, index) {
-            switch (typeof column) {
-                case 'string':
-                    if (!column.length) {
-                        return "x";
-                    } else {
-                        return column;
-                    }
-                case 'object':
-                    break;
-                default:
-                    return "?";
             }
             ;
 
-            var cell;
-            if (row[index].game.home.name === row[index].home) {
-                cell = row[index].game.score;
-            } else {
-                cell = reverse(row[index].game.score);
+            $scope.save(game._id);
+        }, function () {
+            $log.info('Modal dismissed at: ' + new Date());
+        });
+    };
+    // end pop-up
+    $scope.save = function (id) {
+        console.log('submit game ' + id);
+
+        var game = findById($scope.games, id);
+        // clean data before save
+        game = clone(game);
+        delete game["$$hashKey"];
+        game.score = cleanScore(game.score);
+
+        var promise = $http.post('/game/' + game._id, JSON.stringify(game));
+
+        promise.success(function (response) {
+            game = findById($scope.games, id);
+            game._rev = response.rev;
+            $rootScope.alerts.push({type: "success", msg: " Saved"});
+            setUpBox();
+        });
+
+        promise.error(function (response) {
+            $rootScope.alerts.push({
+                type: "danger",
+                msg: "Save failed with error '" + response + "'. Refresh the page, check and try again."
+            });
+        });
+    }
+
+    $scope.readOnly = function (column, row, index) {
+        //console.log(JSON.stringify(row[index]));
+
+        if (index === 0) {
+            return true;
+        }
+        if (row[index].home === "Free Week") {
+            return true;
+        }
+        if (row[index].away === "Free Week") {
+            return true;
+        }
+        if (row[index].home === $rootScope.login) {
+            return false;
+        }
+        if (row[index].away === $rootScope.login) {
+            return false;
+        }
+        return true;
+    };
+
+    var setUpBox = function () {
+        $scope.box = findByName($scope.boxleague.boxes, $scope.boxName);
+        $scope.boxPlayers = $scope.box.players;
+        $scope.boxGames = $scope.box.games;
+
+        $scope.tableHeaders = [];
+        $scope.tableRows = [];
+        $scope.tableHeaders.push($scope.box.name);
+
+        calculateLeaderboard($scope.boxGames);
+
+        // for the games table
+        var columns = getColumns($scope.boxGames);
+        var filter = filterColumns(columns);
+        //filter = removeColumn(filter, "boxleague");
+        filter = removeColumn(filter, "box");
+        filter = removeColumn(filter, "schedule");
+        filter.unshift("schedule");
+        $scope.boxColumns = filter;
+        $scope.boxSortType = "schedule";
+        $scope.boxSortReverse = false;
+        $scope.boxSearchName = "";
+        $scope.sortBoxColumn = function (column){
+            $scope.boxSortType = column;
+            $scope.boxSortReverse = !$scope.boxSortReverse;
+            return(column);
+        }
+
+        // for the players table
+        var columns = getColumns($scope.boxPlayers);
+        var filter = filterColumns(columns);
+        $scope.playerColumns = filter;
+        $scope.playerSortType = "name";
+        $scope.playerSortReverse = false;
+        $scope.playerSearchName = "";
+        $scope.sortPlayerColumn = function (column){
+            $scope.playerSortType = column;
+            $scope.playerSortReverse = !$scope.playerSortReverse;
+            return(column);
+        }
+
+        $scope.toTitleCase = function (str){
+            return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+        }
+
+        // set-up the boxleage table
+        $scope.boxPlayers.forEach(function (player1) {
+            var row = [];
+            row.push(player1.name);
+            $scope.tableRows.push(row);
+            $scope.tableHeaders.push(player1.name);
+
+            $scope.boxPlayers.forEach(function (player2) {
+                try {
+                    var game = findGameByPlayers($scope.boxGames, player1, player2);
+                    row.push({game: game, home: player1.name, away: player2.name});
+                }
+                catch (err) {
+                    row.push("");
+                }
+            })
+        });
+    }
+
+    function findGameByPlayers(games, player1, player2) {
+        for (var i = 0; i < games.length; i++) {
+            if ((games[i].homeId === player1._id && games[i].awayId === player2._id) ||
+                (games[i].homeId === player2._id && games[i].awayId === player1._id)) {
+                return (games[i]);
             }
-            //console.log('cell %s', cell)
-            switch (cell) {
-                case null:
-                    return "null";
-                //case "":
-                //    return row[index].home === $rootScope.login ? "0:0" : "";
-                default:
-                    return cell;
+        }
+        throw "findGameByPlayers couldn't find game with player1: " + player1._id + " and player2: " + player2._id;
+    }
+
+    $scope.fixtureFilter = function (item) {
+        return $scope.search.length === 0 | item.home.name.indexOf($scope.search) >= 0 || item.away.name.indexOf($scope.search) >= 0;
+    };
+
+    var reverse = function(score) {
+        if (!score) {
+            return "";
+        }
+        var sets = score.split(" ");
+        var text = "";
+        sets.forEach(function (item) {
+            var games = item.split(":");
+            var game1 = games[1] || "";
+            var game0 = games[0] || "";
+            text += game1;
+            if (game0.length) {
+                text += ":" + game0;
             }
-        };
+            text += " ";
+        })
+        return text;
+    }
+    $scope.getCellScore = function (column, row, index) {
+        switch (typeof column) {
+            case 'string':
+                if (!column.length) {
+                    return "x";
+                } else {
+                    return column;
+                }
+            case 'object':
+                break;
+            default:
+                return "?";
+        }
+        ;
 
-        $scope.validInput = /^([W]:[0])|([0]:[W])|[0-9]+:[0-9]+ [0-9]+:[0-9]+ [0-9]+:[0-9]+|[0-9]+:[0-9]+ [0-9]+:[0-9]+$/;
+        var cell;
+        if (row[index].game.home.name === row[index].home) {
+            cell = row[index].game.score;
+        } else {
+            cell = reverse(row[index].game.score);
+        }
+        //console.log('cell %s', cell)
+        switch (cell) {
+            case null:
+                return "null";
+            //case "":
+            //    return row[index].home === $rootScope.login ? "0:0" : "";
+            default:
+                return cell;
+        }
+    };
 
-        $scope.inputScore = function (game) {
-            game.error = "";
-            game.save = false;
+    $scope.validInput = /^([W]:[0])|([0]:[W])|[0-9]+:[0-9]+ [0-9]+:[0-9]+ [0-9]+:[0-9]+|[0-9]+:[0-9]+ [0-9]+:[0-9]+$/;
 
-            game.score = game.score.replace(/[\-.;,]/g, ":");
-            game.score = game.score.replace(/::/g, ":");
-            game.score = game.score.replace(/  /g, " ");
-            game.score = game.score.replace(/[^W: \d]/g, "");
-            game.score = game.score.substring(0, 13);
+    $scope.inputScore = function (game) {
+        game.error = "";
+        game.save = false;
 
-            if (!game.score) {
-                // if the game score is blanked out
-                game.save = true;
-                return;
-            }
+        game.score = game.score.replace(/[\-.;,]/g, ":");
+        game.score = game.score.replace(/::/g, ":");
+        game.score = game.score.replace(/  /g, " ");
+        game.score = game.score.replace(/[^W: \d]/g, "");
+        game.score = game.score.substring(0, 13);
 
-            var validStr = $scope.validInput.test(game.score);
-            if (!validStr) {
-                game.error = "?";
-                return;
-            }
+        if (!game.score) {
+            // if the game score is blanked out
+            game.save = true;
+            return;
+        }
 
-            var validSetsScore = isSetsScore(game.score);
-            if (!validSetsScore) {
-                game.error = "!";
-                return;
-            }
+        var validStr = $scope.validInput.test(game.score);
+        if (!validStr) {
+            game.error = "?";
+            return;
+        }
 
-            var validCompleteScore = isCompleteScore(game.score);
-            if (!validCompleteScore) {
-                game.error = "*";
-                return;
-            }
+        var validSetsScore = isSetsScore(game.score);
+        if (!validSetsScore) {
+            game.error = "!";
+            return;
+        }
 
-            if (validStr && validSetsScore && validCompleteScore && game.score !== game.origScore) {
-                game.save = true;
-            }
-        };
-    }]);
+        var validCompleteScore = isCompleteScore(game.score);
+        if (!validCompleteScore) {
+            game.error = "*";
+            return;
+        }
+
+        if (validStr && validSetsScore && validCompleteScore && game.score !== game.origScore) {
+            game.save = true;
+        }
+    };
+}]);
 
 boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("importBoxleagueCtrl");
