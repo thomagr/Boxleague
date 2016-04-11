@@ -340,13 +340,13 @@ function isSetScore(score) {
 var calculateLeaderboard = function(games){
     var leaderboard = [];
     var findInLeaderboard = function(player, box){
-        for(var i=0;i<$scope.leaderboard.length;i++){
-            if($scope.leaderboard[i].name === player) {
-                return $scope.leaderboard[i];
+        for(var i=0;i<leaderboard.length;i++){
+            if(leaderboard[i].name === player) {
+                return leaderboard[i];
             }
         }
-        $scope.leaderboard.push({name: player, score: 0, played: 0, won: 0, lost: 0, box: box});
-        return $scope.leaderboard[$scope.leaderboard.length-1];
+        leaderboard.push({name: player, score: 0, played: 0, won: 0, lost: 0, box: box});
+        return leaderboard[leaderboard.length-1];
     }
     var calculateScore = function(score){
 
@@ -390,8 +390,8 @@ var calculateLeaderboard = function(games){
     games.forEach(function(game){
         var score = calculateScore(game.score);
         if(score.home > 0 || score.away > 0) {
-            var home = findInLeaderboard(game.home);
-            var away = findInLeaderboard(game.away);
+            var home = findInLeaderboard(game.home, game.box);
+            var away = findInLeaderboard(game.away, game.box);
             home.played++;
             away.played++;
             home.score += score.home;
@@ -959,7 +959,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.tableRows = [];
         $scope.tableHeaders.push($scope.box.name);
 
-        $scope.laderboard = calculateLeaderboard($scope.boxGames);
+        $scope.leaderboard = calculateLeaderboard($scope.boxGames);
 
         // for the games table
         var columns = getColumns($scope.boxGames);
@@ -1134,16 +1134,6 @@ boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$rou
         $scope.boxleague = response.data;
         $http.get('/games').then(function (response) {
             $scope.games = response.data;
-            $scope.boxleague.boxes.forEach(function (box, index, arr) {
-                arr[index].players = [];
-                box.playerIds.forEach(function (id) {
-                    arr[index].players.push(findById($scope.players, id));
-                });
-                arr[index].games = [];
-                box.gameIds.forEach(function (id) {
-                    arr[index].games.push(findById($scope.games, id));
-                });
-            });
             $scope.leaderboard = calculateLeaderboard($scope.games);
         }, error);
     }, error);
