@@ -337,6 +337,77 @@ function isSetScore(score) {
 
     return 0;
 }
+var calculateLeaderboard = function(games){
+    var leaderboard = [];
+    var findInLeaderboard = function(player, box){
+        for(var i=0;i<$scope.leaderboard.length;i++){
+            if($scope.leaderboard[i].name === player) {
+                return $scope.leaderboard[i];
+            }
+        }
+        $scope.leaderboard.push({name: player, score: 0, played: 0, won: 0, lost: 0, box: box});
+        return $scope.leaderboard[$scope.leaderboard.length-1];
+    }
+    var calculateScore = function(score){
+
+        // validate we have a score
+        if(!isCompleteScore(score) || !isSetsScore(score)){
+            return {home: 0, away:0};
+        }
+
+        var setsString = score.split(" ");
+        var sets = [];
+        setsString.forEach(function(set){
+            var gameString = set.split(":");
+            sets.push([parseInt(gameString[0]), parseInt(gameString[1])]);
+        });
+
+        var home = 0, away = 0;
+        if(sets.length === 2){
+            if(sets[0][0] > sets[0][1]){
+                home = 18;
+                away =  sets[0][1];
+                away += sets[1][1];
+            } else {
+                away = 18;
+                home =  sets[0][0];
+                home += sets[1][0];
+            }
+        } else if( sets.length === 3){
+            if(sets[2][0] > sets[2][1]){
+                home = 12;
+                away =  Math.min(6, sets[0][1]);
+                away += Math.min(6, sets[1][1]);
+            } else {
+                away = 12;
+                home =  Math.min(6, sets[0][0]);
+                home += Math.min(6, sets[1][0]);
+            }
+        }
+
+        return {home: home, away: away};
+    }    
+    games.forEach(function(game){
+        var score = calculateScore(game.score);
+        if(score.home > 0 || score.away > 0) {
+            var home = findInLeaderboard(game.home);
+            var away = findInLeaderboard(game.away);
+            home.played++;
+            away.played++;
+            home.score += score.home;
+            away.score += score.away;
+
+            if(score.home > score.away){
+                home.won++;
+                away.lost++;
+            } else {
+                away.won++;
+                home.lost++;
+            }
+        }
+    });
+    return leaderboard;
+}
 
 boxleagueApp.filter('formatString', function($filter){
     return function(input) {
@@ -696,6 +767,23 @@ boxleagueApp.controller('boxleagueCtrl', ['$scope', '$rootScope', '$log', '$loca
         });
     });
 }]);
+boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
+    $log.info("boxleagueCtrl");
+
+    $http.get('/boxleagues').
+    then(function (response) {
+        $scope.boxleagues = response.data;
+        $scope.boxleagues.forEach(function(boxleague){
+            $location.url('/boxleague/' + boxleague._id + '/leaderboard');
+        })
+    }, function(response) {
+        $rootScope.alerts.push({
+            type: "warning",
+            msg: "Read failed with error '" + response.data + "'"
+        });
+    });
+}]);
+
 boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
     function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
     $log.info("boxesCtrl");
@@ -754,78 +842,6 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             }, error)
         }, error);
     }, error);
-
-    var calculateLeaderboard = function(games){
-        $scope.leaderboard = [];
-        var findInLeaderboard = function(player){
-            for(var i=0;i<$scope.leaderboard.length;i++){
-                if($scope.leaderboard[i].name === player) {
-                    return $scope.leaderboard[i];
-                }
-            }
-            $scope.leaderboard.push({name: player, score: 0, played: 0, won: 0, lost: 0});
-            return $scope.leaderboard[$scope.leaderboard.length-1];
-        }
-        games.forEach(function(game){
-            var score = calculateScore(game.score);
-            if(score.home > 0 || score.away > 0) {
-                var home = findInLeaderboard(game.home);
-                var away = findInLeaderboard(game.away);
-                home.played++;
-                away.played++;
-                home.score += score.home;
-                away.score += score.away;
-                
-                if(score.home > score.away){
-                    home.won++;
-                    away.lost++;
-                } else {
-                    away.won++;
-                    home.lost++;
-                }
-            }
-        });
-    }
-
-    var calculateScore = function(score){
-
-        // validate we have a score
-        if(!isCompleteScore(score) || !isSetsScore(score)){
-            return {home: 0, away:0};
-        }
-
-        var setsString = score.split(" ");
-        var sets = [];
-        setsString.forEach(function(set){
-            var gameString = set.split(":");
-            sets.push([parseInt(gameString[0]), parseInt(gameString[1])]);
-        });
-
-        var home = 0, away = 0;
-        if(sets.length === 2){
-            if(sets[0][0] > sets[0][1]){
-                home = 18;
-                away =  sets[0][1];
-                away += sets[1][1];
-            } else {
-                away = 18;
-                home =  sets[0][0];
-                home += sets[1][0];
-            }
-        } else if( sets.length === 3){
-            if(sets[2][0] > sets[2][1]){
-                home = 12;
-                away =  Math.min(6, sets[0][1]);
-                away += Math.min(6, sets[1][1]);
-            } else {
-                away = 12;
-                home =  Math.min(6, sets[0][0]);
-                home += Math.min(6, sets[1][0]);
-            }
-        }
-
-        return {home: home, away: away};
-    }
 
     // modal pop-up
     $scope.openByGrid = function (column, row, index) {
@@ -943,7 +959,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.tableRows = [];
         $scope.tableHeaders.push($scope.box.name);
 
-        calculateLeaderboard($scope.boxGames);
+        $scope.laderboard = calculateLeaderboard($scope.boxGames);
 
         // for the games table
         var columns = getColumns($scope.boxGames);
@@ -1102,6 +1118,35 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             game.save = true;
         }
     };
+}]);
+boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$q', '$uibModal', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $q, $uibModal) {
+    $log.info("leaderboardCtrl");
+
+    $scope.id = $routeParams.id;
+
+    var error = function (response) {
+        $rootScope.alerts.push({
+            type: "warning",
+            msg: "Read " + table + " failed with error '" + response.data
+        });
+    }
+    $http.get('/boxleague/' + $scope.id).then(function (response) {
+        $scope.boxleague = response.data;
+        $http.get('/games').then(function (response) {
+            $scope.games = response.data;
+            $scope.boxleague.boxes.forEach(function (box, index, arr) {
+                arr[index].players = [];
+                box.playerIds.forEach(function (id) {
+                    arr[index].players.push(findById($scope.players, id));
+                });
+                arr[index].games = [];
+                box.gameIds.forEach(function (id) {
+                    arr[index].games.push(findById($scope.games, id));
+                });
+            });
+            $scope.leaderboard = calculateLeaderboard($scope.games);
+        }, error);
+    }, error);
 }]);
 
 boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {

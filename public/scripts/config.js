@@ -80,13 +80,25 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         controller: 'boxleagueCtrl',
         resolve: {
             loggedin: checkLoggedin
-        }        
+        }
+    }).when('/leaderboard', {
+        templateUrl: 'pages/empty.html',
+        controller: 'leaderboardMainCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/boxleague/:id/boxes', {
         templateUrl: 'pages/boxes.html',
         controller: 'boxesCtrl',
         resolve: {
             loggedin: checkLoggedin
         }
+    }).when('/boxleague/:id/leaderboard', {
+        templateUrl: 'pages/leaderboard.html',
+        controller: 'leaderboardCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }        
     }).when('/boxleague/:id/box/:box', {
         templateUrl: 'pages/box.html',
         controller: 'boxCtrl',

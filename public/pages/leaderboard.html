@@ -1,0 +1,29 @@
+<div class="row">
+    <h1>{{boxleague.name}}</h1>
+    <div ng-show="leaderboard && leaderboard.length">
+        <h2>Leaderboard</h2>
+        <table class="table table-bordered table-striped table-condensed table-responsive">
+            <thead>
+            <tr>
+                <th>Box</th>
+                <th>Name</th>
+                <th>Won</th>
+                <th>Lost</th>
+                <th>Points</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="player in leaderboard | orderBy:['box', 'score']:true">
+                <td>{{player.box}}</td>
+                <td>{{player.name}}</td>
+                <td>{{player.won}}</td>
+                <td>{{player.lost}}</td>
+                <td>{{player.score}}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div ng-hide="leaderboard && leaderboard.length">
+        No current scores in boxleague
+    </div>
+</div>
