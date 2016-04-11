@@ -230,16 +230,11 @@ function getObject(name, http, success, error) {
  **********************************************************************/
 boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $location) {
     $scope.user = {};
-
-    //$rootScope.alerts = [];
-
+    
     $rootScope.close = function (index) {
         $rootScope.alerts.splice(index, 1);
     };
 
-    //$rootScope.isAuth = false;
-
-    // Register the login() function
     $scope.login = function () {
         if (!$scope.username || !$scope.password) {
             return;
