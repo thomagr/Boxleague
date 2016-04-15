@@ -12,7 +12,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
             if (response !== '0') {
                 $rootScope.isAuth = true;
                 $rootScope.login = response.name;
-                $rootScope.admin = $rootScope.login === 'Graham Thomas';
+                $rootScope.admin = $rootScope.login === 'Admin';
                 deferred.resolve();
             }
             // Not Authenticated

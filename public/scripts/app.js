@@ -248,6 +248,7 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $locati
         promise.success(function (response) {
             //$rootScope.isAuth = true;
             $rootScope.login = response.name;
+            $rootScope.alerts = [];
             $location.url('/myBox');
             //boxleagueApp.run();
         });
@@ -258,7 +259,7 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $locati
                 type: "danger",
                 msg: "The username or password entered is incorrect."
             }
-            $rootScope.alerts.push(msg);
+            $rootScope.alerts = [msg];
             $location.url('/login');
         });
     };

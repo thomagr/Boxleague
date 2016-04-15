@@ -1,33 +1,39 @@
 <!--http://stackoverflow.com/questions/16579427/html5-file-upload-with-angularjs-->
 <!--http://stackoverflow.com/questions/20137496/angular-js-ng-repeat-for-creating-grid-->
-<div ng-hide="newPlayers" class="row" style="margin-top: 20px;">
-    <div class="fileUpload btn btn-default">
-        <input type="file" class="upload" file-input name="changeEvent"/>
+<div class="row">
+    <div class="well">
+        <div ng-hide="newPlayers">
+            <div class="fileUpload btn btn-default">
+                <input type="file" class="upload" file-input name="changeEvent"/>
+            </div>
+        </div>
+
+        <div ng-show="newPlayers">
+            <form class="form-inline">
+                <button type="submit" class="btn btn-success" ng-click="submit()">Save</button>
+            </form>
+        </div>
     </div>
 </div>
-
-<div ng-show="newPlayers" class="row" style="margin-top: 20px;">
-    <form class="form-inline">
-        <button type="submit" class="btn btn-success" ng-click="submit()">Save</button>
-    </form>
+<div class="row" ng-show="newPlayers">
+    <div class="well">
+        <h1>New Players</h1>
+        <players-table
+                players="newPlayers"
+                sort-type="sortType"
+                sort-reverse="sortReverse"
+                search-name="searchName">
+        </players-table>
+    </div>
 </div>
-
-<div ng-show="newPlayers" class="row" style="margin-top: 20px;">
-    <h1>New Players</h1>
-    <players-table
-            players="newPlayers"
-            sort-type="sortType"
-            sort-reverse="sortReverse"
-            search-name="searchName">
-    </players-table>
-</div>
-
-<div ng-show="currentPlayers" class="row" style="margin-top: 20px;">
-    <h1>Current Players</h1>
-    <players-table
-            players="currentPlayers"
-            sort-type="sortType"
-            sort-reverse="sortReverse"
-            search-name="searchName">
-    </players-table>
+<div class="row" ng-show="currentPlayers">
+    <div class="well">
+        <h1>Current Players</h1>
+        <players-table
+                players="currentPlayers"
+                sort-type="sortType"
+                sort-reverse="sortReverse"
+                search-name="searchName">
+        </players-table>
+    </div>
 </div>

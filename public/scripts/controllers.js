@@ -23,6 +23,7 @@ function removeColumn(columns, name){
     return columns;
 }
 function filterColumns(columns){
+    //return columns;
     var filter = [];
     var skip = ['Id', '_id', '_rev', '$$hashKey', 'boxes', "boxleague"];
     columns.forEach(function(column){
@@ -471,6 +472,11 @@ boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '
 
     var table = $routeParams.name;
     $scope.title = table;
+    if(table.indexOf('s', table.length-1)){
+        $scope.type = table.substring(0, table.length-1);
+    } else {
+        $scope.type = table;
+    }
 
     $http.get('/' + table).then(function (response) {
         $scope.rows = response.data;
@@ -972,6 +978,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.boxSortType = "schedule";
         $scope.boxSortReverse = false;
         $scope.boxSearchName = "";
+        $scope.gamesType = "game";
         $scope.sortBoxColumn = function (column){
             $scope.boxSortType = column;
             $scope.boxSortReverse = !$scope.boxSortReverse;
@@ -985,6 +992,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.playerSortType = "name";
         $scope.playerSortReverse = false;
         $scope.playerSearchName = "";
+        $scope.playersType = "player";
         $scope.sortPlayerColumn = function (column){
             $scope.playerSortType = column;
             $scope.playerSortReverse = !$scope.playerSortReverse;

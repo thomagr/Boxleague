@@ -3,25 +3,28 @@
 }
 
 .navbar-inverse {
-    background-image: linear-gradient(to bottom,#777711 0,#000 100%);
+    background-image: linear-gradient(to bottom, #777711 0, #000 100%);
+    /*background-image: linear-gradient(to bottom,darkgreen 0,#000 100%);*/
 }
 
-.navbar-inverse .brand{
+.navbar-inverse .brand {
     color: #FFFFFF;
 }
 
 .icon-white {
-    color:white;
+    color: white;
 }
 
-h1,h2,h3,h4 {
+h1, h2, h3, h4 {
     color: Olive;
+    /*color: Purple;*/
 }
 
 /* For Modal */
 .scoretitle {
-    background-image: linear-gradient(to bottom,#777711 0,#000 100%);
-    color:white;
+    background-image: linear-gradient(to bottom, #777711 0, #000 100%);
+    /*background-image: linear-gradient(to bottom,darkgreen 0,#000 100%);*/
+    color: white;
     text-align: center;
 }
 
@@ -35,7 +38,7 @@ h1,h2,h3,h4 {
 
 .scoreInput {
     /*text-align: center;*/
-    width:100%;
+    width: 100%;
     cursor: pointer;
 }
 
@@ -49,24 +52,24 @@ h1,h2,h3,h4 {
 
 .scoreReadonly {
     /*text-align: center;*/
-    width:100%;
+    width: 100%;
     cursor: pointer;
 }
 
 .scoreNoGame {
     color: transparent;
-background: repeating-linear-gradient(
-  45deg,
-  White ,
-  White 5px,
-  WhiteSmoke  5px,
-  WhiteSmoke  10px
-);
+    background: repeating-linear-gradient(
+            45deg,
+            White,
+            White 5px,
+            WhiteSmoke 5px,
+            WhiteSmoke 10px
+    );
 }
 
 .scoreButton {
-    width:100%;
-    height:20px;
+    width: 100%;
+    height: 20px;
     background-color: Transparent;
     border: none;
     outline: none;
@@ -77,5 +80,59 @@ background: repeating-linear-gradient(
 }
 
 .scoreEmptyTarget:hover {
-    width:100%;
+    width: 100%;
 }
+
+.backgroundImage {
+    background: url("/images/url.jpeg") no-repeat center center fixed;
+    background-size: auto;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    /*background-size: cover;*/
+}
+
+.loginLabel {
+    color: olive;
+    font-weight: 400;
+    padding-right: 10px;
+    /*min-width:100px;*/
+}
+
+.loginButton {
+}
+
+.loginInput {
+    /*min-width:150px;*/
+}
+
+.loginWell {
+    margin: 10px;
+    /*padding:10px;*/
+    /*max-width:300px;*/
+}
+
+.btn-purple {
+    opacity: 1;
+    background-color: purple;
+    border-color: purple;
+    color: white;
+}
+
+.alert {
+    margin-bottom: 0px;
+}
+
+/*.btn-primary {*/
+/*opacity: 1;*/
+/*background-color: purple;*/
+/*border-color: purple;*/
+/*color: white;*/
+/*}*/
+
+/*.btn-success {*/
+/*opacity: 1;*/
+/*background-color: purple;*/
+/*border-color: purple;*/
+/*color: white;*/
+/*}*/

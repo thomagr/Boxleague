@@ -1,5 +1,5 @@
-<div ng-show="tableRows">
-    <div class="row">
+<div class="row" ng-show="tableRows">
+    <div class="well">
         <h1>{{boxleagueTitle}}</h1>
         <h2>{{boxName}}</h2>
         <table class="table table-bordered table-striped table-condensed table-responsive">
@@ -11,10 +11,12 @@
             <tbody>
             <tr ng-repeat="row in tableRows">
                 <td ng-repeat="column in row track by $index" ng-class="{rowTitle: $index === 0}">
-                    <div ng-if="readOnly(column,row,$index)" ng-class="{scoreNoGame: getCellScore(column,row,$index) === 'x'}">
+                    <div ng-if="readOnly(column,row,$index)"
+                         ng-class="{scoreNoGame: getCellScore(column,row,$index) === 'x'}">
                         {{getCellScore(column,row,$index)}}
                     </div>
-                    <div ng-if="!readOnly(column,row,$index)" ng-click="openByGrid(column,row,$index)" class="scoreDiv">
+                    <div ng-if="!readOnly(column,row,$index)" ng-click="openByGrid(column,row,$index)"
+                         class="scoreDiv">
                         <div ng-if="getCellScore(column,row,$index)" class="scoreInput">
                             {{getCellScore(column,row,$index)}}
                         </div>
@@ -27,62 +29,68 @@
             </tbody>
         </table>
     </div>
+</div>
 
-    <div class="row">
-        <div ng-show="leaderboard && leaderboard.length">
-            <h2>Leaderboard</h2>
-            <table class="table table-bordered table-striped table-condensed table-responsive">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Won</th>
-                        <th>Lost</th>
-                        <th>Points</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <tr ng-repeat="player in leaderboard | orderBy:'score':true">
-                    <td>{{player.name}}</td>
-                    <td>{{player.won}}</td>
-                    <td>{{player.lost}}</td>
-                    <td>{{player.score}}</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+<div class="row" ng-show="leaderboard && leaderboard.length">
+    <div class="well">
+        <h2>Leaderboard</h2>
+        <table class="table table-bordered table-striped table-condensed table-responsive">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Won</th>
+                <th>Lost</th>
+                <th>Points</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="player in leaderboard | orderBy:'score':true">
+                <td>{{player.name}}</td>
+                <td>{{player.won}}</td>
+                <td>{{player.lost}}</td>
+                <td>{{player.score}}</td>
+            </tr>
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <div class="row">
-        <div ng-show="boxGames">
-            <h2>Games</h2>
-            <generic-table
-                    rows="boxGames"
-                    columns="boxColumns"
-                    sort-type="boxSortType"
-                    sort-reverse="boxSortReverse"
-                    search-name="boxSearchName"
-                    to-title-case="toTitleCase"
-                    sort-column="sortBoxColumn">
-            </generic-table>
-        </div>
+<div class="row" ng-show="boxGames">
+    <div class="well">
+        <h2>Games</h2>
+        <generic-table
+                rows="boxGames"
+                columns="boxColumns"
+                sort-type="boxSortType"
+                sort-reverse="boxSortReverse"
+                search-name="boxSearchName"
+                to-title-case="toTitleCase"
+                sort-column="sortBoxColumn"
+                type="gamesType"
+        >
+        </generic-table>
     </div>
+</div>
 
-    <div class="row">
-        <div ng-show="boxPlayers">
-            <h2>Players</h2>
-            <generic-table
-                    rows="boxPlayers"
-                    columns="playerColumns"
-                    sort-type="playerSortType"
-                    sort-reverse="playerSortReverse"
-                    search-name="playerSearchName"
-                    to-title-case="toTitleCase"
-                    sort-column="sortPlayerColumn">
-            </generic-table>
-        </div>
+<div class="row" ng-show="boxPlayers">
+    <div class="well">
+        <h2>Players</h2>
+        <generic-table
+                rows="boxPlayers"
+                columns="playerColumns"
+                sort-type="playerSortType"
+                sort-reverse="playerSortReverse"
+                search-name="playerSearchName"
+                to-title-case="toTitleCase"
+                sort-column="sortPlayerColumn"
+                type="playersType"
+        >
+        </generic-table>
     </div>
+</div>
 
-    <div class="row">
+<div class="row">
+    <div class="well">
         <h2>Entering Scores</h2>
         <div ng-include src="'pages/setshelp.html'">
         </div>

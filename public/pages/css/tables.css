@@ -1,7 +1,7 @@
 
 * {
-	margin: 0;
-	padding: 0;
+    margin: 0;
+    padding: 0;
 }
 
 /*
@@ -10,10 +10,11 @@ body {
 }*/
 
 #page-wrap {
-	margin: 50px;
+    margin: 50px;
 }
+
 p {
-	margin: 20px 0;
+    margin: 20px 0;
 }
 
 /*
@@ -23,15 +24,18 @@ table {
     width: 100%;
     border-collapse: collapse;
 }
+
 /* Zebra striping */
 tr:nth-of-type(odd) {
     background: #eee;
 }
+
 th {
     background: #333;
     color: white;
     font-weight: bold;
 }
+
 td, th {
     padding: 6px;
     border: 1px solid #ccc;
@@ -43,9 +47,8 @@ Max width before this PARTICULAR table gets nasty
 This query will take effect for any screen smaller than 760px
 and also iPads specifically.
 */
-@media
-only screen and (max-width: 760px),
-(min-device-width: 768px) and (max-device-width: 1024px)  {
+@media only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px) {
 
     /* Force table to not be like tables anymore */
     table, thead, tbody, th, td, tr {
@@ -59,7 +62,9 @@ only screen and (max-width: 760px),
         left: -9999px;
     }
 
-    tr { border: 1px solid #ccc; }
+    tr {
+        border: 1px solid #ccc;
+    }
 
     td {
         /* Behave  like a "row" */
@@ -83,21 +88,33 @@ only screen and (max-width: 760px),
     /*
     Label the data
     */
-    td:nth-of-type(1):before { content: "Name"; }
-    td:nth-of-type(2):before { content: "Mobile"; }
-    td:nth-of-type(3):before { content: "Home"; }
-    td:nth-of-type(4):before { content: "Email"; }
+    td:nth-of-type(1):before {
+        content: "Name";
+    }
+
+    td:nth-of-type(2):before {
+        content: "Mobile";
+    }
+
+    td:nth-of-type(3):before {
+        content: "Home";
+    }
+
+    td:nth-of-type(4):before {
+        content: "Email";
+    }
 }
 
 /* Smartphones (portrait and landscape) ----------- */
 @media only screen
-and (min-device-width : 320px)
-and (max-device-width : 480px) {
+and (min-device-width: 320px)
+and (max-device-width: 480px) {
     body {
         padding: 0;
         margin: 0;
-        width: 320px; }
+        width: 320px;
     }
+}
 
 /* iPads (portrait and landscape) ----------- */
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {

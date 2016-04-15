@@ -39,7 +39,8 @@ boxleagueApp.directive("genericTable", function () {
             toTitleCase: "=",
             sortColumn: "=",
             rows: "=",
-            columns: "="
+            columns: "=",
+            type: "="
         }
     }
 });

@@ -1,5 +1,5 @@
-<div class="row">
-    <div ng-show="rows">
+<div class="row" ng-show="rows">
+    <div class="well">
         <h1>{{toTitleCase(title)}}</h1>
         <generic-table
                 rows="rows"
@@ -8,7 +8,9 @@
                 sort-reverse="sortReverse"
                 search-name="searchName"
                 to-title-case="toTitleCase"
-                sort-column="sortColumn">
+                sort-column="sortColumn"
+                type="type"
+        >
         </generic-table>
     </div>
 </div>

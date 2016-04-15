@@ -5,12 +5,12 @@
 
 /* For table filter */
 .search {
-   position: relative;
-   font-size: 16px;
+    position: relative;
+    font-size: 16px;
 }
 
 .search input {
-   width: 250px;
+    width: 250px;
 }
 
 .search input {
@@ -18,24 +18,28 @@
 }
 
 .search .fa-search {
-   position: absolute;
-   top: 5px;
-   left: 10px;
+    position: absolute;
+    top: 5px;
+    left: 10px;
 }
 
-// for handling mobile devices
+/* For handling mobile devices */
+
 @media (max-width: 767px) {
     .navbar-mobile {
         display: initial;
     }
+
     .navbar-desktop {
         display: none;
     }
 }
+
 @media (min-width: 767px) {
     .navbar-mobile {
         display: none;
     }
+
     .navbar-desktop {
         display: initial;
     }

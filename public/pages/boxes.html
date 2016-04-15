@@ -1,13 +1,12 @@
-<div class="row">
-    <div ng-show="boxleague">
+<div class="row" ng-show="boxleague">
+    <div class="well">
         <h1>{{boxleague.name}}</h1>
-
         <div class="row">
-            <span ng-repeat="box in boxleague.boxes | orderBy:sortElement">
+            <div ng-repeat="box in boxleague.boxes | orderBy:sortElement">
                 <div class="col-sm-4">
                     <boxes box="box" boxleague="boxleague._id"></boxes>
                 </div>
-            </span>
+            </div>
         </div>
     </div>
 </div>

@@ -1,8 +1,9 @@
 <div class="row">
-    <h1>{{location}}</h1>
+    <div class="well">
+        <h1>{{location}}</h1>
 
-    <div ng-if="hourlyWeatherResult.list">
-        <strong>3 hourly</strong><br>
+        <div ng-if="hourlyWeatherResult.list">
+            <strong>3 hourly</strong><br>
         <span ng-repeat="h in hourlyWeatherResult.list">
             <hourly-weather-report weather-day="h"
                                    convert-to-standard="convertToDegC(daytimeTemp)"
@@ -10,16 +11,17 @@
                                    date-format="HH:mm">
             </hourly-weather-report>
         </span>
-    </div>
-    <div ng-if="dailyWeatherResult.list">
-        <strong>Daily</strong><br>
+        </div>
+        <div ng-if="dailyWeatherResult.list">
+            <strong>Daily</strong><br>
 
-        <div ng-repeat="w in dailyWeatherResult.list">
-            <daily-weather-report weather-day="w"
-                                  convert-to-standard="convertToDegC(daytimeTemp)"
-                                  convert-to-date="convertToDate(dt)"
-                                  date-format="EEE MMM d">
-            </daily-weather-report>
+            <div ng-repeat="w in dailyWeatherResult.list">
+                <daily-weather-report weather-day="w"
+                                      convert-to-standard="convertToDegC(daytimeTemp)"
+                                      convert-to-date="convertToDate(dt)"
+                                      date-format="EEE MMM d">
+                </daily-weather-report>
+            </div>
         </div>
     </div>
 </div>
