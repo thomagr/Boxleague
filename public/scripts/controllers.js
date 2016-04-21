@@ -1,34 +1,36 @@
-function clone(obj){
+function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
-function toTitleCase(str){
-    return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function (txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
 }
-function getColumns(rows){
-    if(!rows){
+function getColumns(rows) {
+    if (!rows) {
         return [];
     }
     var columns = [];
-    rows.forEach(function(row){
-        Object.keys(row).forEach(function(column){
-            if(columns.indexOf(column) === -1){
+    rows.forEach(function (row) {
+        Object.keys(row).forEach(function (column) {
+            if (columns.indexOf(column) === -1) {
                 columns.push(column);
             }
         });
     });
     return columns;
 }
-function removeColumn(columns, name){
+function removeColumn(columns, name) {
     columns.splice(columns.indexOf(name), 1);
     return columns;
 }
-function filterColumns(columns){
+function filterColumns(columns) {
     //return columns;
     var filter = [];
     var skip = ['Id', '_id', '_rev', '$$hashKey', 'boxes', "boxleague"];
-    columns.forEach(function(column){
-        for(var i=0;i<skip.length;i++){
-            if(column.indexOf(skip[i]) >= 0) {
+    columns.forEach(function (column) {
+        for (var i = 0; i < skip.length; i++) {
+            if (column.indexOf(skip[i]) >= 0) {
                 return;
             }
         }
@@ -177,7 +179,7 @@ function findByName(source, name) {
 }
 // Has someone won correctly
 function isCompleteScore(score) {
-    if(!score || !score.length){
+    if (!score || !score.length) {
         return 0;
     }
 
@@ -202,11 +204,9 @@ function isCompleteScore(score) {
         if (parseInt(games[0]) > parseInt(games[1])) {
             home++;
         }
-        ;
         if (parseInt(games[0]) < parseInt(games[1])) {
             away++;
         }
-        ;
     });
 
     if (home === 2 && (away === 1 || away === 0 )) {
@@ -225,8 +225,8 @@ function isTiebreakScore(score) {
         return 0;
     }
 
-    home = parseInt(games[0]);
-    away = parseInt(games[1]);
+    var home = parseInt(games[0]);
+    var away = parseInt(games[1]);
 
     // score is not set
     if (home + away === 0) {
@@ -296,8 +296,8 @@ function isSetScore(score) {
         return 0;
     }
 
-    home = parseInt(games[0]);
-    away = parseInt(games[1]);
+    var home = parseInt(games[0]);
+    var away = parseInt(games[1]);
 
     // score is not set
     if (home + away === 0) {
@@ -338,67 +338,95 @@ function isSetScore(score) {
 
     return 0;
 }
-var calculateLeaderboard = function(games){
+var calculateLeaderboard = function (games) {
+
     var leaderboard = [];
-    var findInLeaderboard = function(player, box){
-        for(var i=0;i<leaderboard.length;i++){
-            if(leaderboard[i].name === player) {
+    var findInLeaderboard = function (player, box) {
+        for (var i = 0; i < leaderboard.length; i++) {
+            if (leaderboard[i].name === player) {
                 return leaderboard[i];
             }
         }
-        leaderboard.push({name: player, score: 0, played: 0, won: 0, lost: 0, box: box});
-        return leaderboard[leaderboard.length-1];
-    }
-    var calculateScore = function(score){
+        leaderboard.push({
+            name: player,
+            score: 0,
+            played: 0,
+            won: 0,
+            lost: 0,
+            setsFor: 0,
+            setsAgainst: 0,
+            setsDiff: 0,
+            box: box
+        });
+        return leaderboard[leaderboard.length - 1];
+    };
 
+    var calculateScore = function (score) {
         // validate we have a score
-        if(!isCompleteScore(score) || !isSetsScore(score)){
-            return {home: 0, away:0};
+        if (!isCompleteScore(score) || !isSetsScore(score)) {
+            return {home: 0, away: 0, setsHome: 0, setsAway: 0};
         }
 
         var setsString = score.split(" ");
         var sets = [];
-        setsString.forEach(function(set){
+        setsString.forEach(function (set) {
             var gameString = set.split(":");
             sets.push([parseInt(gameString[0]), parseInt(gameString[1])]);
         });
 
-        var home = 0, away = 0;
-        if(sets.length === 2){
-            if(sets[0][0] > sets[0][1]){
+        var home = 0, away = 0, setsHome = 0, setsAway = 0;
+        if (sets.length === 2) {
+            if (sets[0][0] > sets[0][1]) {
+                setsHome = 2;
                 home = 18;
-                away =  sets[0][1];
+                away = sets[0][1];
                 away += sets[1][1];
             } else {
+                setsAway = 2;
                 away = 18;
-                home =  sets[0][0];
+                home = sets[0][0];
                 home += sets[1][0];
             }
-        } else if( sets.length === 3){
-            if(sets[2][0] > sets[2][1]){
+        } else if (sets.length === 3) {
+            if (sets[2][0] > sets[2][1]) {
                 home = 12;
-                away =  Math.min(6, sets[0][1]);
+                setsHome = 2;
+                setsAway = 1;
+                away = Math.min(6, sets[0][1]);
                 away += Math.min(6, sets[1][1]);
             } else {
                 away = 12;
-                home =  Math.min(6, sets[0][0]);
+                setsAway = 2;
+                setsHome = 1;
+                home = Math.min(6, sets[0][0]);
                 home += Math.min(6, sets[1][0]);
             }
         }
 
-        return {home: home, away: away};
-    }    
-    games.forEach(function(game){
+        return {home: home, away: away, setsHome: setsHome, setsAway: setsAway};
+    };
+
+    games.forEach(function (game) {
+
         var score = calculateScore(game.score);
-        if(score.home > 0 || score.away > 0) {
+
+
             var home = findInLeaderboard(game.home, game.box);
             var away = findInLeaderboard(game.away, game.box);
+
+        if (score.home > 0 || score.away > 0) {
+
             home.played++;
             away.played++;
             home.score += score.home;
             away.score += score.away;
 
-            if(score.home > score.away){
+            home.setsFor += score.setsHome;
+            home.setsAgainst += score.setsAway;
+            away.setsFor += score.setsAway;
+            away.setsAgainst += score.setsHome;
+
+            if (score.home > score.away) {
                 home.won++;
                 away.lost++;
             } else {
@@ -407,12 +435,13 @@ var calculateLeaderboard = function(games){
             }
         }
     });
-    return leaderboard;
-}
 
-boxleagueApp.filter('formatString', function($filter){
-    return function(input) {
-        if(input instanceof Date){
+    return leaderboard;
+};
+
+boxleagueApp.filter('formatString', function ($filter) {
+    return function (input) {
+        if (input instanceof Date) {
             return $filter('date')(input, 'dd MMM yyyy');
         } else if (typeof input === "string" && input.substring(0, 3) === "201" && input.indexOf('Z', input.length - 1) !== -1) {
             return $filter('date')(input, 'dd MMM yyyy')
@@ -436,7 +465,7 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
 
     $timeout(function () {
         var hourlyPromise = $http.get('/weatherHourly?location=' + $scope.location);
-        hourlyPromise.success(function (response, status) {
+        hourlyPromise.success(function (response) {
             $scope.hourlyWeatherResult = response;
         });
         hourlyPromise.error(function (response, status) {
@@ -449,7 +478,7 @@ boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routePa
 
     $timeout(function () {
         var dailyPromise = $http.get('/weatherDaily?location=' + $scope.location);
-        dailyPromise.success(function (response, status) {
+        dailyPromise.success(function (response) {
             $scope.dailyWeatherResult = response;
         });
         dailyPromise.error(function (response, status) {
@@ -466,14 +495,14 @@ boxleagueApp.controller('welcomeCtrl', ['$scope', '$rootScope', '$log', function
 
     $rootScope.alerts = [];
 }]);
-boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', '$interval', '$filter', function ($scope, $log, $http, $rootScope, $routeParams, $interval, $filter) {
+boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', function ($scope, $log, $http, $rootScope, $routeParams) {
     $log.info("tableCtrl");
 
 
     var table = $routeParams.name;
     $scope.title = table;
-    if(table.indexOf('s', table.length-1)){
-        $scope.type = table.substring(0, table.length-1);
+    if (table.indexOf('s', table.length - 1)) {
+        $scope.type = table.substring(0, table.length - 1);
     } else {
         $scope.type = table;
     }
@@ -482,13 +511,13 @@ boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '
         $scope.rows = response.data;
         var columns = getColumns($scope.rows);
         var filter = filterColumns(columns);
-        if(filter.indexOf("schedule") !== -1) {
+        if (filter.indexOf("schedule") !== -1) {
             filter = removeColumn(filter, "schedule");
             filter.unshift("schedule");
         }
         $scope.columns = filter;
         $scope.sortType = filter[0];
-    }, function(response) {
+    }, function (response) {
         $scope.rows = [];
         $scope.colunns = [];
         $rootScope.alerts.push({
@@ -501,16 +530,18 @@ boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '
     $scope.searchName = '';
     $scope.sortType = '';
 
-    $scope.toTitleCase = function (str){
-        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
-    }
-    $scope.sortColumn = function (column){
+    $scope.toTitleCase = function (str) {
+        return str.replace(/\w\S*/g, function (txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+    };
+    $scope.sortColumn = function (column) {
         $scope.sortType = column;
         $scope.sortReverse = !$scope.sortReverse;
-        return(column);
+        return (column);
     }
 }]);
-boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', '$interval', function ($scope, $log, $http, $rootScope, $routeParams, $interval) {
+boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', function ($scope, $log, $http, $rootScope, $routeParams) {
     $log.info("formCtrl");
 
     var table = $routeParams.name;
@@ -522,9 +553,8 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
     $http.get('/' + table + 's').then(function (response) {
         var data = response.data;
         var columns = getColumns(data);
-        var filter = filterColumns(columns);
-        $scope.columns = filter;
-    }, function(response) {
+        $scope.columns = filterColumns(columns);
+    }, function (response) {
         $scope.rows = [];
         $scope.colunns = [];
         $rootScope.alerts.push({
@@ -535,10 +565,10 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
 
     $http.get('/' + table + '/' + id).then(function (response) {
         $scope.data = response.data;
-        if($scope.data.name && $scope.data.name === $rootScope.login || $rootScope.admin){
+        if ($scope.data.name && $scope.data.name === $rootScope.login || $rootScope.admin) {
             $scope.edit = true;
         }
-    }, function(response) {
+    }, function (response) {
         $scope.rows = [];
         $scope.colunns = [];
         $rootScope.alerts.push({
@@ -546,7 +576,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
             msg: "Read " + table + " failed with error '" + response.data
         });
     });
-    $scope.toTitleCase = function (str){
+    $scope.toTitleCase = function (str) {
         return toTitleCase(str);
     };
     $scope.submit = function () {
@@ -557,8 +587,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         data = clone(data);
         delete data["$$hashKey"];
 
-        var promise = $http.post('/' + table + '/' + $scope._id, JSON.stringify(data)).
-        then(function (response) {
+        $http.post('/' + table + '/' + $scope._id, JSON.stringify(data)).then(function (response) {
             $scope.data._id = response.data.id;
             $scope.data._rev = response.data.rev;
             $rootScope.alerts.push({type: "success", msg: " Saved"});
@@ -572,8 +601,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
     $scope.delete = function () {
         console.log("deleting data ...");
 
-        var promise = $http.delete('/' + table + '/' + $scope.data._id + '/' + $scope.data._rev).
-        then(function (response) {
+        $http.delete('/' + table + '/' + $scope.data._id + '/' + $scope.data._rev).then(function () {
             $rootScope.alerts.push({type: "success", msg: "Deleted"});
         }, function (response) {
             $rootScope.alerts.push({
@@ -583,23 +611,18 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         });
     };
     // special cases
-    $scope.readOnly = function(column){
-        if(table === "player" && column === "name"){
-            return true;
-        } else {
-            return false;
-        }
+    $scope.readOnly = function (column) {
+        return table === "player" && column === "name"
     }
 }]);
 
 boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$rootScope', '$location', '$http', function ($scope, $log, $rootScope, $location, $http) {
     $log.info("settingsCtrl");
 
-    $http.get('/players').
-    then(function (response) {
+    $http.get('/players').then(function (response) {
         $scope.players = response.data;
         $location.url('/form/player/' + findByName($scope.players, $rootScope.login)._id);
-    }, function(response) {
+    }, function (response) {
         $rootScope.alerts.push({
             type: "warning",
             msg: "Read failed with error '" + response.data + "'"
@@ -609,17 +632,16 @@ boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$rootScope', '$locat
 boxleagueApp.controller('myBoxCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("myBoxCtrl");
 
-    $http.get('/boxleagues').
-    then(function (response) {
+    $http.get('/boxleagues').then(function (response) {
         $scope.boxleagues = response.data;
-        $scope.boxleagues.forEach(function(boxleague){
+        $scope.boxleagues.forEach(function (boxleague) {
             boxleague.boxes.forEach(function (box) {
                 if (box.players.indexOf($rootScope.login) !== -1) {
                     $location.url('/boxleague/' + boxleague._id + '/box/' + box.name);
                 }
             })
         })
-    }, function(response) {
+    }, function (response) {
         $rootScope.alerts.push({
             type: "warning",
             msg: "Read failed with error '" + response.data + "'"
@@ -630,9 +652,9 @@ boxleagueApp.controller('myBoxCtrl', ['$scope', '$rootScope', '$log', '$location
 boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance, game) {
 
     $scope.score = game.score;
-    if(game.date instanceof Date){
+    if (game.date instanceof Date) {
         $scope.date = game.date;
-    } else if(typeof game.date == "string" && game.date.length){
+    } else if (typeof game.date == "string" && game.date.length) {
         $scope.date = new Date(game.date);
     } else {
         $scope.date = game.date;
@@ -648,10 +670,10 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
         $scope.score = "";
         $scope.date = "";
         load();
-    }
+    };
 
     // load
-    load = function () {
+    var load = function () {
         $scope.sets = [];
 
         // initialise
@@ -660,7 +682,6 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
         });
 
         var sets = $scope.score ? $scope.score.split(" ") : [];
-        var i = 0;
         for (var i = 0; i < sets.length; i++) {
             var set = sets[i];
             var games = set.split(":");
@@ -669,10 +690,9 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
             $scope.sets[i].game1 = game1;
             $scope.sets[i].game2 = game2;
         }
-        ;
     };
 
-    setsToScore = function (sets) {
+    var setsToScore = function (sets) {
         var score = "";
         sets.forEach(function (set) {
             score += set.game1 + ":" + set.game2 + " ";
@@ -680,18 +700,16 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
         score = score.trim();
         score = score.replace(/ 0:0$/, "");
         return score;
-    }
+    };
 
     $scope.notValidScore = function () {
-        var score = "";
-
-        score = setsToScore($scope.sets);
+        var score = setsToScore($scope.sets);
 
         var validSetsScore = isSetsScore(score);
         var validCompleteScore = isCompleteScore(score);
 
         return !(validSetsScore && validCompleteScore);
-    }
+    };
 
     load();
 
@@ -700,7 +718,7 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
         num = Math.max(0, num - 1);
 
         return num.toString();
-    }
+    };
 
     $scope.increment = function (score, index) {
         var num = parseInt(score);
@@ -708,7 +726,7 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
         num = Math.min(max, num + 1);
 
         return num.toString();
-    }
+    };
 
     $scope.ok = function () {
         game.score = cleanScore(setsToScore($scope.sets));
@@ -760,13 +778,12 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
 boxleagueApp.controller('boxleagueCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("boxleagueCtrl");
 
-    $http.get('/boxleagues').
-    then(function (response) {
+    $http.get('/boxleagues').then(function (response) {
         $scope.boxleagues = response.data;
-        $scope.boxleagues.forEach(function(boxleague){
+        $scope.boxleagues.forEach(function (boxleague) {
             $location.url('/boxleague/' + boxleague._id + '/boxes');
         })
-    }, function(response) {
+    }, function (response) {
         $rootScope.alerts.push({
             type: "warning",
             msg: "Read failed with error '" + response.data + "'"
@@ -776,13 +793,12 @@ boxleagueApp.controller('boxleagueCtrl', ['$scope', '$rootScope', '$log', '$loca
 boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("boxleagueCtrl");
 
-    $http.get('/boxleagues').
-    then(function (response) {
+    $http.get('/boxleagues').then(function (response) {
         $scope.boxleagues = response.data;
-        $scope.boxleagues.forEach(function(boxleague){
+        $scope.boxleagues.forEach(function (boxleague) {
             $location.url('/boxleague/' + boxleague._id + '/leaderboard');
         })
-    }, function(response) {
+    }, function (response) {
         $rootScope.alerts.push({
             type: "warning",
             msg: "Read failed with error '" + response.data + "'"
@@ -792,42 +808,42 @@ boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', 
 
 boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
     function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
-    $log.info("boxesCtrl");
+        $log.info("boxesCtrl");
 
-    $scope.id = $routeParams.id;
+        $scope.id = $routeParams.id;
 
-    var error = function(response){
-        $rootScope.alerts.push({
-            type: "warning",
-            msg: "Read " + table + " failed with error '" + response.data
-        });
-    }
+        var error = function (response) {
+            $rootScope.alerts.push({
+                type: "warning",
+                msg: "Read boxleague failed with error '" + response.data
+            });
+        };
 
-    $http.get('/boxleague/' + $scope.id).then(function (response) {
-        $scope.boxleague = response.data;
-    }, error);
+        $http.get('/boxleague/' + $scope.id).then(function (response) {
+            $scope.boxleague = response.data;
+        }, error);
 
-    // sort order, if we have boxes use the box number
-    $scope.sortElement = function (item) {
-        if (item.name.indexOf("Box ") !== -1) {
-            return parseInt(item.name.replace("Box ", ""));
-        } else {
-            return item.name;
+        // sort order, if we have boxes use the box number
+        $scope.sortElement = function (item) {
+            if (item.name.indexOf("Box ") !== -1) {
+                return parseInt(item.name.replace("Box ", ""));
+            } else {
+                return item.name;
+            }
         }
-    }
-}]);
+    }]);
 boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$q', '$uibModal', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $q, $uibModal) {
     $log.info("boxCtrl");
 
     $scope.boxName = $routeParams.box;
     $scope.id = $routeParams.id;
 
-    var error = function(response){
+    var error = function (response) {
         $rootScope.alerts.push({
             type: "warning",
-            msg: "Read " + table + " failed with error '" + response.data
+            msg: "Read failed with error '" + response.data
         });
-    }
+    };
     $http.get('/boxleague/' + $scope.id).then(function (response) {
         $scope.boxleague = response.data;
         $http.get('/players').then(function (response) {
@@ -860,7 +876,6 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             default:
                 return;
         }
-        ;
 
         // if the row login is not the logged in person ignore
         if (row[index].home != $rootScope.login && row[index].away != $rootScope.login) {
@@ -901,7 +916,6 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             if (!game) {
                 return;
             }
-            ;
 
             $scope.save(game._id);
         }, function () {
@@ -933,24 +947,20 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
                 msg: "Save failed with error '" + response + "'. Refresh the page, check and try again."
             });
         });
-    }
+    };
 
     $scope.readOnly = function (column, row, index) {
         //console.log(JSON.stringify(row[index]));
 
         if (index === 0) {
             return true;
-        }
-        if (row[index].home === "Free Week") {
+        } else if (row[index].home === "Free Week") {
             return true;
-        }
-        if (row[index].away === "Free Week") {
+        } else if (row[index].away === "Free Week") {
             return true;
-        }
-        if (row[index].home === $rootScope.login) {
+        } else if (row[index].home === $rootScope.login) {
             return false;
-        }
-        if (row[index].away === $rootScope.login) {
+        } else if (row[index].away === $rootScope.login) {
             return false;
         }
         return true;
@@ -965,7 +975,27 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.tableRows = [];
         $scope.tableHeaders.push($scope.box.name);
 
+        // calculate the leaderboard details
         $scope.leaderboard = calculateLeaderboard($scope.boxGames);
+        var total = 0, played = 0;
+        $scope.boxGames.forEach(function(game){
+            total++;
+            if (isCompleteScore(game.score) && isSetsScore(game.score)) {
+                played++;
+            }
+        })
+        $scope.played = played;
+        $scope.total = total;
+        $scope.percent = ((played/total)*100).toFixed(1);
+        if ($scope.percent < 25) {
+            $scope.type = 'danger';
+        } else if ($scope.percent < 50) {
+            $scope.type = 'warning';
+        } else if ($scope.percent < 75) {
+            $scope.type = 'info';
+        } else {
+            $scope.type = 'success';
+        }
 
         // for the games table
         var columns = getColumns($scope.boxGames);
@@ -979,29 +1009,31 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.boxSortReverse = false;
         $scope.boxSearchName = "";
         $scope.gamesType = "game";
-        $scope.sortBoxColumn = function (column){
+        $scope.sortBoxColumn = function (column) {
             $scope.boxSortType = column;
             $scope.boxSortReverse = !$scope.boxSortReverse;
-            return(column);
-        }
+            return (column);
+        };
 
         // for the players table
-        var columns = getColumns($scope.boxPlayers);
-        var filter = filterColumns(columns);
+        columns = getColumns($scope.boxPlayers);
+        filter = filterColumns(columns);
         $scope.playerColumns = filter;
         $scope.playerSortType = "name";
         $scope.playerSortReverse = false;
         $scope.playerSearchName = "";
         $scope.playersType = "player";
-        $scope.sortPlayerColumn = function (column){
+        $scope.sortPlayerColumn = function (column) {
             $scope.playerSortType = column;
             $scope.playerSortReverse = !$scope.playerSortReverse;
-            return(column);
-        }
+            return (column);
+        };
 
-        $scope.toTitleCase = function (str){
-            return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
-        }
+        $scope.toTitleCase = function (str) {
+            return str.replace(/\w\S*/g, function (txt) {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
+        };
 
         // set-up the boxleage table
         $scope.boxPlayers.forEach(function (player1) {
@@ -1020,7 +1052,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
                 }
             })
         });
-    }
+    };
 
     function findGameByPlayers(games, player1, player2) {
         for (var i = 0; i < games.length; i++) {
@@ -1036,7 +1068,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         return $scope.search.length === 0 | item.home.name.indexOf($scope.search) >= 0 || item.away.name.indexOf($scope.search) >= 0;
     };
 
-    var reverse = function(score) {
+    var reverse = function (score) {
         if (!score) {
             return "";
         }
@@ -1051,9 +1083,9 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
                 text += ":" + game0;
             }
             text += " ";
-        })
+        });
         return text;
-    }
+    };
     $scope.getCellScore = function (column, row, index) {
         switch (typeof column) {
             case 'string':
@@ -1067,7 +1099,6 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             default:
                 return "?";
         }
-        ;
 
         var cell;
         if (row[index].game.home.name === row[index].home) {
@@ -1122,12 +1153,12 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             return;
         }
 
-        if (validStr && validSetsScore && validCompleteScore && game.score !== game.origScore) {
+        if (validStr && validSetsScore && validCompleteScore) {
             game.save = true;
         }
     };
 }]);
-boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$q', '$uibModal', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $q, $uibModal) {
+boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
     $log.info("leaderboardCtrl");
 
     $scope.id = $routeParams.id;
@@ -1135,14 +1166,33 @@ boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$rou
     var error = function (response) {
         $rootScope.alerts.push({
             type: "warning",
-            msg: "Read " + table + " failed with error '" + response.data
+            msg: "Read failed with error '" + response.data
         });
-    }
+    };
     $http.get('/boxleague/' + $scope.id).then(function (response) {
         $scope.boxleague = response.data;
         $http.get('/games').then(function (response) {
             $scope.games = response.data;
             $scope.leaderboard = calculateLeaderboard($scope.games);
+            var total = 0, played = 0;
+            $scope.games.forEach(function(game){
+                total++;
+                if (isCompleteScore(game.score) && isSetsScore(game.score)) {
+                    played++;
+                }
+            })
+            $scope.played = played;
+            $scope.total = total;
+            $scope.percent = ((played/total)*100).toFixed(1);
+            if ($scope.percent < 25) {
+                $scope.type = 'danger';
+            } else if ($scope.percent < 50) {
+                $scope.type = 'warning';
+            } else if ($scope.percent < 75) {
+                $scope.type = 'info';
+            } else {
+                $scope.type = 'success';
+            }
         }, error);
     }, error);
 }]);
@@ -1197,18 +1247,17 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
         delete $scope.boxleagueName;
         $scope.startDate = new Date;
         $scope.endDate = new Date;
-    }
+    };
 
     $scope.submit = function () {
         var boxleague = createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, $rootScope.boxleague.boxes);
         $rootScope.saveImportedBoxleague(boxleague, $rootScope.games, $rootScope.players);
-    }
+    };
 
     $scope.$watch('changeEvent', function () {
         if (!$scope.changeEvent) {
             return
         }
-        ;
 
         $scope.filename = $scope.changeEvent.target.files[0].name;
         $rootScope.games = [];
@@ -1232,7 +1281,6 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                     if (boxName.indexOf("Box ") === -1) {
                         return;
                     }
-                    ;
 
                     var games = []; // games on this sheet
 
@@ -1246,11 +1294,9 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                         if (players[0] === "Anthony Dore") {
                             players[0] = "Antony Dore"
                         }
-                        ;
                         if (players[1] === "Anthony Dore") {
                             players[1] = "Antony Dore"
                         }
-                        ;
 
                         var game = createGame(idCount.toString(),
                             findByName($rootScope.players, players[0])._id,
@@ -1280,10 +1326,10 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                     for (var i = 0; i < 6; i++) {
                         games[i].schedule = new Date(weeks[i % 2].date + " " + weeks[i % 2].time);
                     }
-                    for (var i = 6; i < 12; i++) {
+                    for (i = 6; i < 12; i++) {
                         games[i].schedule = new Date(weeks[i % 2 + 2].date + " " + weeks[i % 2 + 2].time);
                     }
-                    for (var i = 12; i < 15; i++) {
+                    for (i = 12; i < 15; i++) {
                         games[i].schedule = new Date(weeks[4].date + " " + weeks[4].time);
                     }
                     games.sort(function (a, b) {
@@ -1380,7 +1426,7 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
         delete $scope.boxleagueName;
         $scope.startDate = new Date;
         $scope.endDate = new Date;
-    }
+    };
 
     var findPlayersInBox = function (source, box) {
         var players = [];
@@ -1398,13 +1444,12 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
     $scope.submit = function () {
         var boxleague = createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, $rootScope.boxleague.boxes);
         $rootScope.saveImportedBoxleague(boxleague, $rootScope.games, $rootScope.players);
-    }
+    };
 
     $scope.$watch('changeEvent', function () {
         if (!$scope.changeEvent) {
             return
         }
-        ;
 
         $scope.filename = $scope.changeEvent.target.files[0].name;
         $rootScope.games = [];
@@ -1470,7 +1515,7 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
                         }
                     }
                     return false;
-                }
+                };
 
                 // create size distinct(players) game sets
                 var findDistinct = function (games, size) {
@@ -1489,7 +1534,7 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
                         }
                     }
                     throw "Could not find distinct games"
-                }
+                };
 
                 // return the difference between these arrays (what's left)
                 var difference = function (a1, a2) {
@@ -1503,7 +1548,7 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
                         }
                     }
                     return result;
-                }
+                };
 
                 boxNames.forEach(function (boxName) {
                     var boxGames = findObjectsMatchingName(games, boxName);
@@ -1564,7 +1609,7 @@ boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$r
 
     $http.get('/players').then(function (response) {
         $scope.currentPlayers = response.data;
-    }, function(response) {
+    }, function (response) {
         $scope.currentPlayers = [];
         $rootScope.alerts.push({
             type: "warning",
@@ -1584,7 +1629,6 @@ boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$r
         if (!$scope.changeEvent) {
             return
         }
-        ;
 
         $scope.filename = $scope.changeEvent.target.files[0].name;
 
@@ -1630,7 +1674,7 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
 
     $http.get('/players').then(function (response) {
         $scope.currentPlayers = response.data;
-    }, function(response) {
+    }, function (response) {
         $scope.currentPlayers = [];
         $rootScope.alerts.push({
             type: "warning",
@@ -1649,7 +1693,7 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
     $scope.$watch('changeEvent', function () {
         if (!$scope.changeEvent) {
             return
-        };
+        }
 
         $scope.filename = $scope.changeEvent.target.files[0].name;
 

@@ -3,22 +3,31 @@
         <h1>{{boxleague.name}}</h1>
         <div ng-show="leaderboard && leaderboard.length">
             <h2>Leaderboard</h2>
+            <uib-progressbar animate="false" value="percent" type="{{type}}"><b>{{percent}}% ({{played}}/{{total}})</b></uib-progressbar>
             <table class="table table-bordered table-striped table-condensed table-responsive">
                 <thead>
                 <tr>
                     <th>Box</th>
                     <th>Name</th>
-                    <th>Won</th>
-                    <th>Lost</th>
-                    <th>Points</th>
+                    <th>P</th>
+                    <th>W</th>
+                    <th>L</th>
+                    <th>+S</th>
+                    <th>-S</th>
+                    <th>SD</th>
+                    <th>Pts</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr ng-repeat="player in leaderboard | orderBy:['box', 'score']:true">
+                <tr ng-repeat="player in leaderboard | orderBy:['box', 'score', '-name']:true">
                     <td>{{player.box}}</td>
                     <td>{{player.name}}</td>
+                    <td>{{player.played}}</td>
                     <td>{{player.won}}</td>
                     <td>{{player.lost}}</td>
+                    <td>{{player.setsFor}}</td>
+                    <td>{{player.setsAgainst}}</td>
+                    <td>{{player.setsFor - player.setsAgainst}}</td>
                     <td>{{player.score}}</td>
                 </tr>
                 </tbody>

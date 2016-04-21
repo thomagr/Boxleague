@@ -163,8 +163,7 @@ boxleagueApp.run(function ($rootScope, $http, $q) {
             data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
         })
 
-        $http.post('/players', JSON.stringify(data)).
-        then(function (response) {
+        $http.post('/players', JSON.stringify(data)).then(function (response) {
             $rootScope.alerts.push({type: "success", msg: "Players saved"});
         }, function (response) {
             $rootScope.alerts.push({
@@ -230,7 +229,7 @@ function getObject(name, http, success, error) {
  **********************************************************************/
 boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $location) {
     $scope.user = {};
-    
+
     $rootScope.close = function (index) {
         $rootScope.alerts.splice(index, 1);
     };

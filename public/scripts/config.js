@@ -62,7 +62,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         controller: 'welcomeCtrl',
         resolve: {
             loggedin: checkLoggedin
-        }        
+        }
     }).when('/table/:name', {
         templateUrl: 'pages/table.html',
         controller: 'tableCtrl',
@@ -98,13 +98,13 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         controller: 'leaderboardCtrl',
         resolve: {
             loggedin: checkLoggedin
-        }        
+        }
     }).when('/boxleague/:id/box/:box', {
         templateUrl: 'pages/box.html',
         controller: 'boxCtrl',
         resolve: {
             loggedin: checkLoggedin
-        }        
+        }
     }).when('/myBox', {
         controller: 'myBoxCtrl',
         templateUrl: 'pages/empty.html',
@@ -116,7 +116,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         controller: 'settingsCtrl',
         resolve: {
             loggedin: checkLoggedin
-        }        
+        }
     }).when('/importPlayersSpreadsheet', {
         templateUrl: 'pages/importPlayers.html',
         controller: 'importPlayersCtrl',
