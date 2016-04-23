@@ -153,25 +153,6 @@ boxleagueApp.run(function ($rootScope, $http) {
         //$rootScope.isAuth = false;
         $http.post('/logout');
     };
-
-    $rootScope.saveNewPlayers = function (newPlayers) {
-        console.log("posting new player data ...");
-
-        // clean data
-        var data = [];
-        newPlayers.forEach(function (player) {
-            data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
-        })
-
-        $http.post('/players', JSON.stringify(data)).then(function (response) {
-            $rootScope.alerts.push({type: "success", msg: "Players saved"});
-        }, function (response) {
-            $rootScope.alerts.push({
-                type: "danger",
-                msg: "Request failed with response '" + response.data + "' and status code: " + response.status
-            });
-        });
-    };
 });
 
 function getArray(name, http, success, error) {

@@ -16,10 +16,8 @@
     </tr>
     <tr ng-repeat="row in rows | orderBy:sortType:sortReverse | filter:searchName">
         <td ng-repeat="column in columns">
-            <!--<span ng-if="column !== '_id'">{{ row[column] | formatString }}</span>-->
-            <!--<span ng-if="column === '_id'"><a ng-href="#/form/{{type}}/{{row[column]}}" >{{ row[column] | formatString }}</a></span>-->
-            <span ng-if="!$first">{{ row[column] | formatString }}</span>
-            <span ng-if="$first"><a ng-href="#/form/{{type}}/{{row['_id']}}">{{ row[column] | formatString }}</a></span>
+            <span ng-if="!$first || !type">{{ row[column] | formatString }}</span>
+            <span ng-if="$first && type"><a ng-href="#/form/{{type}}/{{row['_id']}}">{{ row[column] | formatString }}</a></span>
         </td>
     </tr>
 </table>
