@@ -4,7 +4,6 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <!--<meta name="viewport" content="width=device-width, initial-scale=1">-->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
     <meta property="og:image" content="http://boxleague.eu-gb.mybluemix.net/images/url.jpeg"/>
@@ -57,7 +56,6 @@
                 </button>
                 <a class="navbar-brand brand nav-login" href="#/">Boxleague</a>
             </div>
-            <!--<div class="collapse navbar-collapse" uib-collapse="isCollapsed" ng-click="isCollapsed = !isCollapsed">-->
             <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
                 <ul class="nav navbar-nav">
                     <li ng-show="admin" uib-dropdown><a href="#" uib-dropdown-toggle><i
@@ -74,33 +72,31 @@
                                 File</a></li>
                         </ul>
                     </li>
-                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/rules"><i class="fa fa-book icon-white"></i>
-                        Rules</a></li>
-                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i class="fa fa-cube icon-white"></i> My
-                        box</a></li>
-                    <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-cubes icon-white"></i> League<span
+                    <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i class="fa fa-cube icon-white"></i>
+                        My box</a></li>
+                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/boxleague"><i class="fa fa-cubes"></i>
+                        Boxes</a></li>
+                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/leaderboard"><i class="fa fa-calculator"></i>
+                        Leaderboard</a></li>
+                    <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-folder-o icon-white"></i> League<span
                             class="caret"></span></a>
                         <ul uib-dropdown-menu>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i class="fa fa-cube"></i> My
-                                box</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/boxleague"><i class="fa fa-cubes"></i>
-                                Boxes</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/leaderboard"><i
-                                    class="fa fa-calculator"></i> Leaderboard</a></li>
-                            <li class="divider"></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/boxleagues"><i
                                     class="fa fa-server"></i> Boxleagues</a></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/games"><i
                                     class="fa fa-calendar"></i> Games</a></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/players"><i
                                     class="fa fa-users"></i> Players</a></li>
+                            <!--<li class="divider"></li>-->
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/rules"><i class="fa fa-book"></i>
+                                Rules</a></li>
                         </ul>
                     </li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/forcast/St Albans, England"><i
+                    <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a href="#/forcast/St Albans, England"><i
                             class="fa fa-umbrella icon-white"></i> Weather</a></li>
-                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/settings"><i class="fa fa-cog icon-white"></i>
+                    <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a href="#/settings"><i class="fa fa-cog icon-white"></i>
                         Settings</a></li>
                     <li ng-click="isCollapsed = !isCollapsed"><a href="#/class" ng-click="logout()"><i
                             class="fa fa-power-off icon-white"></i> Logout</a></li>
@@ -109,7 +105,6 @@
         </div>
     </nav>
 </div>
-<!--<div class="backgroundImage">-->
 <div class="container">
     <div class="row">
         <div ng-show="alerts.length">
@@ -120,6 +115,5 @@
 <div ng-class="{container: isAuth}">
     <div ng-view></div>
 </div>
-<!--</div>-->
 </body>
 </html>

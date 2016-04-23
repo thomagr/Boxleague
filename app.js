@@ -171,8 +171,8 @@ function isRegisteredUser(cache, name, user) {
 
     if(user === "Graham Thomas"){
         return {name: "Graham Thomas"};
-    } else if(user === "admin"){
-        return {name: "admin"};
+    } else if(user === "Admin"){
+        return {name: "Admin"};
     }
 }
 

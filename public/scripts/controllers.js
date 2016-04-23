@@ -338,7 +338,7 @@ function isSetScore(score) {
 
     return 0;
 }
-var calculateLeaderboard = function (games) {
+function calculateLeaderboard(games) {
 
     var leaderboard = [];
     var findInLeaderboard = function (player, box) {
@@ -450,6 +450,7 @@ boxleagueApp.filter('formatString', function ($filter) {
         }
     }
 });
+
 boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', '$http', '$timeout', function ($scope, $log, $resource, $routeParams, $http, $timeout) {
     $log.info("forcastCtrl");
 
@@ -615,7 +616,6 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         return table === "player" && column === "name"
     }
 }]);
-
 boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$rootScope', '$location', '$http', function ($scope, $log, $rootScope, $location, $http) {
     $log.info("settingsCtrl");
 
@@ -632,6 +632,8 @@ boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$rootScope', '$locat
 boxleagueApp.controller('myBoxCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("myBoxCtrl");
 
+    $scope.login = $rootScope.login;
+    
     $http.get('/boxleagues').then(function (response) {
         $scope.boxleagues = response.data;
         $scope.boxleagues.forEach(function (boxleague) {
@@ -648,8 +650,7 @@ boxleagueApp.controller('myBoxCtrl', ['$scope', '$rootScope', '$log', '$location
         });
     });
 }]);
-
-boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance, game) {
+boxleagueApp.controller('scoreboardCtrl', function ($scope, $uibModalInstance, game) {
 
     $scope.score = game.score;
     if (game.date instanceof Date) {
@@ -774,7 +775,6 @@ boxleagueApp.controller('ModalInstanceCtrl', function ($scope, $uibModalInstance
     };
     // end for Dates dialog
 });
-
 boxleagueApp.controller('boxleagueCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("boxleagueCtrl");
 
@@ -805,9 +805,7 @@ boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', 
         });
     });
 }]);
-
-boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http',
-    function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
+boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
         $log.info("boxesCtrl");
 
         $scope.id = $routeParams.id;
@@ -903,8 +901,8 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
     var open = function (game) {
         var modalInstance = $uibModal.open({
             animation: true,
-            templateUrl: 'myModalContent.html',
-            controller: 'ModalInstanceCtrl',
+            templateUrl: 'scoreboard.html',
+            controller: 'scoreboardCtrl',
             resolve: {
                 game: function () {
                     return game;
@@ -983,7 +981,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             if (isCompleteScore(game.score) && isSetsScore(game.score)) {
                 played++;
             }
-        })
+        });
         $scope.played = played;
         $scope.total = total;
         $scope.percent = ((played/total)*100).toFixed(1);
@@ -1180,7 +1178,7 @@ boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$rou
                 if (isCompleteScore(game.score) && isSetsScore(game.score)) {
                     played++;
                 }
-            })
+            });
             $scope.played = played;
             $scope.total = total;
             $scope.percent = ((played/total)*100).toFixed(1);
@@ -1200,12 +1198,18 @@ boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$rou
 boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("importBoxleagueCtrl");
 
-    $rootScope.init().then(function () {
+    $http.get('/players').then(function (response) {
+        $scope.players = response.data;
         if ($rootScope.boxleague) {
             $scope.boxleagueName = $rootScope.boxleague.name;
             $scope.startDate = $rootScope.boxleague.start;
             $scope.endDate = $rootScope.boxleague.end;
         }
+    }, function (response) {
+        $rootScope.alerts.push({
+            type: "warning",
+            msg: "Read failed with error '" + response.data + "'"
+        });
     });
 
     $scope.changeEvent = "";
@@ -1604,6 +1608,7 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
         reader.readAsBinaryString($scope.changeEvent.target.files[0]);
     })
 }]);
+
 boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
     $log.info("importPlayersFileCtrl");
 

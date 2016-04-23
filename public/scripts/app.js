@@ -3,7 +3,7 @@ var boxleagueApp = angular.module('boxleagueApp', ['ngRoute', 'ngResource', 'ui.
 
 // ROUTES
 
-boxleagueApp.run(function ($rootScope, $http, $q) {
+boxleagueApp.run(function ($rootScope, $http) {
 
     $rootScope.alerts = [];
 
@@ -11,7 +11,7 @@ boxleagueApp.run(function ($rootScope, $http, $q) {
     $rootScope.init = function () {
         var error = function (msg) {
             $rootScope.alerts.push(msg);
-        }
+        };
 
         var successBoxleague = function (boxleagues) {
             //$rootScope.alerts.push({type: "success", msg: "loaded boxleague"});
@@ -30,7 +30,7 @@ boxleagueApp.run(function ($rootScope, $http, $q) {
                 });
             });
             $rootScope.boxleague = boxleague;
-        }
+        };
 
         var successGames = function (response) {
             //$rootScope.alerts.push({type: "success", msg: "loaded games"});
@@ -42,19 +42,19 @@ boxleagueApp.run(function ($rootScope, $http, $q) {
             //     arr[index].away = findById($rootScope.players, game.awayId);
             // });
             return getArray('boxleagues', $http, successBoxleague, error)
-        }
+        };
 
         var successPlayers = function (response) {
             //$rootScope.alerts.push({type: "success", msg: "loaded players"});
 
             $rootScope.players = response.data;
             return $http.get('/games').then(successGames, error);
-        }
+        };
 
         if (!$rootScope.players || !$rootScope.games || !$rootScope.boxleague) {
             return $http.get('/players').then(successPlayers, error);
         } else {
-            return Promise.resolve("success");
+            return promise.resolve("success");
         }
     };
 
@@ -241,23 +241,24 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $locati
 
         var promise = $http.post('/login', {
             username: $scope.username,
-            password: $scope.password,
+            password: $scope.password
         });
 
         promise.success(function (response) {
-            //$rootScope.isAuth = true;
             $rootScope.login = response.name;
             $rootScope.alerts = [];
-            $location.url('/myBox');
-            //boxleagueApp.run();
+            if($rootScope.login !== "Admin"){
+                $location.url('/myBox');
+            } else {
+                $location.url('/');
+            }
         });
 
         promise.error(function (response, status) {
-            //$rootScope.isAuth = false;
             var msg = {
                 type: "danger",
                 msg: "The username or password entered is incorrect."
-            }
+            };
             $rootScope.alerts = [msg];
             $location.url('/login');
         });

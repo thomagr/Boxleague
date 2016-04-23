@@ -2,6 +2,7 @@
     <div class="well">
         <h1>{{boxleagueTitle}}</h1>
         <h2>{{boxName}}</h2>
+        Click on a table cell (row or column) to enter a score in the <strong>Scoreboard.</strong>
         <table class="table table-bordered table-striped table-condensed table-responsive">
             <thead>
             <tr>
@@ -30,30 +31,6 @@
         </table>
     </div>
 </div>
-
-<!--<div class="row" ng-show="leaderboard && leaderboard.length">-->
-<!--<div class="well">-->
-<!--<h2>Leaderboard</h2>-->
-<!--<table class="table table-bordered table-striped table-condensed table-responsive">-->
-<!--<thead>-->
-<!--<tr>-->
-<!--<th>Name</th>-->
-<!--<th>Won</th>-->
-<!--<th>Lost</th>-->
-<!--<th>Points</th>-->
-<!--</tr>-->
-<!--</thead>-->
-<!--<tbody>-->
-<!--<tr ng-repeat="player in leaderboard | orderBy:'score':true">-->
-<!--<td>{{player.name}}</td>-->
-<!--<td>{{player.won}}</td>-->
-<!--<td>{{player.lost}}</td>-->
-<!--<td>{{player.score}}</td>-->
-<!--</tr>-->
-<!--</tbody>-->
-<!--</table>-->
-<!--</div>-->
-<!--</div>-->
 
 <div class="row" ng-show="leaderboard && leaderboard.length">
     <div class="well">

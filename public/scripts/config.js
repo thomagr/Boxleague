@@ -107,7 +107,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }
     }).when('/myBox', {
         controller: 'myBoxCtrl',
-        templateUrl: 'pages/empty.html',
+        templateUrl: 'pages/noBox.html',
         resolve: {
             loggedin: checkLoggedin
         }
