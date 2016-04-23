@@ -105,6 +105,12 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         resolve: {
             loggedin: checkLoggedin
         }
+    }).when('/nextBoxleague', {
+        templateUrl: 'pages/nextBoxleague.html',
+        controller: 'nextBoxleagueCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }        
     }).when('/myBox', {
         controller: 'myBoxCtrl',
         templateUrl: 'pages/noBox.html',

@@ -1,0 +1,54 @@
+<div class="row">
+    <div class="well">
+        <table class="table">
+            <tr>
+                <td>
+                    <h2>Current</h2>
+                    <div ng-show="leaderboard && leaderboard.length">
+                        <table class="table table-bordered table-striped table-condensed table-responsive">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Box</th>
+                                <th>Pts</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="player in leaderboard | orderBy:['box', '-score', 'name']">
+                                <td>{{player.name}}</td>
+                                <td>{{player.box}}</td>
+                                <td>{{player.score}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div ng-hide="leaderboard && leaderboard.length">
+                        No current scores in boxleague
+                    </div>
+                </td>
+                <td>
+                    <h2>Next</h2>
+                    <div ng-show="nextBox && nextBox.length">
+                        <table class="table table-bordered table-striped table-condensed table-responsive">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Box</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="player in nextBox| orderBy:['newBox', 'name']">
+                                <td>{{player.name}}</td>
+                                <td>{{player.newBox}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div ng-hide="nextBox && nextBox.length">
+                        No players in next boxleague
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>

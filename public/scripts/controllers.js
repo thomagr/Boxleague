@@ -136,7 +136,8 @@ function cleanScore(score) {
 
     return score;
 }
-var findObjectsMatchingName = function (source, name) {
+
+function findObjectsMatchingBox(source, name) {
     var results = [];
     source.forEach(function (item) {
         if (item.box === name) {
@@ -144,22 +145,30 @@ var findObjectsMatchingName = function (source, name) {
         }
     });
     if (results.length === 0) {
-        throw "Couldn't find item with name: " + name;
+        throw "Couldn't find item with box: " + name;
     }
     return results;
-};
-var findIdsMatchingName = function (source, name) {
-    return findObjectsMatchingName(source, name).map(function (item) {
+}
+function findIdsMatchingName(source, name) {
+    return findObjectsMatchingBox(source, name).map(function (item) {
         return item._id
     });
-};
+}
 function findById(source, id) {
+    if (!source) {
+        throw "No source provided";
+    }
+
+    if (!id) {
+        throw "No id provided";
+    }
+
     for (var i = 0; i < source.length; i++) {
         if (source[i]._id === id) {
             return source[i];
         }
     }
-    throw "Couldn't find object with id: " + id;
+    throw "Couldn't find object with id: " + JSON.stringify(id);
 }
 function findByName(source, name) {
     if (!source) {
@@ -177,6 +186,11 @@ function findByName(source, name) {
     }
     throw "Couldn't find object with name: " + JSON.stringify(name);
 }
+
+function unique(value, index, self) {
+    return self.indexOf(value) === index;
+}
+
 // Has someone won correctly
 function isCompleteScore(score) {
     if (!score || !score.length) {
@@ -410,6 +424,10 @@ function calculateLeaderboard(games) {
 
         var score = calculateScore(game.score);
 
+        // skip any free week games
+        if(game.home === "Free Week" || game.away === "Free Week" ){
+            return;
+        }
 
         var home = findInLeaderboard(game.home, game.box);
         var away = findInLeaderboard(game.away, game.box);
@@ -437,7 +455,7 @@ function calculateLeaderboard(games) {
     });
 
     return leaderboard;
-};
+}
 
 boxleagueApp.filter('formatString', function ($filter) {
     return function (input) {
@@ -1545,7 +1563,7 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
                 };
 
                 boxNames.forEach(function (boxName) {
-                    var boxGames = findObjectsMatchingName(games, boxName);
+                    var boxGames = findObjectsMatchingBox(games, boxName);
 
                     // create 5 weeks of games of 3 games per week
                     var date = new Date($scope.startDate);
@@ -1786,5 +1804,64 @@ boxleagueApp.controller('importPlayersManualCtrl', ['$scope', '$log', '$http', '
         });
 
         return (newMap.indexOf($scope.data.name) === -1 && currentMap.indexOf($scope.data.name) === -1);
+    }
+}]);
+
+boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$filter', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $filter) {
+    $log.info("nextBoxleagueCtrl");
+
+    var error = function (response) {
+        $rootScope.alerts.push({
+            type: "warning",
+            msg: "Read failed with error '" + response.data
+        });
+    };
+
+    $http.get('/boxleagues').then(function (response) {
+        $scope.boxleagues = response.data;
+        load($scope.boxleagues[0]._id)
+    }, error);
+
+    var load = function (id) {
+        $http.get('/boxleague/' + id).then(function (response) {
+            $scope.boxleague = response.data;
+            $http.get('/games').then(function (response) {
+                $scope.games = response.data;
+                $scope.leaderboard = calculateLeaderboard($scope.games);
+                promote($scope.leaderboard);
+            }, error);
+        }, error);
+    };
+
+    var promote = function (leaderboard) {
+        leaderboard = $filter('orderBy')(leaderboard, ['-box', 'score', '-name'], true);
+
+        $scope.nextBox = [];
+
+        var boxNames = leaderboard.map(function(item){ return item.box});
+        boxNames = boxNames.filter(unique);
+        boxNames = boxNames.sort();
+
+        for(var i=0;i<boxNames.length;i++){
+            var current = boxNames[i];
+            var above = boxNames[Math.max(0, i-1)];
+            var below = boxNames[Math.min(boxNames.length-1, i+1)];
+
+            var box = findObjectsMatchingBox(leaderboard, current);
+            box.forEach(function(item){
+                item.newBox = current;
+            })
+
+            // promote
+            box[0].newBox = above;
+            box[1].newBox = above;
+            // demote
+            box[box.length-2].newBox = below;
+            box[box.length-1].newBox = below;
+            
+            box.forEach(function(item){
+                $scope.nextBox.push(item);
+            })
+        }
     }
 }]);

@@ -19,7 +19,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr ng-repeat="player in leaderboard | orderBy:['box', 'score', '-name']:true">
+                <tr ng-repeat="player in leaderboard | orderBy:['box', '-score', 'name']">
                     <td>{{player.box}}</td>
                     <td>{{player.name}}</td>
                     <td>{{player.played}}</td>
