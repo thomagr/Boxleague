@@ -1107,7 +1107,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         }
 
         var cell;
-        if (row[index].game.home.name === row[index].home) {
+        if (row[index].game.home === row[index].home) {
             cell = row[index].game.score;
         } else {
             cell = reverse(row[index].game.score);
