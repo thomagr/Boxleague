@@ -83,6 +83,11 @@ h1, h2, h3, h4 {
     width: 100%;
 }
 
+.notAvailable {
+    text-decoration: line-through;
+    color: lightgrey;
+}
+
 .backgroundImage {
     background: url("/images/url.jpeg") no-repeat center center fixed;
     background-size: auto;

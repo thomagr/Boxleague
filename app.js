@@ -131,18 +131,35 @@ function updateCache(cache, name, data) {
         }
     }
 }
-function findCacheItem(cache, name, id) {
-    console.log('findCacheItem cache ' + name);
+function readCacheItem(cache, name, id) {
+    console.log('readCacheItem cache ' + name);
 
     if (!cache[name]){
         return
-    };
+    }
 
-    for(var index=0;index<cache[name].length;index++){
-        if (id === cache[name][index]._id) {
-            return cache[name][index];
+    for(var i=0;i<cache[name].length;i++){
+        if (id === cache[name][i]._id) {
+            return cache[name][i];
         }
     }
+}
+// find items by an index and its id
+function findCacheItem(cache, name, index, id) {
+    console.log('findCacheItem cache %s by %s == %s', name, index, id);
+
+    var results = [];
+
+    if (!cache[name]){
+        return
+    }
+
+    for(var i=0;i<cache[name].length;i++){
+        if (id === cache[name][i][index]) {
+            results.push(cache[name][i]);
+        }
+    }
+    return results;
 }
 function removeCacheItem(cache, name, data) {
     console.log('removeCacheItem cache ' + name);
@@ -286,7 +303,7 @@ var readDoc = function (name, res, id) {
     console.log('readDoc %s', name);
 
     if(id) {
-        var item = findCacheItem(cache, name, id);
+        var item = readCacheItem(cache, name, id);
         if (item) {
             console.log("returning item from cache");
             res.send(item);
@@ -313,7 +330,7 @@ var readDoc = function (name, res, id) {
             database.list({include_docs: true}, function (error, response) {
                 if (error) {
                     console.log('Error list %s: %s', name, error.reason);
-                    if(res){res.status(error.statusCode).send(error.reason)};
+                    if(res){res.status(error.statusCode).send(error.reason)}
                     return;
                 }
                 // convert the output from docs to objects
@@ -321,26 +338,63 @@ var readDoc = function (name, res, id) {
                 var items = [];
                 rows.forEach(function(item){
                     items.push(item.doc);
-                })
+                });
                 loadCache(cache, name, items);
-                if(res){res.send(items)};
+                if(res){res.send(items)}
             });
         } else {
             // use the id and get it
             database.get(id, function (er, body) {
                 if (er) {
                     console.log('Error login: %s', er.reason);
-                    if(res){res.status(er.statusCode).send(er.reason)};
+                    if(res){res.status(er.statusCode).send(er.reason)}
                     return;
                 }
-                if(res){res.send(body)};
+                if(res){res.send(body)}
             });
         }
     });
 };
+var findDocs = function (name, index, id, res) {
+    console.log('findDocs %s by %s == %s', name, index, id);
+
+    var item = findCacheItem(cache, name, index, id);
+    if (item && item.length) {
+        console.log("returning item from cache");
+        res.send(item);
+        return;
+    }
+
+    Cloudant({account: user, password: password}, function (error, cloudant) {
+        if (error) {
+            console.log('Error login: %s', error.reason);
+            if(res){res.status(500).send(error.reason)}
+            return;
+        }
+
+        // use a database object
+        var database = cloudant.use(name);
+
+        var selector = {};
+        selector[index] = id;
+
+        database.find({selector:selector}, function (er, response) {
+            if (er) {
+                console.log('Error login: %s', er.reason);
+                if(res){res.status(er.statusCode).send(er.reason)}
+                return;
+            }
+            if(res){res.send(response.docs)}
+        });
+    });
+};
+
+//findDocs("games", "boxleagueId", "21506efae2378b137e169013c478366b");
+//findDocs("boxleagues", "active", "yes");
+
 var updateDoc = function (data, name, res) {
     console.log('updateDoc %s', name);
-    console.log(JSON.stringify(data))
+    console.log(JSON.stringify(data));
 
     Cloudant({account: user, password: password}, function (error, cloudant) {
         if (error) {
@@ -425,7 +479,10 @@ var deleteDoc = function (id, rev, name, res) {
     });
 };
 
+// initialise the players list to allow for logins
 readDoc("players");
+//readDoc("boxleagues");
+//readDoc("games");
 
 app.get('/player/:id', auth, function (req, res) {
     console.log(req.url);
@@ -464,6 +521,10 @@ app.get('/games', auth, function (req, res) {
     console.log(req.url);
     readDoc("games", res);
 });
+app.get('/games/:field/:id', auth, function (req, res) {
+    console.log(req.url);
+    findDocs("games", req.params.field, req.params.id, res);
+});
 app.post('/games', auth, function (req, res) {
     console.log(req.url);
     bulkUpdateDoc(req.body, "games", res);
@@ -484,6 +545,10 @@ app.delete('/boxleague/:id/:rev', auth, function (req, res) {
 app.get('/boxleagues', auth, function (req, res) {
     console.log(req.url);
     readDoc("boxleagues", res);
+});
+app.get('/boxleagues/:active', auth, function (req, res) {
+    console.log(req.url);
+    findDocs("boxleagues", "active", req.params.active, res);
 });
 app.post('/boxleagues', auth, function (req, res) {
     console.log(req.url);

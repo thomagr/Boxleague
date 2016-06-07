@@ -209,39 +209,28 @@ function getObject(name, http, success, error) {
  * Login controller
  **********************************************************************/
 boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $location) {
-    $scope.user = {};
 
-    $rootScope.close = function (index) {
-        $rootScope.alerts.splice(index, 1);
+    var error = function () {
+        $rootScope.alerts.push({
+            type: "danger",
+            msg: "The username or password entered is incorrect."
+        });
     };
 
     $scope.login = function () {
-        if (!$scope.username || !$scope.password) {
-            return;
-        }
-
-        var promise = $http.post('/login', {
-            username: $scope.username,
-            password: $scope.password
-        });
-
-        promise.success(function (response) {
+        $http.post('/login', {username: $scope.username, password: $scope.password}).then(function (response) {
             $rootScope.login = response.name;
             $rootScope.alerts = [];
-            if($rootScope.login !== "Admin"){
-                $location.url('/myBox');
-            } else {
+            if ($rootScope.login === "Admin") {
                 $location.url('/');
+            } else {
+                $location.url('/myBox');
             }
-        });
+        }, error);
+    };
 
-        promise.error(function (response, status) {
-            var msg = {
-                type: "danger",
-                msg: "The username or password entered is incorrect."
-            };
-            $rootScope.alerts = [msg];
-            $location.url('/login');
-        });
+    // required for message alerts
+    $rootScope.close = function (index) {
+        $rootScope.alerts.splice(index, 1);
     };
 });

@@ -1,6 +1,11 @@
 <div class="row">
     <div class="well">
         <h1>My Box</h1>
-        No default box found for <strong>{{login}}</strong> in current boxleague.
+        <div ng-show="loading">
+            Loading, please wait ...
+        </div>
+        <div ng-hide="loading">
+            No box found for <strong>{{login}}</strong> in current boxleague.
+        </div>
     </div>
 </div>

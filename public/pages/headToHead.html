@@ -1,13 +1,12 @@
-<div class="row">
+<div class="row" ng-show="games">
     <div class="well">
-        <h1>{{boxleague.name}}</h1>
-        <div ng-show="leaderboard && leaderboard.length">
-            <h2>Leaderboard</h2>
-            <uib-progressbar animate="false" value="percent" type="{{type}}"><b>{{percent}}% ({{played}}/{{total}})</b></uib-progressbar>
+        <h1>Head to Head</h1>
+        <select ng-options="player as player.name for player in played | orderBy:['name']" ng-model="selected" ng-change="change(selected)"></select>
+        <div ng-show="selected">
+            <h2>{{login}} vs {{selected.name}}</h2>
             <table class="table table-bordered table-striped table-condensed table-responsive">
                 <thead>
                 <tr>
-                    <th>Box</th>
                     <th>Name</th>
                     <th>P</th>
                     <th>W</th>
@@ -18,12 +17,10 @@
                     <th>+S</th>
                     <th>-S</th>
                     <th>SD</th>
-                    <th>Pts</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr ng-repeat="player in leaderboard | orderBy:['box', '-score', 'name']">
-                    <td>{{player.box}}</td>
+                <tr ng-repeat="player in leaderboard">
                     <td>{{player.name}}</td>
                     <td>{{player.played}}</td>
                     <td>{{player.won}}</td>
@@ -34,13 +31,26 @@
                     <td>{{player.setsFor}}</td>
                     <td>{{player.setsAgainst}}</td>
                     <td>{{player.setsDiff}}</td>
-                    <td>{{player.score}}</td>
                 </tr>
                 </tbody>
             </table>
         </div>
-        <div ng-hide="leaderboard && leaderboard.length">
-            No current scores in boxleague
-        </div>
     </div>
+</div>
+<div class="row" ng-show="games">
+    <div class="well">
+        <h2>Games</h2>
+        <generic-table
+                rows="games"
+                columns="columns"
+                sort-type="sortType"
+                sort-reverse="sortReverse"
+                search-name="searchName"
+                to-title-case="toTitleCase"
+                sort-column="sortColumn"
+                type="type"
+        >
+        </generic-table>
+    </div>
+</div>
 </div>

@@ -6,6 +6,10 @@ function toTitleCase(str) {
         return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     });
 }
+function removeColumn(columns, name) {
+    columns.splice(columns.indexOf(name), 1);
+    return columns;
+}
 function getColumns(rows) {
     if (!rows) {
         return [];
@@ -18,16 +22,18 @@ function getColumns(rows) {
             }
         });
     });
-    return columns;
-}
-function removeColumn(columns, name) {
-    columns.splice(columns.indexOf(name), 1);
+    columns.sort();
+    // if column name appears make it the first one in the array
+    if(columns.indexOf('name') !== -1){
+        columns.splice(columns.indexOf('name'), 1);
+        columns.unshift('name');
+    }
     return columns;
 }
 function filterColumns(columns) {
-    //return columns;
     var filter = [];
-    var skip = ['Id', '_id', '_rev', '$$hashKey', 'boxes', "boxleague"];
+    // skip columns that contain these fields - used to make the output human readable
+    var skip = ['Id', '_id', '_rev', '$$hashKey', 'boxes', "boxleague", "language", "views"];
     columns.forEach(function (column) {
         for (var i = 0; i < skip.length; i++) {
             if (column.indexOf(skip[i]) >= 0) {
@@ -38,23 +44,37 @@ function filterColumns(columns) {
     });
     return filter;
 }
-function getDayClass(data) {
-    var date = data.date,
-        mode = data.mode;
-    if (mode === 'day') {
-        var dayToCheck = new Date(date).setHours(0, 0, 0, 0);
-
-        for (var i = 0; i < $scope.events.length; i++) {
-            var currentDay = new Date($scope.events[i].date).setHours(0, 0, 0, 0);
-
-            if (dayToCheck === currentDay) {
-                return $scope.events[i].status;
+function filterRowsTable(rows) {
+    var filter = [];
+    // skip rows that contain these fields - used to remove indexes
+    var skip = ['language'];
+    rows.forEach(function (row) {
+        for (var i = 0; i < skip.length; i++) {
+            if (row[skip[i]]) {
+                return;
             }
         }
-    }
-
-    return '';
+        filter.push(row);
+    });
+    return filter;
 }
+// function getDayClass(data) {
+//     var date = data.date,
+//         mode = data.mode;
+//     if (mode === 'day') {
+//         var dayToCheck = new Date(date).setHours(0, 0, 0, 0);
+//
+//         for (var i = 0; i < $scope.events.length; i++) {
+//             var currentDay = new Date($scope.events[i].date).setHours(0, 0, 0, 0);
+//
+//             if (dayToCheck === currentDay) {
+//                 return $scope.events[i].status;
+//             }
+//         }
+//     }
+//
+//     return '';
+// }
 function check(object, type) {
     switch (type) {
         case "array":
@@ -154,41 +174,42 @@ function findIdsMatchingName(source, name) {
         return item._id
     });
 }
-function findById(source, id) {
+
+function findByProperty(source, property, value){
     if (!source) {
         throw "No source provided";
     }
 
-    if (!id) {
-        throw "No id provided";
+    if (!property) {
+        throw "No property provided";
     }
 
+    if (!value) {
+        throw "No value provided";
+    }
+    
     for (var i = 0; i < source.length; i++) {
-        if (source[i]._id === id) {
+        if (source[i][property] === value) {
             return source[i];
         }
     }
-    throw "Couldn't find object with id: " + JSON.stringify(id);
+    throw "Couldn't find object with property: " + property;    
+}
+function findById(source, id) {
+    return findByProperty(source, "_id", id);
 }
 function findByName(source, name) {
-    if (!source) {
-        throw "No source provided";
-    }
-
-    if (!name) {
-        throw "No name provided";
-    }
-
-    for (var i = 0; i < source.length; i++) {
-        if (source[i].name === name) {
-            return source[i];
-        }
-    }
-    throw "Couldn't find object with name: " + JSON.stringify(name);
+    return findByProperty(source, "name", name);
 }
 
 function unique(value, index, self) {
     return self.indexOf(value) === index;
+}
+function arrayObjectIndexOf(myArray, searchTerm, property) {
+    for(var i = 0, len = myArray.length; i < len; i++) {
+        if (myArray[i][property] === searchTerm) return i;
+    }
+    return -1;
 }
 
 // Has someone won correctly
@@ -352,10 +373,9 @@ function isSetScore(score) {
 
     return 0;
 }
-function calculateLeaderboard(games) {
-
+function calculateLeaderboard(games, players) {
     var leaderboard = [];
-    var findInLeaderboard = function (player, box) {
+    var getRunningScore = function (player, box) {
         for (var i = 0; i < leaderboard.length; i++) {
             if (leaderboard[i].name === player) {
                 return leaderboard[i];
@@ -367,6 +387,9 @@ function calculateLeaderboard(games) {
             played: 0,
             won: 0,
             lost: 0,
+            gamesFor: 0,
+            gamesAgainst: 0,
+            gamesDiff: 0,
             setsFor: 0,
             setsAgainst: 0,
             setsDiff: 0,
@@ -374,8 +397,7 @@ function calculateLeaderboard(games) {
         });
         return leaderboard[leaderboard.length - 1];
     };
-
-    var calculateScore = function (score) {
+    var calculatePoints = function (score) {
         // validate we have a score
         if (!isCompleteScore(score) || !isSetsScore(score)) {
             return {home: 0, away: 0, setsHome: 0, setsAway: 0};
@@ -389,60 +411,78 @@ function calculateLeaderboard(games) {
         });
 
         var home = 0, away = 0, setsHome = 0, setsAway = 0;
+        var gamesHome = sets[0][0] + sets[1][0]; //Math.min(6, sets[0][0]) + Math.min(6, sets[1][0]);
+        var gamesAway = sets[0][1] + sets[1][1]; //Math.min(6, sets[0][1]) + Math.min(6, sets[1][1]);
+
         if (sets.length === 2) {
             if (sets[0][0] > sets[0][1]) {
                 setsHome = 2;
                 home = 18;
-                away = sets[0][1];
-                away += sets[1][1];
+                away = gamesAway;
             } else {
                 setsAway = 2;
                 away = 18;
-                home = sets[0][0];
-                home += sets[1][0];
+                home = gamesHome;
             }
         } else if (sets.length === 3) {
             if (sets[2][0] > sets[2][1]) {
                 home = 12;
                 setsHome = 2;
                 setsAway = 1;
-                away = Math.min(6, sets[0][1]);
-                away += Math.min(6, sets[1][1]);
+                away = gamesAway;
             } else {
                 away = 12;
                 setsAway = 2;
                 setsHome = 1;
-                home = Math.min(6, sets[0][0]);
-                home += Math.min(6, sets[1][0]);
+                home = gamesHome;
             }
         }
 
-        return {home: home, away: away, setsHome: setsHome, setsAway: setsAway};
+        return {home: home, away: away, setsHome: setsHome, setsAway: setsAway, gamesHome: gamesHome, gamesAway: gamesAway};
     };
 
     games.forEach(function (game) {
 
-        var score = calculateScore(game.score);
-
         // skip any free week games
-        if(game.home === "Free Week" || game.away === "Free Week" ){
+        if (game.home === "Free Week" || game.away === "Free Week") {
             return;
         }
 
-        var home = findInLeaderboard(game.home, game.box);
-        var away = findInLeaderboard(game.away, game.box);
+        var homePlayer = findByName(players, game.home);
+        var awayPlayer = findByName(players, game.away);
+
+        // skip any injured players
+        if (homePlayer.notAvailable === "yes" || awayPlayer.notAvailable === "yes") {
+            return;
+        }
+
+        var home = getRunningScore(game.home, game.box);
+        var away = getRunningScore(game.away, game.box);
+
+        var score = calculatePoints(game.score);
 
         if (score.home > 0 || score.away > 0) {
-
             home.played++;
             away.played++;
+            
             home.score += score.home;
             away.score += score.away;
 
+            home.gamesFor += score.gamesHome;
+            home.gamesAgainst += score.gamesAway;
+            home.gamesDiff = home.gamesFor - home.gamesAgainst;
+            
+            away.gamesFor += score.gamesAway;
+            away.gamesAgainst += score.gamesHome;
+            away.gamesDiff = away.gamesFor - away.gamesAgainst;
+
             home.setsFor += score.setsHome;
             home.setsAgainst += score.setsAway;
+            home.setsDiff = home.setsFor - home.setsAgainst;
+            
             away.setsFor += score.setsAway;
             away.setsAgainst += score.setsHome;
+            away.setsDiff = away.setsFor - away.setsAgainst;
 
             if (score.home > score.away) {
                 home.won++;
@@ -455,6 +495,18 @@ function calculateLeaderboard(games) {
     });
 
     return leaderboard;
+}
+
+function getActiveBoxleague($http, success, fail){
+    $http.get('/boxleagues/yes').then(function (response) {
+        if(response && response.data && response.data.length === 1) {
+            success(response.data[0]);
+        } else {
+            fail({data: "No active boxleague found"});
+        }
+    }, function (response) {
+        fail(response);
+    });
 }
 
 boxleagueApp.filter('formatString', function ($filter) {
@@ -517,7 +569,6 @@ boxleagueApp.controller('welcomeCtrl', ['$scope', '$rootScope', '$log', function
 boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', function ($scope, $log, $http, $rootScope, $routeParams) {
     $log.info("tableCtrl");
 
-
     var table = $routeParams.name;
     $scope.title = table;
     if (table.indexOf('s', table.length - 1)) {
@@ -527,7 +578,7 @@ boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '
     }
 
     $http.get('/' + table).then(function (response) {
-        $scope.rows = response.data;
+        $scope.rows = filterRowsTable(response.data);
         var columns = getColumns($scope.rows);
         var filter = filterColumns(columns);
         if (filter.indexOf("schedule") !== -1) {
@@ -556,11 +607,16 @@ boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '
         return (column);
     }
 }]);
-boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', function ($scope, $log, $http, $rootScope, $routeParams) {
+boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', '$location', function ($scope, $log, $http, $rootScope, $routeParams, $location) {
     $log.info("formCtrl");
 
     var table = $routeParams.name;
     var id = $routeParams.id;
+
+    if(table === "boxleague"){
+        $location.url('/boxleague/' + id + '/boxes');
+        return;
+    }
 
     $scope.title = toTitleCase(table);
 
@@ -578,6 +634,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         });
     });
 
+    // get the specific object
     $http.get('/' + table + '/' + id).then(function (response) {
         $scope.data = response.data;
         if ($scope.data.name && $scope.data.name === $rootScope.login || $rootScope.admin) {
@@ -591,7 +648,20 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
             msg: "Read " + table + " failed with error '" + response.data
         });
     });
+
     $scope.toTitleCase = toTitleCase;
+
+    $scope.columnType = function (column) {
+        var type = "string";
+        switch (column) {
+            case "active":
+            case "available":
+                type = "yesno";
+        }
+        return type;
+    };
+
+    // action buttons
     $scope.submit = function () {
         console.log("saving data ...");
 
@@ -623,13 +693,14 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
             });
         });
     };
-    // special cases
+
+    // don't allow player names to change
     $scope.readOnly = function (column) {
         return table === "player" && column === "name"
     }
 }]);
-boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$rootScope', '$location', '$http', function ($scope, $log, $rootScope, $location, $http) {
-    $log.info("settingsCtrl");
+boxleagueApp.controller('settingsMainCtrl', ['$scope', '$log', '$rootScope', '$location', '$http', function ($scope, $log, $rootScope, $location, $http) {
+    $log.info("settingsMainCtrl");
 
     $http.get('/players').then(function (response) {
         $scope.players = response.data;
@@ -641,28 +712,33 @@ boxleagueApp.controller('settingsCtrl', ['$scope', '$log', '$rootScope', '$locat
         });
     });
 }]);
-boxleagueApp.controller('myBoxCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
-    $log.info("myBoxCtrl");
+boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', '$timeout', function ($scope, $rootScope, $log, $location, $http, $timeout) {
+    $log.info("myBoxMainCtrl");
 
-    $scope.login = $rootScope.login;
+    $scope.loading = true;
 
-    $http.get('/boxleagues').then(function (response) {
-        $scope.boxleagues = response.data;
-        $scope.boxleagues.forEach(function (boxleague) {
-            boxleague.boxes.forEach(function (box) {
-                if (box.players.indexOf($rootScope.login) !== -1) {
-                    $location.url('/boxleague/' + boxleague._id + '/box/' + box.name);
-                }
-            })
-        })
-    }, function (response) {
+    var error = function (response) {
         $rootScope.alerts.push({
             type: "warning",
-            msg: "Read failed with error '" + response.data + "'"
+            msg: "Read failed with error '" + response.data
         });
-    });
+    };
+
+    getActiveBoxleague($http, function(boxleague){
+        var found = false;
+        boxleague.boxes.forEach(function (box) {
+            if (box.players.indexOf($rootScope.login) !== -1) {
+                $location.url('/boxleague/' + boxleague._id + '/box/' + box.name);
+                found = true;
+            }
+        });
+        if(!found){
+            $scope.loading = false;
+        }
+    }, error);
 }]);
-boxleagueApp.controller('scoreboardCtrl', function ($scope, $uibModalInstance, game) {
+boxleagueApp.controller('scoreboardCtrl', function ($scope, $log, $uibModalInstance, game) {
+    $log.info("scoreboardCtrl");
 
     $scope.score = game.score;
     if (game.date instanceof Date) {
@@ -762,7 +838,7 @@ boxleagueApp.controller('scoreboardCtrl', function ($scope, $uibModalInstance, g
     $scope.format = $scope.formats[2];
     $scope.altInputFormats = ['M!/d!/yyyy'];
     $scope.inlineOptions = {
-        customClass: getDayClass,
+        //customClass: getDayClass,
         minDate: new Date(2016, 1, 1),
         showWeeks: true
     };
@@ -790,30 +866,14 @@ boxleagueApp.controller('scoreboardCtrl', function ($scope, $uibModalInstance, g
 boxleagueApp.controller('boxleagueCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("boxleagueCtrl");
 
-    $http.get('/boxleagues').then(function (response) {
-        $scope.boxleagues = response.data;
-        $scope.boxleagues.forEach(function (boxleague) {
+    getActiveBoxleague($http, function(boxleague){
+        boxleague.boxes.forEach(function (box) {
             $location.url('/boxleague/' + boxleague._id + '/boxes');
-        })
-    }, function (response) {
-        $rootScope.alerts.push({
-            type: "warning",
-            msg: "Read failed with error '" + response.data + "'"
         });
-    });
-}]);
-boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
-    $log.info("boxleagueCtrl");
-
-    $http.get('/boxleagues').then(function (response) {
-        $scope.boxleagues = response.data;
-        $scope.boxleagues.forEach(function (boxleague) {
-            $location.url('/boxleague/' + boxleague._id + '/leaderboard');
-        })
-    }, function (response) {
+    }, function(response){
         $rootScope.alerts.push({
-            type: "warning",
-            msg: "Read failed with error '" + response.data + "'"
+            type: "danger",
+            msg: response.data
         });
     });
 }]);
@@ -847,6 +907,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
 
     $scope.boxName = $routeParams.box;
     $scope.id = $routeParams.id;
+    $scope.notAvailable = [];
 
     var error = function (response) {
         $rootScope.alerts.push({
@@ -856,20 +917,35 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
     };
     $http.get('/boxleague/' + $scope.id).then(function (response) {
         $scope.boxleague = response.data;
+
+        // get this box
+        $scope.box = findByName($scope.boxleague.boxes, $scope.boxName);
+
         $http.get('/players').then(function (response) {
             $scope.players = response.data;
-            $http.get('/games').then(function (response) {
+
+            // update the box information for players
+            $scope.box.players = [];
+            $scope.box.playerIds.forEach(function (id) {
+                $scope.box.players.push(findById($scope.players, id));
+            });
+
+            $scope.box.players.forEach(function(player){
+                if(player.available === "no"){
+                    $scope.notAvailable.push(player.name);
+                }
+             });
+
+            $http.get('/games/boxleagueId/' + $scope.id).then(function (response) {
                 $scope.games = response.data;
-                $scope.boxleague.boxes.forEach(function (box, index, arr) {
-                    arr[index].players = [];
-                    box.playerIds.forEach(function (id) {
-                        arr[index].players.push(findById($scope.players, id));
-                    });
-                    arr[index].games = [];
-                    box.gameIds.forEach(function (id) {
-                        arr[index].games.push(findById($scope.games, id));
-                    });
+
+                // update the boxes information for games
+                $scope.box.games = [];
+                $scope.box.gameIds.forEach(function (id) {
+                    $scope.box.games.push(findById($scope.games, id));
                 });
+
+                // now initialise the page
                 setUpBox();
             }, error)
         }, error);
@@ -960,8 +1036,6 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
     };
 
     $scope.readOnly = function (column, row, index) {
-        //console.log(JSON.stringify(row[index]));
-
         if (index === 0) {
             return true;
         } else if (row[index].home === "Free Week") {
@@ -976,8 +1050,25 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         return true;
     };
 
+    $scope.isNotAvailable = function (column, row, index) {
+        if (index === 0) {
+            for (var i = 0; i < $scope.notAvailable.length; i++) {
+                if ($scope.notAvailable[i] === row[index]) {
+                    return true;
+                }
+            }
+        } else {
+            for (i = 0; i < $scope.notAvailable.length; i++) {
+                if ($scope.notAvailable[i] === row[index].home || $scope.notAvailable[i] === row[index].away) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+
     var setUpBox = function () {
-        $scope.box = findByName($scope.boxleague.boxes, $scope.boxName);
         $scope.boxPlayers = $scope.box.players;
         $scope.boxGames = $scope.box.games;
 
@@ -986,7 +1077,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.tableHeaders.push($scope.box.name);
 
         // calculate the leaderboard details
-        $scope.leaderboard = calculateLeaderboard($scope.boxGames);
+        $scope.leaderboard = calculateLeaderboard($scope.boxGames, $scope.players);
         var total = 0, played = 0;
         $scope.boxGames.forEach(function (game) {
             total++;
@@ -1164,6 +1255,18 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         }
     };
 }]);
+boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
+    $log.info("leaderboardMainCtrl");
+
+    getActiveBoxleague($http, function(boxleague){
+        $location.url('/boxleague/' + boxleague._id + '/leaderboard');
+    }, function(response){
+        $rootScope.alerts.push({
+            type: "danger",
+            msg: response.data
+        });
+    });
+}]);
 boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', function ($scope, $log, $resource, $routeParams, $rootScope, $http) {
     $log.info("leaderboardCtrl");
 
@@ -1177,30 +1280,205 @@ boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$rou
     };
     $http.get('/boxleague/' + $scope.id).then(function (response) {
         $scope.boxleague = response.data;
-        $http.get('/games').then(function (response) {
-            $scope.games = response.data;
-            $scope.leaderboard = calculateLeaderboard($scope.games);
-            var total = 0, played = 0;
-            $scope.games.forEach(function (game) {
-                total++;
-                if (isCompleteScore(game.score) && isSetsScore(game.score)) {
-                    played++;
+        $http.get('/players').then(function (response) {
+            $scope.players = response.data;
+            $http.get('/games/'+$scope.id).then(function (response) {
+                $scope.games = response.data;
+                $scope.leaderboard = calculateLeaderboard($scope.games, $scope.players);
+                var total = 0, played = 0;
+                $scope.games.forEach(function (game) {
+                    total++;
+                    if (isCompleteScore(game.score) && isSetsScore(game.score)) {
+                        played++;
+                    }
+                });
+                $scope.played = played;
+                $scope.total = total;
+                $scope.percent = ((played / total) * 100).toFixed(1);
+                if ($scope.percent < 25) {
+                    $scope.type = 'danger';
+                } else if ($scope.percent < 50) {
+                    $scope.type = 'warning';
+                } else if ($scope.percent < 75) {
+                    $scope.type = 'info';
+                } else {
+                    $scope.type = 'success';
                 }
-            });
-            $scope.played = played;
-            $scope.total = total;
-            $scope.percent = ((played / total) * 100).toFixed(1);
-            if ($scope.percent < 25) {
-                $scope.type = 'danger';
-            } else if ($scope.percent < 50) {
-                $scope.type = 'warning';
-            } else if ($scope.percent < 75) {
-                $scope.type = 'info';
-            } else {
-                $scope.type = 'success';
-            }
+            }, error);
         }, error);
     }, error);
+}]);
+boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$filter', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $filter) {
+    $log.info("nextBoxleagueCtrl");
+
+    var error = function (response) {
+        $rootScope.alerts.push({
+            type: "warning",
+            msg: "Read failed with error '" + response.data
+        });
+    };
+
+    getActiveBoxleague($http, function(boxleague){
+        $scope.boxleague = boxleague;
+
+        $http.get('/games/boxleagueId/' + boxleague._id).then(function (response) {
+            $scope.games = response.data;
+            $http.get('/players').then(function (response) {
+                $scope.players = response.data;
+                nextBoxleague($scope.boxleague, $scope.games, $scope.players)
+            }, error);
+        }, error);
+    }, error);
+
+    var nextBoxleague = function (boxleague, games, players) {
+        $scope.leaderboard = calculateLeaderboard(games, players);
+        $scope.leaderboard = $filter('orderBy')($scope.leaderboard, ['-box', 'score', 'setsDiff','gamesDiff','-name'], true);
+
+        // update the box information for players
+        $scope.currentPlayers = [];
+        boxleague.boxes.forEach(function(box){
+            box.playerIds.forEach(function (id) {
+                $scope.currentPlayers.push(findById(players, id));
+            });            
+        });
+        $scope.currentPlayers.sort();
+
+        $scope.nextBox = [];
+
+        var boxNames = $scope.leaderboard.map(function (item) {
+            return item.box
+        });
+
+        boxNames = boxNames.filter(unique);
+        boxNames = boxNames.sort();
+        $scope.boxNames = boxNames;
+
+        for (var i = 0; i < boxNames.length; i++) {
+            var current = boxNames[i];
+            var above = boxNames[Math.max(0, i - 1)];
+            var below = boxNames[Math.min(boxNames.length - 1, i + 1)];
+
+            var box = findObjectsMatchingBox($scope.leaderboard, current);
+            box.forEach(function (item) {
+                item.newBox = current;
+                item.box = current;
+            });
+
+            // promote
+            var j = 0;
+            box[j].newBox = above;
+            box[j].change = box[j].box !== box[j].newBox? "promote" : "";
+            j++;
+            box[j].newBox = above;
+            box[j].change = box[j].box !== box[j].newBox? "promote" : "";
+
+            // demote
+            j = box.length - 2;
+            box[j].newBox = below;
+            box[j].change = box[j].box !== box[j].newBox? "demote" : "";
+            j++;
+            box[j].newBox = below;
+            box[j].change = box[j].box !== box[j].newBox? "demote" : "";
+
+            box.forEach(function (item) {
+                $scope.nextBox.push(item);
+            })
+        }
+    };
+
+    $scope.removed = [];
+    $scope.remove = function(){
+        $scope.nextBox.splice(arrayObjectIndexOf($scope.nextBox, $scope.removeSelected.name, 'name'), 1);
+        $scope.removed.push($scope.removeSelected);
+    };
+
+    $scope.added = [];
+    $scope.add = function(){
+        $scope.nextBox.push({name: $scope.playerSelected.name, newBox: $scope.boxSelected, change: 'added'});
+        $scope.added.push($scope.playerSelected);
+
+    };
+}]);
+boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$location', '$http', function ($scope, $log, $rootScope, $location, $http) {
+    $log.info("headToHeadCtrl");
+
+    var error = function (response) {
+        $rootScope.alerts.push({
+            type: "warning",
+            msg: "Read failed with error '" + response.data
+        });
+    };
+
+    $scope.login = $rootScope.login;
+
+    // get all of the required data
+    $http.get('/boxleagues').then(function (response) {
+        $scope.boxleagues = response.data;
+        $http.get('/players').then(function (response) {
+            $scope.players = response.data;
+            $http.get('/games/homeId/' + findByName($scope.players, $rootScope.login)._id).then(function (response) {
+                $scope.games = response.data;
+                $http.get('/games/awayId/' + findByName($scope.players, $rootScope.login)._id).then(function (response) {
+                    $scope.games.concat(response.data);
+                    setUp();
+                }, error);
+            }, error);
+        }, error);
+    }, error);
+
+    var setUp = function()
+    {
+        var login = findByName($scope.players, $rootScope.login);
+        var loginId = login._id;
+
+        var hasScore = [];
+        var played = [];
+        $scope.games.forEach(function(game){
+            var index = arrayObjectIndexOf($scope.boxleagues, game.boxleagueId, "_id");
+            game.boxleague = $scope.boxleagues[index].name;
+            if(game.score.length){
+                hasScore.push(game);
+                if(game.homeId !== loginId) {
+                    played.push(findById($scope.players, game.homeId));
+                }
+                if(game.awayId !== loginId) {
+                    played.push(findById($scope.players, game.awayId));
+                }
+            }
+        });
+        played.filter(unique);
+
+        $scope.games = hasScore;
+        $scope.played = played;
+
+        $scope.columns = ["date", "home", "away", "boxleague", "box", "score"];
+        $scope.sortType = "date";
+        $scope.sortReverse = false;
+        $scope.searchName = "";
+        //$scope.type = "game";
+        $scope.toTitleCase = toTitleCase;
+        $scope.sortBoxColumn = function (column) {
+            $scope.sortType = column;
+            $scope.sortReverse = !$scope.sortReverse;
+            return (column);
+        };
+    };
+    $scope.change = function(selected) {
+        var games = [];
+
+        $scope.games.forEach(function(game){
+            if(game.homeId === $scope.selected._id) {
+                games.push(game);
+            }
+            if(game.awayId === $scope.selected._id) {
+                games.push(game);
+            }
+        });
+
+        $scope.searchName = selected.name;
+
+        $scope.leaderboard = calculateLeaderboard(games, $scope.players);
+    }
 }]);
 
 boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
@@ -1658,9 +1936,8 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
             data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
         });
 
-        $http.post('/players', JSON.stringify(data)).then(function (response) {
+        $http.post('/players', JSON.stringify(data)).then(function() {
             $rootScope.alerts.push({type: "success", msg: "Players saved"});
-
             $http.get('/players').then(function (response) {
                 $scope.currentPlayers = response.data;
             }, function (response) {
@@ -1682,7 +1959,7 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
     };
 }]);
 // control for file import
-boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
+boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', function ($scope, $log) {
     $log.info("importPlayersFileCtrl");
 
     $scope.$watch('changeEvent', function () {
@@ -1727,7 +2004,7 @@ boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$r
     })
 }]);
 // control for Tim's spreadsheet import
-boxleagueApp.controller('importPlayersXlsCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
+boxleagueApp.controller('importPlayersXlsCtrl', ['$scope', '$log', function ($scope, $log) {
     $log.info("importPlayersXlsCtrl");
 
     $scope.$watch('changeEvent', function () {
@@ -1772,7 +2049,7 @@ boxleagueApp.controller('importPlayersXlsCtrl', ['$scope', '$log', '$http', '$ro
     })
 }]);
 // control for manual input
-boxleagueApp.controller('importPlayersManualCtrl', ['$scope', '$log', '$http', '$rootScope', function ($scope, $log, $http, $rootScope) {
+boxleagueApp.controller('importPlayersManualCtrl', ['$scope', '$log', function ($scope, $log) {
     $log.info("importPlayersManualCtrl");
 
     $scope.data = {name: "", mobile: "", email: "", home: ""};
@@ -1789,7 +2066,7 @@ boxleagueApp.controller('importPlayersManualCtrl', ['$scope', '$log', '$http', '
             $scope.newPlayers.push($scope.data);
         }
         $scope.data = {name: "", mobile: "", email: "", home: ""};
-    }
+    };
 
     $scope.valid = function () {
         if ($scope.data.name.length < 3) {
@@ -1807,61 +2084,3 @@ boxleagueApp.controller('importPlayersManualCtrl', ['$scope', '$log', '$http', '
     }
 }]);
 
-boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$filter', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $filter) {
-    $log.info("nextBoxleagueCtrl");
-
-    var error = function (response) {
-        $rootScope.alerts.push({
-            type: "warning",
-            msg: "Read failed with error '" + response.data
-        });
-    };
-
-    $http.get('/boxleagues').then(function (response) {
-        $scope.boxleagues = response.data;
-        load($scope.boxleagues[0]._id)
-    }, error);
-
-    var load = function (id) {
-        $http.get('/boxleague/' + id).then(function (response) {
-            $scope.boxleague = response.data;
-            $http.get('/games').then(function (response) {
-                $scope.games = response.data;
-                $scope.leaderboard = calculateLeaderboard($scope.games);
-                promote($scope.leaderboard);
-            }, error);
-        }, error);
-    };
-
-    var promote = function (leaderboard) {
-        leaderboard = $filter('orderBy')(leaderboard, ['-box', 'score', '-name'], true);
-
-        $scope.nextBox = [];
-
-        var boxNames = leaderboard.map(function(item){ return item.box});
-        boxNames = boxNames.filter(unique);
-        boxNames = boxNames.sort();
-
-        for(var i=0;i<boxNames.length;i++){
-            var current = boxNames[i];
-            var above = boxNames[Math.max(0, i-1)];
-            var below = boxNames[Math.min(boxNames.length-1, i+1)];
-
-            var box = findObjectsMatchingBox(leaderboard, current);
-            box.forEach(function(item){
-                item.newBox = current;
-            })
-
-            // promote
-            box[0].newBox = above;
-            box[1].newBox = above;
-            // demote
-            box[box.length-2].newBox = below;
-            box[box.length-1].newBox = below;
-            
-            box.forEach(function(item){
-                $scope.nextBox.push(item);
-            })
-        }
-    }
-}]);

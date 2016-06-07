@@ -1,23 +1,24 @@
 <div class="row" ng-show="tableRows">
     <div class="well">
-        <h1>{{boxleagueTitle}}</h1>
-        <h2>{{boxName}}</h2>
+        <h2>{{boxleague.name}} - {{boxName}}</h2>
+        <!--<h2>{{boxName}}</h2>-->
         Click on a table cell to enter your score in the <strong>Scoreboard.</strong>
         <table class="table table-bordered table-striped table-condensed table-responsive">
             <thead>
             <tr>
-                <th ng-repeat="header in tableHeaders">{{header}}</th>
+                <th ng-repeat="header in tableHeaders" ng-class="{notAvailable: isNotAvailable(0,[header],0)}">{{header}}</th>
             </tr>
             </thead>
             <tbody>
             <tr ng-repeat="row in tableRows">
-                <td ng-repeat="column in row track by $index" ng-class="{rowTitle: $index === 0}">
+                <td ng-repeat="column in row track by $index" ng-class="{rowTitle: $first}">
                     <div ng-if="readOnly(column,row,$index)"
-                         ng-class="{scoreNoGame: getCellScore(column,row,$index) === 'x'}">
+                         ng-class="{scoreNoGame: getCellScore(column,row,$index) === 'x', notAvailable: isNotAvailable(column,row,$index)}">
                         {{getCellScore(column,row,$index)}}
                     </div>
                     <div ng-if="!readOnly(column,row,$index)" ng-click="openByGrid(column,row,$index)"
-                         class="scoreDiv">
+                         ng-class="{scoreNoGame: getCellScore(column,row,$index) === 'x', notAvailable: isNotAvailable(column,row,$index)}"
+                    class="scoreDiv">
                         <div ng-if="getCellScore(column,row,$index)" class="scoreInput">
                             {{getCellScore(column,row,$index)}}
                         </div>
@@ -29,6 +30,14 @@
             </tr>
             </tbody>
         </table>
+        <div ng-if="notAvailable.length">
+            <h4>Not available</h4>
+            <ul ng-repeat="player in notAvailable">
+                <li ng-if="player !== '-x-'">
+                    {{player}}
+                </li>
+            </ul>
+        </div>
     </div>
 </div>
 
@@ -43,6 +52,9 @@
                 <th>P</th>
                 <th>W</th>
                 <th>L</th>
+                <th>+G</th>
+                <th>-G</th>
+                <th>GD</th>
                 <th>+S</th>
                 <th>-S</th>
                 <th>SD</th>
@@ -55,9 +67,12 @@
                 <td>{{player.played}}</td>
                 <td>{{player.won}}</td>
                 <td>{{player.lost}}</td>
+                <td>{{player.gamesFor}}</td>
+                <td>{{player.gamesAgainst}}</td>
+                <td>{{player.gamesDiff}}</td>
                 <td>{{player.setsFor}}</td>
                 <td>{{player.setsAgainst}}</td>
-                <td>{{player.setsFor - player.setsAgainst}}</td>
+                <td>{{player.setsDiff}}</td>
                 <td>{{player.score}}</td>
             </tr>
             </tbody>

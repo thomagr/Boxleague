@@ -112,17 +112,23 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
             loggedin: checkLoggedin
         }        
     }).when('/myBox', {
-        controller: 'myBoxCtrl',
+        controller: 'myBoxMainCtrl',
         templateUrl: 'pages/noBox.html',
         resolve: {
             loggedin: checkLoggedin
         }
     }).when('/settings', {
         templateUrl: 'pages/empty.html',
-        controller: 'settingsCtrl',
+        controller: 'settingsMainCtrl',
         resolve: {
             loggedin: checkLoggedin
         }
+    }).when('/headToHead', {
+        templateUrl: 'pages/headToHead.html',
+        controller: 'headToHeadCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }        
     }).when('/importPlayersSpreadsheet', {
         templateUrl: 'pages/importPlayers.html',
         controller: 'importPlayersXlsCtrl',
