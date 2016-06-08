@@ -24,7 +24,7 @@ function getColumns(rows) {
     });
     columns.sort();
     // if column name appears make it the first one in the array
-    if(columns.indexOf('name') !== -1){
+    if (columns.indexOf('name') !== -1) {
         columns.splice(columns.indexOf('name'), 1);
         columns.unshift('name');
     }
@@ -175,7 +175,7 @@ function findIdsMatchingName(source, name) {
     });
 }
 
-function findByProperty(source, property, value){
+function findByProperty(source, property, value) {
     if (!source) {
         throw "No source provided";
     }
@@ -187,13 +187,13 @@ function findByProperty(source, property, value){
     if (!value) {
         throw "No value provided";
     }
-    
+
     for (var i = 0; i < source.length; i++) {
         if (source[i][property] === value) {
             return source[i];
         }
     }
-    throw "Couldn't find object with property: " + property;    
+    throw "Couldn't find object with property: " + property;
 }
 function findById(source, id) {
     return findByProperty(source, "_id", id);
@@ -206,27 +206,270 @@ function unique(value, index, self) {
     return self.indexOf(value) === index;
 }
 function arrayObjectIndexOf(myArray, searchTerm, property) {
-    for(var i = 0, len = myArray.length; i < len; i++) {
+    for (var i = 0, len = myArray.length; i < len; i++) {
         if (myArray[i][property] === searchTerm) return i;
     }
     return -1;
 }
 
-// Has someone won correctly
-function isCompleteScore(score) {
-    if (!score || !score.length) {
+function scoreToSets(score) {
+    var sets = [];
+
+    // initialise $scope sets
+    [1, 2, 3].forEach(function (set) {
+        sets.push({name: "Set " + set, home: "0", away: "0"});
+    });
+
+    // load $scope sets from current score
+    var arr = score ? score.split(" ") : [];
+    for (var i = 0; i < arr.length; i++) {
+        var games = arr[i].split(":");
+        sets[i].home = games[0] || "0";
+        sets[i].away = games[1] || "0";
+    }
+    return sets;
+};
+function setsToScore(sets) {
+    var arr = sets.map(function(set) {
+        return set.home + ":" + set.away;
+    });
+
+    var score = arr.join(" ");
+
+    // fix score format
+    // set to blank string if no score
+    score = score.replace(/^0:0 0:0 0:0$/, "");
+    // remove trailing 3rd set if no score
+    score = score.replace(/ 0:0$/, "");
+    // remove trailing 2nd set if walkover
+    if(score.indexOf("W") !== -1){
+        score = score.replace(/ 0:0$/, "");
+    }
+    // remove trailing 2nd set if concedes
+    if(score.indexOf("C") !== -1){
+        score = score.replace(/ 0:0$/, "");
+    }
+
+    return score;
+};
+// Do we have a valid values for a set score e.g. 6:0, 7:5, 7:6
+function isSetScore(score) {
+    if(!score || !score.length ){
         return 0;
     }
 
+    // special situation for walkover
     if (score === "W:0" || score === "0:W") {
         return 1;
     }
 
-    if (score === "w:0" || score === "0:w") {
+    // special situation for concedes
+    if (score === "C:C") {
+        return 0;
+    }
+
+    var games = score.split(":");
+
+    if (games.length !== 2) {
+        return 0;
+    }
+
+    var home = parseInt(games[0]);
+    var away = parseInt(games[1]);
+
+    // if we have a 'C' then someone has conceded
+    if((games[0] === 'C' && away <= 7) || (games[1] === 'C' && home <= 7)){
         return 1;
     }
 
-    if (score === "0:0 0:0") {
+    // values are not in range
+    if (home < 0 || away < 0) {
+        return 0;
+    }
+
+    // score is not set
+    if (home + away === 0) {
+        return 0;
+    }
+
+    // values are not in range
+    if (home > 7 || away > 7) {
+        return 0;
+    }
+
+    // score is not set
+    if (home < 6 && away < 6) {
+        return 0;
+    }
+
+    // special case tiebreak set 7:6
+    if (home + away === 13) {
+        return 1;
+    }
+
+    // valid scores
+    if ((home === 6 || away === 6) && Math.abs(home - away) >= 2) {
+        return 1;
+    }
+
+    if ((home === 7 || away === 7) && Math.abs(home - away) === 2) {
+        return 1;
+    }
+
+    return 0;
+}
+// do we have valid values for a tiebreak e.g. 1:0 or 10:8
+function isTiebreakScore(score, numPoints) {
+    if(!score || !score.length ){
+        return 0;
+    }
+
+    var games = score.split(":");
+
+    if (games.length !== 2) {
+        return 0;
+    }
+
+    var home = parseInt(games[0]);
+    var away = parseInt(games[1]);
+
+    // if we have a 'C' then someone has conceded, any positive value is then valid
+    if((games[0] === 'C' && away >= 0) || (games[1] === 'C' && home >= 0)){
+        return 1;
+    }
+
+    // negative values
+    if(home < 0 || away < 0){
+        return 0;
+    }
+
+    // score is not set
+    if (home + away === 0) {
+        return 0;
+    }
+
+    // valid tiebreak score e.g. 1:0
+    if (home + away === 1) {
+        return 1;
+    }
+
+    // tiebreak is not set
+    if (home < numPoints && away < numPoints) {
+        return 0;
+    }
+
+    // values are not in range
+    if (home < 0 || away < 0) {
+        return 0;
+    }
+
+    var diff = Math.abs(home - away);
+    if (home === numPoints && home - away >= 2) {
+        return 1;
+    } else if (away === numPoints && away - home >= 2) {
+        return 1;
+    } else if (home > numPoints && diff === 2) {
+        return 1;
+    } else if (away > numPoints && diff === 2) {
+        return 1;
+    }
+
+    return 0;
+}
+function isMatchTiebreakScore(score) {
+    return isTiebreakScore(score, 10);
+}
+// Do we have valid sequence of sets e.g. set1, set2 or set1, set2, match tiebreak
+function isSetsScore(score, numSets) {
+    if (!score || !score.length) {
+        return 0;
+    }
+
+    // special situation for walkover
+    if(score.indexOf('W') !== -1) {
+        if (score === "W:0" || score === "0:W") {
+            return 1;
+        }
+        return 0;
+    }
+
+    // games in sets
+    var sets = score.split(" ");
+
+    var concedes = 0;
+    sets.forEach(function(set){
+        set.split(":").forEach(function(game){
+            concedes += game === 'C';
+        })
+    });
+
+    // check concedes logic
+    if(concedes){
+        if(concedes > 1){
+            return 0;
+        }
+
+        // check only the last set is a concedes and there is only 1 'C'
+        if(sets[sets.length-1].indexOf('C') === -1) {
+            return 0;
+        }
+
+        // who conceded?
+        var sets = score.split(" ");
+        sets.forEach(function(set){
+            var games = set.split(":");
+            if(games[0] === 'C'){
+                isHome = true;
+            }
+        });
+        // get rid of the last set
+        sets.pop();
+        // we shouldn't have a complete score if the last set is popped
+        if(isCompleteScore(sets.join(" "), numSets)){
+            return 0;
+        }
+
+        // add the winner of the next sets
+        while(!isCompleteScore(sets.join(" "), numSets) && sets.length < 3){
+            sets.push(isHome ? "0:6" : "6:0");
+        }
+        score = sets.join(" ");
+    }
+
+    var setsScores = 0;
+    sets.forEach(function(set){
+        setsScores += isSetScore(set);
+    });
+
+    // last set may be a match tiebreak
+    var tieBreakScore = isMatchTiebreakScore(sets[sets.length-1]);
+
+    // we have straight sets
+    if (sets.length >= Math.ceil(numSets / 2) && sets.length === setsScores) {
+        return 1;
+    }
+    if (sets.length === numSets && sets.length === setsScores + tieBreakScore) {
+        return 1;
+    }
+
+    return 0;
+}
+// Has someone won
+function isCompleteScore(score, numSets) {
+    if (!score || !score.length) {
+        return 0;
+    }
+
+    // special situation for walkover
+    if(score.indexOf('W') !== -1) {
+        if (score === "W:0" || score === "0:W") {
+            return 1;
+        }
+        return 0;
+    }
+
+    // if we have a 'C' then someone has conceded
+    if(score.indexOf('C') !== -1){
         return 1;
     }
 
@@ -238,141 +481,118 @@ function isCompleteScore(score) {
         var games = set.split(":");
         if (parseInt(games[0]) > parseInt(games[1])) {
             home++;
-        }
-        if (parseInt(games[0]) < parseInt(games[1])) {
+        } else if (parseInt(games[0]) < parseInt(games[1])) {
             away++;
         }
     });
 
-    if (home === 2 && (away === 1 || away === 0 )) {
-        return 1;
-    }
-    if (away === 2 && (home === 1 || home === 0 )) {
-        return 1;
-    }
-    return 0;
-}
-// do we have valid values for a home:away tiebreak
-function isTiebreakScore(score) {
-    var games = score.split(":");
-
-    if (games.length !== 2) {
+    // too many sets
+    if(home + away > numSets){
         return 0;
     }
 
-    var home = parseInt(games[0]);
-    var away = parseInt(games[1]);
-
-    // score is not set
-    if (home + away === 0) {
+    // not enough sets
+    if(home + away < Math.ceil(numSets / 2)){
         return 0;
     }
 
-    // valid scores e.g. 1:0
-    if ((home === 1 && away === 0) || (home === 0 && away === 1)) {
-        return 1;
-    }
-
-    // score is not set
-    if (home < 10 && away < 10) {
-        return 0;
-    }
-
-    // values are not in range
-    if (home < 0 || away < 0) {
-        return 0;
-    }
-
-    var diff = Math.abs(home - away);
-    if (home === 10 && home - away >= 2) {
-        return 1;
-    } else if (away === 10 && away - home >= 2) {
-        return 1;
-    } else if (home > 10 && diff === 2) {
-        return 1;
-    } else if (away > 10 && diff === 2) {
+    // someone has won
+    if(Math.abs(home - away) > 0) {
         return 1;
     }
 
     return 0;
 }
-// Do we have valid text in the sets score set1 set2 set3
-function isSetsScore(score) {
-    if (score === "W:0" || score === "0:W") {
-        return 1;
+// calculate points from score
+function calculatePoints(score, numSets) {
+    // validate we have a score
+    if (!isCompleteScore(score, numSets) || !isSetsScore(score, numSets)) {
+        return {home: 0, away: 0, setsHome: 0, setsAway: 0, gamesHome: 0, gamesAway: 0};
     }
 
-    if (score === "w:0" || score === "0:w") {
-        return 1;
+    // special situation for walkover
+    if (score === "W:0") {
+        return {home: 10, away: 0, setsHome: 0, setsAway: 0, gamesHome: 0, gamesAway: 0};
+    } else if(score === "0:W"){
+        return {home: 0, away: 10, setsHome: 0, setsAway: 0, gamesHome: 0, gamesAway: 0};
     }
 
-    if (score === "0:0 0:0") {
-        return 1;
+    // special situation for concedes
+    var isHome = false;
+    var isConcedes = false;
+    if(score.indexOf('C') !== -1){
+        isConcedes = true;
+        // who conceded?
+        var sets = score.split(" ");
+        sets.forEach(function(set){
+            var games = set.split(":");
+            if(games[0] === 'C'){
+                isHome = true;
+            }
+        });
+        // get rid of the last set
+        sets.pop();
+        // add the winner of the next sets
+        while(!isCompleteScore(sets.join(" "), numSets) && sets.length < 3){
+            sets.push(isHome ? "0:6" : "6:0");
+        }
+        score = sets.join(" ");
     }
 
-    var sets = score.split(" ");
-    if (sets.length === 2 && isSetScore(sets[0]) && isSetScore(sets[1])) {
-        return 1;
-    }
-    if (sets.length === 3 && isSetScore(sets[0]) && isSetScore(sets[1]) && isSetScore(sets[2])) {
-        return 1;
-    }
-    if (sets.length === 3 && isSetScore(sets[0]) && isSetScore(sets[1]) && isTiebreakScore(sets[2])) {
-        return 1;
-    }
+    var setsString = score.split(" ");
 
-    return 0;
-}
-// Do we have a valid set score
-function isSetScore(score) {
-    var games = score.split(":");
+    var sets = [];
+    setsString.forEach(function (set) {
+        var gameString = set.split(":");
+        sets.push([parseInt(gameString[0]), parseInt(gameString[1])]);
+    });
 
-    if (games.length !== 2) {
-        return 0;
-    }
+    var home = 0, away = 0, setsHome = 0, setsAway = 0;
+    var gamesHome = sets[0][0] + sets[1][0]; //Math.min(6, sets[0][0]) + Math.min(6, sets[1][0]);
+    var gamesAway = sets[0][1] + sets[1][1]; //Math.min(6, sets[0][1]) + Math.min(6, sets[1][1]);
 
-    var home = parseInt(games[0]);
-    var away = parseInt(games[1]);
-
-    // score is not set
-    if (home + away === 0) {
-        return 0;
-    }
-
-    // score is not set
-    if (home < 6 && away < 6) {
-        return 0;
-    }
-
-    // values are not in range
-    if (home < 0 || away < 0) {
-        return 0;
+    if (sets.length === 2) {
+        if (sets[0][0] > sets[0][1]) {
+            setsHome = 2;
+            home = 18;
+            away = gamesAway;
+        } else {
+            setsAway = 2;
+            away = 18;
+            home = gamesHome;
+        }
+    } else if (sets.length === 3) {
+        if (sets[2][0] > sets[2][1]) {
+            home = 12;
+            setsHome = 2;
+            setsAway = 1;
+            away = gamesAway;
+        } else {
+            away = 12;
+            setsAway = 2;
+            setsHome = 1;
+            home = gamesHome;
+        }
     }
 
-    // values are not in range
-    if (home > 7 || away > 7) {
-        return 0;
+    if(isConcedes && Math.abs(home - away) < 2){
+        if(isHome){
+            home = away - 2;
+        } else {
+            away = home - 2;
+        }
     }
 
-    // tie break set
-    if (home === 7 && (away === 6 || away === 5)) {
-        return 1;
-    }
+    return {
+        home: home,
+        away: away,
+        setsHome: setsHome,
+        setsAway: setsAway,
+        gamesHome: gamesHome,
+        gamesAway: gamesAway
+    };
+};
 
-    // tie break set
-    if (away === 7 && (home === 6 || home === 5)) {
-        return 1;
-    }
-
-    // valid scores
-    if (home === 6 && home - away >= 2) {
-        return 1;
-    } else if (away === 6 && away - home >= 2) {
-        return 1;
-    }
-
-    return 0;
-}
 function calculateLeaderboard(games, players) {
     var leaderboard = [];
     var getRunningScore = function (player, box) {
@@ -397,49 +617,6 @@ function calculateLeaderboard(games, players) {
         });
         return leaderboard[leaderboard.length - 1];
     };
-    var calculatePoints = function (score) {
-        // validate we have a score
-        if (!isCompleteScore(score) || !isSetsScore(score)) {
-            return {home: 0, away: 0, setsHome: 0, setsAway: 0};
-        }
-
-        var setsString = score.split(" ");
-        var sets = [];
-        setsString.forEach(function (set) {
-            var gameString = set.split(":");
-            sets.push([parseInt(gameString[0]), parseInt(gameString[1])]);
-        });
-
-        var home = 0, away = 0, setsHome = 0, setsAway = 0;
-        var gamesHome = sets[0][0] + sets[1][0]; //Math.min(6, sets[0][0]) + Math.min(6, sets[1][0]);
-        var gamesAway = sets[0][1] + sets[1][1]; //Math.min(6, sets[0][1]) + Math.min(6, sets[1][1]);
-
-        if (sets.length === 2) {
-            if (sets[0][0] > sets[0][1]) {
-                setsHome = 2;
-                home = 18;
-                away = gamesAway;
-            } else {
-                setsAway = 2;
-                away = 18;
-                home = gamesHome;
-            }
-        } else if (sets.length === 3) {
-            if (sets[2][0] > sets[2][1]) {
-                home = 12;
-                setsHome = 2;
-                setsAway = 1;
-                away = gamesAway;
-            } else {
-                away = 12;
-                setsAway = 2;
-                setsHome = 1;
-                home = gamesHome;
-            }
-        }
-
-        return {home: home, away: away, setsHome: setsHome, setsAway: setsAway, gamesHome: gamesHome, gamesAway: gamesAway};
-    };
 
     games.forEach(function (game) {
 
@@ -459,19 +636,21 @@ function calculateLeaderboard(games, players) {
         var home = getRunningScore(game.home, game.box);
         var away = getRunningScore(game.away, game.box);
 
-        var score = calculatePoints(game.score);
+        var score = calculatePoints(game.score, 3);
 
         if (score.home > 0 || score.away > 0) {
-            home.played++;
-            away.played++;
-            
+            if(game.score.indexOf('W') ===-1 ) {
+                home.played++;
+                away.played++;
+            }
+
             home.score += score.home;
             away.score += score.away;
 
             home.gamesFor += score.gamesHome;
             home.gamesAgainst += score.gamesAway;
             home.gamesDiff = home.gamesFor - home.gamesAgainst;
-            
+
             away.gamesFor += score.gamesAway;
             away.gamesAgainst += score.gamesHome;
             away.gamesDiff = away.gamesFor - away.gamesAgainst;
@@ -479,17 +658,19 @@ function calculateLeaderboard(games, players) {
             home.setsFor += score.setsHome;
             home.setsAgainst += score.setsAway;
             home.setsDiff = home.setsFor - home.setsAgainst;
-            
+
             away.setsFor += score.setsAway;
             away.setsAgainst += score.setsHome;
             away.setsDiff = away.setsFor - away.setsAgainst;
 
-            if (score.home > score.away) {
-                home.won++;
-                away.lost++;
-            } else {
-                away.won++;
-                home.lost++;
+            if(game.score.indexOf('W') ===-1 ) {
+                if (score.home > score.away) {
+                    home.won++;
+                    away.lost++;
+                } else {
+                    away.won++;
+                    home.lost++;
+                }
             }
         }
     });
@@ -497,9 +678,9 @@ function calculateLeaderboard(games, players) {
     return leaderboard;
 }
 
-function getActiveBoxleague($http, success, fail){
+function getActiveBoxleague($http, success, fail) {
     $http.get('/boxleagues/yes').then(function (response) {
-        if(response && response.data && response.data.length === 1) {
+        if (response && response.data && response.data.length === 1) {
             success(response.data[0]);
         } else {
             fail({data: "No active boxleague found"});
@@ -613,7 +794,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
     var table = $routeParams.name;
     var id = $routeParams.id;
 
-    if(table === "boxleague"){
+    if (table === "boxleague") {
         $location.url('/boxleague/' + id + '/boxes');
         return;
     }
@@ -724,7 +905,7 @@ boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$loca
         });
     };
 
-    getActiveBoxleague($http, function(boxleague){
+    getActiveBoxleague($http, function (boxleague) {
         var found = false;
         boxleague.boxes.forEach(function (box) {
             if (box.players.indexOf($rootScope.login) !== -1) {
@@ -732,7 +913,7 @@ boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$loca
                 found = true;
             }
         });
-        if(!found){
+        if (!found) {
             $scope.loading = false;
         }
     }, error);
@@ -740,7 +921,12 @@ boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$loca
 boxleagueApp.controller('scoreboardCtrl', function ($scope, $log, $uibModalInstance, game) {
     $log.info("scoreboardCtrl");
 
+    // initialise scope values from parameters
     $scope.score = game.score;
+    $scope.home = game.home;
+    $scope.away = game.away;
+
+    // fix type of date
     if (game.date instanceof Date) {
         $scope.date = game.date;
     } else if (typeof game.date == "string" && game.date.length) {
@@ -748,68 +934,46 @@ boxleagueApp.controller('scoreboardCtrl', function ($scope, $log, $uibModalInsta
     } else {
         $scope.date = game.date;
     }
-    // if(game.date && game.date.length || typeof game.date === 'object'){
-    //     $scope.date = new Date(game.date);
-    // }
 
-    $scope.home = game.home;
-    $scope.away = game.away;
-
-    $scope.reset = function () {
-        $scope.score = "";
-        $scope.date = "";
-        load();
-    };
-
-    // load
-    var load = function () {
-        $scope.sets = [];
-
-        // initialise
-        [1, 2, 3].forEach(function (set) {
-            $scope.sets.push({name: "Set " + set, game1: "0", game2: "0"});
-        });
-
-        var sets = $scope.score ? $scope.score.split(" ") : [];
-        for (var i = 0; i < sets.length; i++) {
-            var set = sets[i];
-            var games = set.split(":");
-            var game1 = games[0] || "0";
-            var game2 = games[1] || "0";
-            $scope.sets[i].game1 = game1;
-            $scope.sets[i].game2 = game2;
+    // for efficient handling of checks
+    $scope.dirty = true;
+    $scope.valid = false;
+    $scope.validScore = function (sets) {
+        if($scope.dirty){
+            var score = setsToScore(sets);
+            $scope.valid = score === "" || (isSetsScore(score, 3) && isCompleteScore(score, 3));
+            var points = calculatePoints(score, 3);
+            $scope.homePoints = points.home;
+            $scope.awayPoints = points.away;
+            $scope.dirty = false;
         }
+        return $scope.valid;
     };
 
-    var setsToScore = function (sets) {
-        var score = "";
-        sets.forEach(function (set) {
-            score += set.game1 + ":" + set.game2 + " ";
-        });
-        score = score.trim();
-        score = score.replace(/ 0:0$/, "");
-        return score;
-    };
+    // for + and - buttons
+    $scope.decrement = function (score, index) {
+        $scope.dirty = true;
 
-    $scope.notValidScore = function () {
-        var score = setsToScore($scope.sets);
-
-        var validSetsScore = isSetsScore(score);
-        var validCompleteScore = isCompleteScore(score);
-
-        return !(validSetsScore && validCompleteScore);
-    };
-
-    load();
-
-    $scope.decrement = function (score) {
+        if(index === 0 && score === "C" || score === "W"){
+            return 'W';
+        }
+        if(score === "0" || score === "C"){
+            return 'C';
+        }
         var num = parseInt(score);
         num = Math.max(0, num - 1);
 
         return num.toString();
     };
-
     $scope.increment = function (score, index) {
+        $scope.dirty = true;
+
+        if(index === 0 && score === "W"){
+            return 'C';
+        }
+        if(score === "C"){
+            return '0';
+        }
         var num = parseInt(score);
         var max = index === 2 ? 99 : 7;
         num = Math.min(max, num + 1);
@@ -817,21 +981,26 @@ boxleagueApp.controller('scoreboardCtrl', function ($scope, $log, $uibModalInsta
         return num.toString();
     };
 
+    // main panel buttons
     $scope.ok = function () {
         game.score = cleanScore(setsToScore($scope.sets));
         game.date = $scope.date;
-        // if($scope.date instanceof Date){
-        //     game.date = JSON.stringify($scope.date);
-        // } else {
-        //     game.date = $scope.date;
-        // }
 
         $uibModalInstance.close(game);
     };
-
     $scope.cancel = function () {
         $uibModalInstance.dismiss(null);
     };
+    $scope.reset = function () {
+        $scope.score = "";
+        $scope.date = "";
+        $scope.dirty = true;
+        $scope.sets = scoreToSets($scope.score);
+    };
+    $scope.update = function () {
+        $scope.score = setsToScore($scope.sets);
+    };
+
 
     // For Dates dialog
     $scope.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'dd-MM-yyyy', 'shortDate'];
@@ -862,15 +1031,18 @@ boxleagueApp.controller('scoreboardCtrl', function ($scope, $log, $uibModalInsta
         $scope.endPopUp.opened = true;
     };
     // end for Dates dialog
+
+    // initialise
+    $scope.sets = scoreToSets($scope.score);
 });
 boxleagueApp.controller('boxleagueCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("boxleagueCtrl");
 
-    getActiveBoxleague($http, function(boxleague){
+    getActiveBoxleague($http, function (boxleague) {
         boxleague.boxes.forEach(function (box) {
             $location.url('/boxleague/' + boxleague._id + '/boxes');
         });
-    }, function(response){
+    }, function (response) {
         $rootScope.alerts.push({
             type: "danger",
             msg: response.data
@@ -930,11 +1102,11 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
                 $scope.box.players.push(findById($scope.players, id));
             });
 
-            $scope.box.players.forEach(function(player){
-                if(player.available === "no"){
+            $scope.box.players.forEach(function (player) {
+                if (player.available === "no") {
                     $scope.notAvailable.push(player.name);
                 }
-             });
+            });
 
             $http.get('/games/boxleagueId/' + $scope.id).then(function (response) {
                 $scope.games = response.data;
@@ -1081,7 +1253,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         var total = 0, played = 0;
         $scope.boxGames.forEach(function (game) {
             total++;
-            if (isCompleteScore(game.score) && isSetsScore(game.score)) {
+            if (isCompleteScore(game.score, 3) && isSetsScore(game.score, 3)) {
                 played++;
             }
         });
@@ -1238,13 +1410,13 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             return;
         }
 
-        var validSetsScore = isSetsScore(game.score);
+        var validSetsScore = isSetsScore(game.score, 3);
         if (!validSetsScore) {
             game.error = "!";
             return;
         }
 
-        var validCompleteScore = isCompleteScore(game.score);
+        var validCompleteScore = isCompleteScore(game.score, 3);
         if (!validCompleteScore) {
             game.error = "*";
             return;
@@ -1258,9 +1430,9 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
 boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', function ($scope, $rootScope, $log, $location, $http) {
     $log.info("leaderboardMainCtrl");
 
-    getActiveBoxleague($http, function(boxleague){
+    getActiveBoxleague($http, function (boxleague) {
         $location.url('/boxleague/' + boxleague._id + '/leaderboard');
-    }, function(response){
+    }, function (response) {
         $rootScope.alerts.push({
             type: "danger",
             msg: response.data
@@ -1282,13 +1454,13 @@ boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$rou
         $scope.boxleague = response.data;
         $http.get('/players').then(function (response) {
             $scope.players = response.data;
-            $http.get('/games/'+$scope.id).then(function (response) {
+            $http.get('/games/' + $scope.id).then(function (response) {
                 $scope.games = response.data;
                 $scope.leaderboard = calculateLeaderboard($scope.games, $scope.players);
                 var total = 0, played = 0;
                 $scope.games.forEach(function (game) {
                     total++;
-                    if (isCompleteScore(game.score) && isSetsScore(game.score)) {
+                    if (isCompleteScore(game.score, 3) && isSetsScore(game.score, 3)) {
                         played++;
                     }
                 });
@@ -1318,7 +1490,7 @@ boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$r
         });
     };
 
-    getActiveBoxleague($http, function(boxleague){
+    getActiveBoxleague($http, function (boxleague) {
         $scope.boxleague = boxleague;
 
         $http.get('/games/boxleagueId/' + boxleague._id).then(function (response) {
@@ -1332,14 +1504,14 @@ boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$r
 
     var nextBoxleague = function (boxleague, games, players) {
         $scope.leaderboard = calculateLeaderboard(games, players);
-        $scope.leaderboard = $filter('orderBy')($scope.leaderboard, ['-box', 'score', 'setsDiff','gamesDiff','-name'], true);
+        $scope.leaderboard = $filter('orderBy')($scope.leaderboard, ['-box', 'score', 'setsDiff', 'gamesDiff', '-name'], true);
 
         // update the box information for players
         $scope.currentPlayers = [];
-        boxleague.boxes.forEach(function(box){
+        boxleague.boxes.forEach(function (box) {
             box.playerIds.forEach(function (id) {
                 $scope.currentPlayers.push(findById(players, id));
-            });            
+            });
         });
         $scope.currentPlayers.sort();
 
@@ -1367,18 +1539,18 @@ boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$r
             // promote
             var j = 0;
             box[j].newBox = above;
-            box[j].change = box[j].box !== box[j].newBox? "promote" : "";
+            box[j].change = box[j].box !== box[j].newBox ? "promote" : "";
             j++;
             box[j].newBox = above;
-            box[j].change = box[j].box !== box[j].newBox? "promote" : "";
+            box[j].change = box[j].box !== box[j].newBox ? "promote" : "";
 
             // demote
             j = box.length - 2;
             box[j].newBox = below;
-            box[j].change = box[j].box !== box[j].newBox? "demote" : "";
+            box[j].change = box[j].box !== box[j].newBox ? "demote" : "";
             j++;
             box[j].newBox = below;
-            box[j].change = box[j].box !== box[j].newBox? "demote" : "";
+            box[j].change = box[j].box !== box[j].newBox ? "demote" : "";
 
             box.forEach(function (item) {
                 $scope.nextBox.push(item);
@@ -1387,13 +1559,13 @@ boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$r
     };
 
     $scope.removed = [];
-    $scope.remove = function(){
+    $scope.remove = function () {
         $scope.nextBox.splice(arrayObjectIndexOf($scope.nextBox, $scope.removeSelected.name, 'name'), 1);
         $scope.removed.push($scope.removeSelected);
     };
 
     $scope.added = [];
-    $scope.add = function(){
+    $scope.add = function () {
         $scope.nextBox.push({name: $scope.playerSelected.name, newBox: $scope.boxSelected, change: 'added'});
         $scope.added.push($scope.playerSelected);
 
@@ -1426,22 +1598,21 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
         }, error);
     }, error);
 
-    var setUp = function()
-    {
+    var setUp = function () {
         var login = findByName($scope.players, $rootScope.login);
         var loginId = login._id;
 
         var hasScore = [];
         var played = [];
-        $scope.games.forEach(function(game){
+        $scope.games.forEach(function (game) {
             var index = arrayObjectIndexOf($scope.boxleagues, game.boxleagueId, "_id");
             game.boxleague = $scope.boxleagues[index].name;
-            if(game.score.length){
+            if (game.score.length) {
                 hasScore.push(game);
-                if(game.homeId !== loginId) {
+                if (game.homeId !== loginId) {
                     played.push(findById($scope.players, game.homeId));
                 }
-                if(game.awayId !== loginId) {
+                if (game.awayId !== loginId) {
                     played.push(findById($scope.players, game.awayId));
                 }
             }
@@ -1463,14 +1634,14 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
             return (column);
         };
     };
-    $scope.change = function(selected) {
+    $scope.change = function (selected) {
         var games = [];
 
-        $scope.games.forEach(function(game){
-            if(game.homeId === $scope.selected._id) {
+        $scope.games.forEach(function (game) {
+            if (game.homeId === $scope.selected._id) {
                 games.push(game);
             }
-            if(game.awayId === $scope.selected._id) {
+            if (game.awayId === $scope.selected._id) {
                 games.push(game);
             }
         });
@@ -1936,7 +2107,7 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
             data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
         });
 
-        $http.post('/players', JSON.stringify(data)).then(function() {
+        $http.post('/players', JSON.stringify(data)).then(function () {
             $rootScope.alerts.push({type: "success", msg: "Players saved"});
             $http.get('/players').then(function (response) {
                 $scope.currentPlayers = response.data;
