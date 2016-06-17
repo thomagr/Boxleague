@@ -77,10 +77,8 @@ app.use(bodyParser.urlencoded({
 }));
 
 //===============CLOUDANT===============
-var user = "boxleague";
-var password = "w1mbl3don3";
-// var user = "thomagr";
-// var password = "EJS-13grt";
+var user = process.env.username || "thomagr";
+var password = process.env.password || "EJS-13grt";
 var production = user === "boxleague";
 console.log("Environment production: %s", production);
 
