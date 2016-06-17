@@ -70,10 +70,6 @@ app.use(session({
 app.use(passport.initialize()); // Add passport initialization
 app.use(passport.session()); // Add passport initialization
 
-// client
-app.use(express.static(__dirname + '/public/pages'));
-app.use(express.static(__dirname + '/public'));
-
 // for posts
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({
@@ -81,8 +77,12 @@ app.use(bodyParser.urlencoded({
 }));
 
 //===============CLOUDANT===============
-var user = "thomagr";
-var password = "EJS-13grt";
+var user = "boxleague";
+var password = "w1mbl3don3";
+// var user = "thomagr";
+// var password = "EJS-13grt";
+var production = user === "boxleague";
+console.log("Environment production: %s", production);
 
 var cache = {};
 
@@ -196,6 +196,23 @@ function isRegisteredUser(cache, name, user) {
 var genuuid = uuid.v4();
 
 //=============================Routes=================================
+// client
+//app.use(express.static(__dirname + '/public/pages'));
+app.use(express.static(__dirname + '/public'));
+//app.use(express.static(__dirname + '/public/scripts'));
+app.use(express.static(__dirname + '/public/pages'));
+if(production){
+    app.get('/scripts/env.js', function (req, res) {
+        console.log('app.get(/environment)');
+        res.sendFile(__dirname + '/public/scripts/production/env.js');
+    });
+} else {
+    app.get('/scripts/env.js', function (req, res) {
+        console.log('app.get(/environment)');
+        res.sendFile(__dirname + '/public/scripts/development/env.js');
+    });
+}
+
 // route to homepage
 app.get('/', function (req, res) {
     console.log('app.get(/)');
@@ -710,6 +727,7 @@ app.post('/submitNewBoxleague', auth, function (req, res) {
     });
 });
 
+// stuff for the weather
 var weatherDaily = [];
 var weatherHourly = [];
 var appId = 'dfa92a2daab9476f51718353645f1c85';

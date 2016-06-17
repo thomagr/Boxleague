@@ -62,7 +62,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="player in leaderboard | orderBy:['score', '-name']:true">
+            <tr ng-repeat="player in leaderboard | orderBy:['-score', '-setsDiff', '-gamesDiff']">
                 <td>{{player.name}}</td>
                 <td>{{player.played}}</td>
                 <td>{{player.won}}</td>
@@ -111,13 +111,5 @@
                 type="playersType"
         >
         </generic-table>
-    </div>
-</div>
-
-<div class="row" ng-show="tableRows">
-    <div class="well">
-        <h2>Entering Scores</h2>
-        <div ng-include src="'pages/setshelp.html'">
-        </div>
     </div>
 </div>

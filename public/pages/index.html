@@ -37,12 +37,13 @@
 
     <!-- Application Specific -->
     <script src="scripts/app.js"></script>
+    <script src="scripts/env.js"></script>
     <script src="scripts/config.js"></script>
     <script src="scripts/controllers.js"></script>
     <script src="scripts/directives.js"></script>
 </head>
 
-<body ng-controller="mainCtrl" class="backgroundImage">
+<body ng-controller="mainCtrl" ng-class="{backgroundImageProduction: production, backgroundImageDevelopment: !production}">
 <div ng-show="isAuth">
     <nav class="navbar navbar-inverse">
         <div class="container-fluid">
@@ -85,15 +86,17 @@
                                     <!--class="fa fa-calendar"></i> Games</a></li>-->
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/players"><i
                                     class="fa fa-users"></i> Players</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/rules"><i class="fa fa-book"></i>
-                                Rules</a></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/headToHead"><i class="fa fa-bar-chart"></i>
                             Head To Head</a></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/boxleagues"><i
                                     class="fa fa-server"></i> Boxleagues</a></li>
-                            <li class="divider"></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/nextBoxleague"><i class="fa fa-arrow-right"></i>
                                 Next Boxleague</a></li>
+                            <li class="divider"></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/rules"><i class="fa fa-book"></i>
+                                Rules</a></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/setsHelp"><i class="fa fa-info"></i>
+                                Entering Scores</a></li>
                         </ul>
                     </li>
                 </ul>

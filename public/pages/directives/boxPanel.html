@@ -1,12 +1,12 @@
-<a ng-href="#/boxleague/{{boxleague}}/box/{{box.name}}" style="display: block;text-decoration: none;">
+<a ng-href="#/boxleague/{{boxleagueId}}/box/{{box.name}}" style="display: block;text-decoration: none;">
     <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">{{box.name}}</h3>
         </div>
         <div class="panel-body">
-            <div ng-repeat="player in box.players">
+            <div ng-repeat="id in box.playerIds">
                 <ul style="list-style-type:none;line-height:80%;padding:0">
-                    <li>{{player}}</li>
+                    <li>{{playerLookup({id: id})}}</li>
                 </ul>
             </div>
         </div>

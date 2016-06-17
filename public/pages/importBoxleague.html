@@ -1,11 +1,11 @@
 <div class="row" style="margin-top: 20px;">
     <div class="well">
         <form class="form-inline">
-            <input type="text" class="form-control" placeholder="Boxleague" ng-model="boxleagueName" ng-required="true">
+            <input type="text" class="form-control" placeholder="Boxleague" ng-model="boxleague.name" ng-required="true">
 
             <div class="input-group">
                 <input placeholder="Start Date" type="text" class="form-control" uib-datepicker-popup="{{format}}"
-                       ng-model="startDate" is-open="startPopUp.opened" datepicker-options="dateOptions"
+                       ng-model="boxleague.start" is-open="startPopUp.opened" datepicker-options="dateOptions"
                        ng-required="true" close-text="Close" alt-input-formats="altInputFormats"/>
             <span class="input-group-btn">
                 <button type="button" class="btn btn-default" ng-click="openStartPopUp()"><i
@@ -14,7 +14,7 @@
             </div>
             <div class="input-group">
                 <input placeholder="End Date" type="text" class="form-control" uib-datepicker-popup="{{format}}"
-                       ng-model="endDate" is-open="endPopUp.opened" datepicker-options="dateOptions" ng-required="true"
+                       ng-model="boxleague.end" is-open="endPopUp.opened" datepicker-options="dateOptions" ng-required="true"
                        close-text="Close" alt-input-formats="altInputFormats"/>
             <span class="input-group-btn">
                 <button type="button" class="btn btn-default" ng-click="openEndPopUp()"><i
@@ -26,22 +26,22 @@
         </form>
     </div>
 </div>
-<div class="row" ng-hide="boxleague" style="margin-top: 20px;">
+<!--<div class="row" ng-hide="boxleague.boxes" style="margin-top: 20px;">-->
     <div class="well">
         <div class="fileUpload btn btn-default">
             <input type="file" class="upload" file-input name="changeEvent"/>
         </div>
     </div>
-</div>
-<div class="row" ng-show="boxleague" style="margin-top: 20px">
+<!--</div>-->
+<!--<div class="row" ng-show="boxleague.boxes">-->
     <div class="well">
-        <h1>{{boxleagueName}}</h1>
-        <div ng-if="boxleague.boxes">
-        <span ng-repeat="box in boxleague.boxes">
-            <div class="col-sm-4" style="padding-left:0px">
-                <boxes box="box"></boxes>
+        <h1>{{boxleague.name}}</h1>
+        <div class="row">
+            <div ng-repeat="box in boxleague.boxes | orderBy:sortElement">
+                <div class="col-sm-4">
+                    <boxes box="box" boxleague_id="boxleague._id" player_lookup="playerLookup(id)"></boxes>
+                </div>
             </div>
-        </span>
         </div>
     </div>
-</div>
+<!--</div>-->

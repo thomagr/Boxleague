@@ -88,13 +88,18 @@ h1, h2, h3, h4 {
     color: lightgrey;
 }
 
-.backgroundImage {
+.backgroundImageProduction {
     background: url("/images/url.jpeg") no-repeat center center fixed;
     background-size: auto;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
-    /*background-size: cover;*/
+}
+.backgroundImageDevelopment {
+    background: red;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
 }
 
 .loginLabel {

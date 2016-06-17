@@ -17,10 +17,11 @@
                     <th>+S</th>
                     <th>-S</th>
                     <th>SD</th>
+                    <th>Pts</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr ng-repeat="player in leaderboard">
+                <tr ng-repeat="player in leaderboard | orderBy:['-score', '-setsDiff','-gamesDiff']">
                     <td>{{player.name}}</td>
                     <td>{{player.played}}</td>
                     <td>{{player.won}}</td>
@@ -31,6 +32,7 @@
                     <td>{{player.setsFor}}</td>
                     <td>{{player.setsAgainst}}</td>
                     <td>{{player.setsDiff}}</td>
+                    <td>{{player.score}}</td>
                 </tr>
                 </tbody>
             </table>

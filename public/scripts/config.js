@@ -63,6 +63,12 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         resolve: {
             loggedin: checkLoggedin
         }
+    }).when('/setsHelp', {
+        templateUrl: 'pages/setsHelp.html',
+        controller: 'welcomeCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/table/:name', {
         templateUrl: 'pages/table.html',
         controller: 'tableCtrl',

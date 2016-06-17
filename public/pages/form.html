@@ -15,6 +15,15 @@
                                 <div ng-if="!edit || readOnly(column)">{{data[column]}}</div>
                                 <div ng-if="edit && !readOnly(column)"><input type="checkbox" ng-model="data[column]" ng-true-value="'yes'" ng-false-value="'no'"></div>
                             </div>
+                            <div ng-switch-when="noblank">
+                                <div ng-if="!edit || readOnly(column)">{{data[column]}}</div>
+                                <div ng-if="edit && !readOnly(column)">
+                                    <select ng-model="data[column]">
+                                        <option value=""></option>
+                                        <option value="no">no</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </td>
                 </tr>

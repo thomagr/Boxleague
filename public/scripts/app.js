@@ -3,7 +3,7 @@ var boxleagueApp = angular.module('boxleagueApp', ['ngRoute', 'ngResource', 'ui.
 
 // ROUTES
 
-boxleagueApp.run(function ($rootScope, $http) {
+boxleagueApp.run(function ($rootScope, $http, __env) {
 
     $rootScope.alerts = [];
 
@@ -61,12 +61,12 @@ boxleagueApp.run(function ($rootScope, $http) {
     $rootScope.saveImportedBoxleague = function (boxleague, games, players) {
         console.log("posting boxleague data ...");
 
-        // delete the _id as the database will be creating this
-        delete boxleague._id;
-        delete boxleague["$$hashKey"];
-        // delete the boxes as we will add these later in a controlled way
+        // keep a copy of the boxes, we will add these back later after the id is created
         var boxes = boxleague.boxes;
-        delete boxleague.boxes;
+        // create a new copy of the boxleague with the known data
+        boxleague = createBoxleague("0", boxleague.name, boxleague.start, boxleague.end, []);
+        // delete the id as this will be created by the database
+        delete boxleague._id;
 
         var data = {database: 'boxleagues', doc: boxleague};
         var promise = $http.post('submitDoc', JSON.stringify(data));
@@ -77,16 +77,10 @@ boxleagueApp.run(function ($rootScope, $http) {
             boxleague._id = response.id;
             boxleague._rev = response.rev;
 
-            // delete the game _id as the database will be creating these
-            // swap the player details for the player name
-            // add the new boxleague details
+            // create a clean list of games
             games.forEach(function (game, index, array) {
+                array[index] = createGame("0", findById(players, game.homeId), findById(players, game.awayId), boxleague, game.box, game.schedule);
                 delete array[index]._id;
-                delete array[index]["$$hashKey"];
-                array[index].home = game.home.name;
-                array[index].away = game.away.name;
-                array[index].boxleague = boxleague.name;
-                array[index].boxleagueId = boxleague._id;
             });
 
             var data = {database: 'games', data: games};
@@ -99,16 +93,13 @@ boxleagueApp.run(function ($rootScope, $http) {
                     games[i]._id = response[i].id;
                 }
 
-                // updateDoc the boxes with game ids
-                // swap the player details array for the player name
-                // add the new boxleague name and id
+                // create a clean list of boxes but using the new games
                 boxes.forEach(function (box, index, array) {
-                    delete array[index].games;
-                    delete array[index]["$$hashKey"];
-                    array[index].gameIds = findIdsMatchingName(games, box.name);
-                    array[index].players = box.players.map(function (item) {
-                        return item.name
-                    });
+                    var boxPlayers = box.playerIds.map(function (item) {
+                            return findById(players, item);
+                        });
+                    var boxGames = findObjectsMatchingBox(games, box.name);
+                    array[index] = createBox(box.name, boxPlayers, boxGames);
                 });
 
                 // now save the boxleague for the second time with the boxes containing players and games
@@ -208,7 +199,9 @@ function getObject(name, http, success, error) {
 /**********************************************************************
  * Login controller
  **********************************************************************/
-boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $location) {
+boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $location, __env) {
+
+    $rootScope.production = __env.production;
 
     var error = function () {
         $rootScope.alerts.push({
@@ -219,7 +212,7 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $locati
 
     $scope.login = function () {
         $http.post('/login', {username: $scope.username, password: $scope.password}).then(function (response) {
-            $rootScope.login = response.name;
+            $rootScope.login = response.data.name;
             $rootScope.alerts = [];
             if ($rootScope.login === "Admin") {
                 $location.url('/');

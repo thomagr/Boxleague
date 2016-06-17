@@ -61,7 +61,8 @@ boxleagueApp.directive("boxes", function () {
         templateUrl: 'directives/boxPanel.html',
         scope: {
             box: "=",
-            boxleague: "="
+            boxleagueId: "=",
+            playerLookup: "&"
         }
     }
 });

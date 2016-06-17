@@ -1,5 +1,5 @@
-<div class="row">
-    <div class="well">
+<div class="row" ng-show="boxleague">
+<div class="well">
         <table class="table table-condensed table-responsive" style="margin-bottom:0px">
             <tr>
                 <th style="border:none"><h2>Current</h2></th>
@@ -20,7 +20,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr ng-repeat="player in leaderboard | orderBy:['box', '-score', '-setsDiff', '-gamesDiff', 'name']">
+                            <tr ng-repeat="player in leaderboard | orderBy:['box', '-score', '-setsDiff', '-gamesDiff']">
                                 <td>{{player.name}}</td>
                                 <td>{{player.box}}</td>
                                 <td>{{player.played}}</td>
