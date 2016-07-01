@@ -33,7 +33,7 @@
         <form name="addForm" novalidate>
             <table class="table table-bordered table-striped table-condensed table-responsive">
                 <tr ng-repeat="column in columns">
-                    <td style="vertical-align: middle;"><b>{{toTitleCase(column)}}</b></td>
+                    <td style="vertical-align: middle;"><b>{{column | toTitleCase}}</b></td>
                     <td><input class="form-control" ng-model="data[column]"></td>
                 </tr>
             </table>

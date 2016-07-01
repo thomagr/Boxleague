@@ -55,7 +55,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand brand nav-login" href="#/">Boxleague</a>
+                <a class="navbar-brand brand nav-login" href="#/">Boxleague Singles</a>
             </div>
             <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
                 <ul class="nav navbar-nav">
@@ -71,7 +71,7 @@
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/importPlayers">Players</a></li>
                         </ul>
                     </li>
-                    <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i
+                    <li ng-hide="!myBox" ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i
                             class="fa fa-cube"></i>
                         My box</a></li>
                     <li ng-click="isCollapsed = !isCollapsed"><a href="#/boxleague"><i class="fa fa-cubes"></i>
@@ -121,6 +121,9 @@
                 </uib-alert>
             </div>
         </div>
+    </div>
+    <div ng-if="loading" class="row">
+        <div class="loader" style="align: center"></div>
     </div>
 </div>
 <div ng-class="{container: isAuth}">

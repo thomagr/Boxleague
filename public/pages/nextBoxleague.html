@@ -11,8 +11,8 @@
                         <table class="table table-bordered table-striped table-condensed table-responsive" style="margin-bottom:0px">
                             <thead>
                             <tr>
-                                <th>Name</th>
                                 <th>Box</th>
+                                <th>Name</th>
                                 <th>P</th>
                                 <th>SD</th>
                                 <th>GD</th>
@@ -20,9 +20,9 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr ng-repeat="player in leaderboard | orderBy:['box', '-score', '-setsDiff', '-gamesDiff']">
-                                <td>{{player.name}}</td>
+                            <tr ng-repeat="player in leaderboard | leaderboardSort">
                                 <td>{{player.box}}</td>
+                                <td>{{player.name}}</td>
                                 <td>{{player.played}}</td>
                                 <td>{{player.setsDiff}}</td>
                                 <td>{{player.gamesDiff}}</td>
@@ -39,15 +39,15 @@
                         <table class="table table-bordered table-striped table-condensed table-responsive" style="margin-bottom:0px">
                             <thead>
                             <tr>
-                                <th>Name</th>
                                 <th>Box</th>
+                                <th>Name</th>
                                 <th>Change</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr ng-repeat="player in nextBox| orderBy:['newBox', 'name']">
-                                <td>{{player.name}}</td>
                                 <td>{{player.newBox}}</td>
+                                <td>{{player.name}}</td>
                                 <td>{{player.change}}</td>
                             </tr>
                             </tbody>

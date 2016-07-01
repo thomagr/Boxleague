@@ -57,87 +57,7 @@ boxleagueApp.run(function ($rootScope, $http, __env) {
             return promise.resolve("success");
         }
     };
-
-    $rootScope.saveImportedBoxleague = function (boxleague, games, players) {
-        console.log("posting boxleague data ...");
-
-        // keep a copy of the boxes, we will add these back later after the id is created
-        var boxes = boxleague.boxes;
-        // create a new copy of the boxleague with the known data
-        boxleague = createBoxleague("0", boxleague.name, boxleague.start, boxleague.end, []);
-        // delete the id as this will be created by the database
-        delete boxleague._id;
-
-        var data = {database: 'boxleagues', doc: boxleague};
-        var promise = $http.post('submitDoc', JSON.stringify(data));
-
-        promise.success(function (response) {
-            $rootScope.alerts.push({type: "success", msg: "#1 Saved initial boxleague"});
-
-            boxleague._id = response.id;
-            boxleague._rev = response.rev;
-
-            // create a clean list of games
-            games.forEach(function (game, index, array) {
-                array[index] = createGame("0", findById(players, game.homeId), findById(players, game.awayId), boxleague, game.box, game.schedule);
-                delete array[index]._id;
-            });
-
-            var data = {database: 'games', data: games};
-            var promise = $http.post('submitDocs', JSON.stringify(data));
-
-            promise.success(function (response) {
-                $rootScope.alerts.push({type: "success", msg: "#2 Saved boxleague games"});
-
-                for (var i = 0; i < response.length; i++) {
-                    games[i]._id = response[i].id;
-                }
-
-                // create a clean list of boxes but using the new games
-                boxes.forEach(function (box, index, array) {
-                    var boxPlayers = box.playerIds.map(function (item) {
-                            return findById(players, item);
-                        });
-                    var boxGames = findObjectsMatchingBox(games, box.name);
-                    array[index] = createBox(box.name, boxPlayers, boxGames);
-                });
-
-                // now save the boxleague for the second time with the boxes containing players and games
-                boxleague.boxes = boxes;
-
-                var data = {database: 'boxleagues', doc: boxleague};
-                var promise = $http.post('submitDoc', JSON.stringify(data));
-
-                promise.success(function (response, status) {
-                    $rootScope.alerts.push({type: "success", msg: "#3 Saved boxleague boxes"});
-                    $rootScope.boxleague = boxleague;
-                    $rootScope.games = games;
-                });
-
-                promise.error(function (response, status) {
-                    $rootScope.alerts.push({
-                        type: "danger",
-                        msg: "Saving boxleage with boxes request failed with response '" + response + "' and status code: " + status
-                    });
-                });
-            });
-
-            promise.error(function (response, status) {
-                $rootScope.alerts.push({
-                    type: "danger",
-                    msg: "Saving games request failed with response '" + response + "' and status code: " + status
-                });
-            });
-        });
-
-        promise.error(function (response, status) {
-            $rootScope.alerts.push({
-                type: "danger",
-                msg: "Saving initial boxleague request failed with response '" + response + "' and status code: " + status
-            });
-        });
-    };
-
+    
     // Logout function is available in any pages
     $rootScope.logout = function () {
         $rootScope.message = 'Logged out.';
@@ -202,6 +122,7 @@ function getObject(name, http, success, error) {
 boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $http, $location, __env) {
 
     $rootScope.production = __env.production;
+    $rootScope.myBox = true;
 
     var error = function () {
         $rootScope.alerts.push({

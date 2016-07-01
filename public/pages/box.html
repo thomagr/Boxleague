@@ -1,7 +1,6 @@
 <div class="row" ng-show="tableRows">
     <div class="well">
         <h2>{{boxleague.name}} - {{boxName}}</h2>
-        <!--<h2>{{boxName}}</h2>-->
         Click on a table cell to enter your score in the <strong>Scoreboard.</strong>
         <table class="table table-bordered table-striped table-condensed table-responsive">
             <thead>
@@ -62,7 +61,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="player in leaderboard | orderBy:['-score', '-setsDiff', '-gamesDiff']">
+            <tr ng-repeat="player in leaderboard | leaderboardSort">
                 <td>{{player.name}}</td>
                 <td>{{player.played}}</td>
                 <td>{{player.won}}</td>

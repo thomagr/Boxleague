@@ -1,6 +1,6 @@
 <div class="row">
     <div class="well">
-        <h1>{{boxleague.name}}</h1>
+        <h2>{{boxleague.name}}</h2>
         <div ng-show="leaderboard && leaderboard.length">
             <h2>Leaderboard</h2>
             <uib-progressbar animate="false" value="percent" type="{{type}}"><b>{{percent}}% ({{played}}/{{total}})</b></uib-progressbar>
@@ -22,7 +22,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr ng-repeat="player in leaderboard | orderBy:['box', '-score', '-setsDiff', '-gamesDiff']">
+                <tr ng-repeat="player in leaderboard | leaderboardSort">
                     <td>{{player.box}}</td>
                     <td>{{player.name}}</td>
                     <td>{{player.played}}</td>

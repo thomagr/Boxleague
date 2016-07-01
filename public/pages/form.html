@@ -1,10 +1,12 @@
 <div class="row">
     <div class="well" ng-show="data">
-        <h1>{{title}}</h1>
+        <h2>{{title}}</h2>
         <form>
             <table class="table table-bordered table-striped table-condensed table-responsive">
                 <tr ng-repeat="column in columns">
-                    <td style="vertical-align: middle;"><b>{{toTitleCase(column)}}</b></td>
+                    <td style="vertical-align: middle;">
+                        <!--<b>{{toTitleCase(column)}}</b></td>-->
+                        <b>{{column | toTitleCase}}</b></td>
                     <td>
                         <div ng-switch on="columnType(column)">
                             <div ng-switch-when="string">

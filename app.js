@@ -102,6 +102,24 @@ function deleteCache(cache, name) {
     }
     delete cache[name];
 }
+// update - return true if found and updated
+function updateCache(cache, name, data) {
+    console.log('updating cache ' + name);
+
+    if (!cache[name]){
+        return
+    }
+
+    for(var index=0;index<cache[name].length;index++){
+        if (data._id === cache[name][index]._id) {
+            console.log('Before: ' + JSON.stringify(cache[name][index]));
+            cache[name][index] = data;
+            console.log('After: ' + JSON.stringify(cache[name][index]));
+            return true;
+        }
+    }
+    return false;
+}
 function loadCache(cache, name, data) {
     console.log('loading cache ' + name);
 
@@ -109,24 +127,10 @@ function loadCache(cache, name, data) {
         cache[name] = data;
     } else {
         data.forEach(function(item){
-            cache[name].push(item);
+            if(!updateCache(cache, name, data)){
+                cache[name].push(item);
+            }
         })
-    }
-}
-function updateCache(cache, name, data) {
-    console.log('updating cache ' + name);
-
-    if (!cache[name]){
-        return
-    };
-
-    for(var index=0;index<cache[name].length;index++){
-        if (data._id === cache[name][index]._id) {
-            console.log('Before: ' + JSON.stringify(cache[name][index]));
-            cache[name][index] = data;
-            console.log('After: ' + JSON.stringify(cache[name][index]));
-            return;
-        }
     }
 }
 function readCacheItem(cache, name, id) {
@@ -436,7 +440,7 @@ var updateDoc = function (data, name, res) {
 };
 var bulkUpdateDoc = function (data, name, res) {
     console.log('bulkUpdateDoc %s', name);
-    console.log(JSON.stringify(data))
+    console.log(JSON.stringify(data));
 
     Cloudant({account: user, password: password}, function (error, cloudant) {
         if (error) {
@@ -452,12 +456,13 @@ var bulkUpdateDoc = function (data, name, res) {
                 console.log('Error list %s: %s', name, error.reason);
                 res.status(error.statusCode).send(error.reason);
             } else {
-                console.log("Data:", JSON.stringify(response));
+                console.log("Response:", JSON.stringify(response));
                 for(var i=0;i<response.length;i++){
                     data[i]._id =response[i].id;
                     data[i]._rev =response[i].rev;
                 }
-                loadCache(cache, name, data);
+                console.log("Data:", JSON.stringify(data));
+                deleteCache(cache, name);
                 res.status(200).send(data);
             }
         });
@@ -569,6 +574,10 @@ app.post('/boxleagues', auth, function (req, res) {
     console.log(req.url);
     bulkUpdateDoc(req.body, "boxleagues", res);
 });
+// app.post('/boxleague', auth, function (req, res) {
+//     console.log(req.url);
+//     updateDoc(req.body, "boxleagues", res);
+// });
 
 app.post('/submitDoc', auth, function (req, res) {
     console.log('app.post(/submitDoc)');
@@ -610,7 +619,7 @@ app.post('/submitDocs', auth, function (req, res) {
         res.status(400).send('missing data');
         return;
     }
-    var data = req.body.data
+    var data = req.body.data;
 
     Cloudant({account: user, password: password}, function (er, cloudant) {
         if (er) {
@@ -636,94 +645,99 @@ app.post('/submitDocs', auth, function (req, res) {
         });
     });
 });
-app.post('/submitNewPlayers', auth, function (req, res) {
-    console.log('app.post(/submitNewPlayers)');
-
-    if (!req.body) {
-        return res.status(400).send('missing data');
-    }
-
-    var databaseName = "players";
-    var data = [];
-    req.body.forEach(function (player) {
-        data.push({
-            name: player.name,
-            mobile: player.mobile,
-            home: player.home,
-            email: player.email
-        });
-    })
-
-    Cloudant({account: user, password: password}, function (er, cloudant) {
-        if (er) {
-            console.log('Error login: %s', er.reason);
-            res.status(500).send(er.reason);
-            return;
-        }
-
-        var database = cloudant.use(databaseName);
-        deleteCache(cache, databaseName);
-        var docs = {docs: data};
-
-        console.log(docs);
-
-        database.bulk(docs, function (er, data) {
-            if (er) {
-                res.status(er.statusCode).send(er.reason);
-            } else {
-                res.status(200).send(data);
-            }
-        });
-    });
-});
-app.post('/submitNewBoxleague', auth, function (req, res) {
-    console.log('app.post(/submitNewBoxleague)');
-
-    if (!req.body) {
-        res.status(400).send('missing boxleague data');
-        return;
-    }
-
-    var boxleague = req.body;
-
-    if (!boxleague.end) {
-        res.status(400).send('missing boxleague end date');
-        return;
-    }
-
-    if (!boxleague.start) {
-        res.status(400).send('missing boxleague start date');
-        return;
-    }
-
-    if (!boxleague.name) {
-        res.status(400).send('missing boxleague name');
-        return;
-    }
-
-    if (!boxleague.boxes && !boxleague.boxes.length) {
-        res.status(400).send('missing boxleague boxes data');
-        return;
-    }
-
-    Cloudant({account: user, password: password}, function (er, cloudant) {
-        if (er) {
-            console.log('Error login: %s', er.reason);
-            res.status(500).send(er.reason);
-            return;
-        }
-
-        var database = cloudant.use('boxleague');
-
-        database.insert(boxleague, function (er, body) {
-            if (er) {
-                res.status(400).send(er.message);
-            } else {
-                res.status(200).end();
-            }
-        });
-    });
-});
+// app.post('/submitNewPlayers', auth, function (req, res) {
+//     console.log('app.post(/submitNewPlayers)');
+//
+//     if (!req.body) {
+//         return res.status(400).send('missing data');
+//     }
+//
+//     var databaseName = "players";
+//     var data = [];
+//     req.body.forEach(function (player) {
+//         data.push({
+//             name: player.name,
+//             mobile: player.mobile,
+//             home: player.home,
+//             email: player.email
+//         });
+//     })
+//
+//     Cloudant({account: user, password: password}, function (er, cloudant) {
+//         if (er) {
+//             console.log('Error login: %s', er.reason);
+//             res.status(500).send(er.reason);
+//             return;
+//         }
+//
+//         var database = cloudant.use(databaseName);
+//         deleteCache(cache, databaseName);
+//         var docs = {docs: data};
+//
+//         console.log(docs);
+//
+//         database.bulk(docs, function (er, data) {
+//             if (er) {
+//                 res.status(er.statusCode).send(er.reason);
+//             } else {
+//                 res.status(200).send(data);
+//             }
+//         });
+//     });
+// });
+// app.post('/submitNewBoxleague', auth, function (req, res) {
+//     console.log('app.post(/submitNewBoxleague)');
+//
+//     if (!req.body) {
+//         return res.status(400).send('missing boxleague data');
+//     }
+//
+//     var boxleague = req.body;
+//
+//     if (!boxleague.end) {
+//         res.status(400).send('missing boxleague end date');
+//         return;
+//     }
+//
+//     if (!boxleague.start) {
+//         res.status(400).send('missing boxleague start date');
+//         return;
+//     }
+//
+//     if (!boxleague.name) {
+//         res.status(400).send('missing boxleague name');
+//         return;
+//     }
+//
+//     if (!boxleague.boxes && !boxleague.boxes.length) {
+//         res.status(400).send('missing boxleague boxes data');
+//         return;
+//     }
+//
+//     var databaseName = "boxleague";
+//
+//     Cloudant({account: user, password: password}, function (er, cloudant) {
+//         if (er) {
+//             console.log('Error login: %s', er.reason);
+//             res.status(500).send(er.reason);
+//             return;
+//         }
+//
+//         var database = cloudant.use(databaseName);
+//         deleteCache(cache, databaseName);
+//         var docs = boxleague;
+//
+//         console.log(docs);
+//
+//         database.insert(docs, function (er, data) {
+//             if (er) {
+//                 res.status(400).send(er.message);
+//             } else {
+//                 res.status(200).send(data);
+//             }
+//         });
+//     });
+// });
 
 // stuff for the weather
 var weatherDaily = [];

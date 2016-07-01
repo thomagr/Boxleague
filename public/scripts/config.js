@@ -45,6 +45,29 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         };
     });
 
+    $httpProvider.interceptors.push(function($q, $rootScope, $timeout) {
+        return {
+            request: function(config) {
+                $rootScope.requesting = $rootScope.requesting || 0;
+                $rootScope.requesting++;
+                $timeout(function() {
+                    if ($rootScope.requesting > 0) {
+                        $rootScope.loading = true;
+                    }
+                }, 500);
+                return config;
+            },
+
+            response: function(response) {
+                $rootScope.requesting--;
+                if($rootScope.requesting === 0){
+                    $rootScope.loading = false;
+                }
+                return response;
+            }
+        };
+    });
+
     //================================================
     // Define all the routes
     //================================================
@@ -130,11 +153,17 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
             loggedin: checkLoggedin
         }
     }).when('/headToHead', {
+        templateUrl: 'pages/empty.html',
+        controller: 'headToHeadMainCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
+    }).when('/headToHead/:id', {
         templateUrl: 'pages/headToHead.html',
         controller: 'headToHeadCtrl',
         resolve: {
             loggedin: checkLoggedin
-        }        
+        }
     }).when('/importPlayersSpreadsheet', {
         templateUrl: 'pages/importPlayers.html',
         controller: 'importPlayersXlsCtrl',

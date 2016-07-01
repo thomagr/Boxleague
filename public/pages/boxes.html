@@ -1,8 +1,8 @@
 <div class="row" ng-show="boxleague">
     <div class="well">
-        <h1>{{boxleague.name}}</h1>
+        <h2>{{boxleague.name}}</h2>
         <div class="row">
-            <div ng-repeat="box in boxleague.boxes | orderBy:sortElement">
+            <div ng-repeat="box in boxleague.boxes | boxesSort">
                 <div class="col-sm-4">
                     <boxes box="box" boxleague_id="boxleague._id" player_lookup="playerLookup(id)"></boxes>
                 </div>

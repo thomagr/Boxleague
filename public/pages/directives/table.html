@@ -8,7 +8,7 @@
     <tr>
         <th ng-repeat="column in columns track by $index">
             <a href ng-click="sortColumn(column)">
-                {{toTitleCase(column)}}
+                {{column | toTitleCase}}
                 <span ng-show="sortType == column && !sortReverse" class="fa fa-caret-down"></span>
                 <span ng-show="sortType == column && sortReverse" class="fa fa-caret-up"></span>
             </a>
