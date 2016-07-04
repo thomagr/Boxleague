@@ -3,7 +3,7 @@
         <h2>{{location}}</h2>
 
         <div ng-if="hourlyWeatherResult.list">
-            <strong>3 hourly</strong><br>
+            <h3>3 Hourly</h3>
         <span ng-repeat="h in hourlyWeatherResult.list">
             <hourly-weather-report weather-day="h"
                                    convert-to-standard="convertToDegC(daytimeTemp)"
@@ -13,8 +13,7 @@
         </span>
         </div>
         <div ng-if="dailyWeatherResult.list">
-            <strong>Daily</strong><br>
-
+            <h3>Daily</h3>
             <div ng-repeat="w in dailyWeatherResult.list">
                 <daily-weather-report weather-day="w"
                                       convert-to-standard="convertToDegC(daytimeTemp)"

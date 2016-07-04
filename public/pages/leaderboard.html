@@ -3,6 +3,7 @@
         <h2>{{boxleague.name}}</h2>
         <div ng-show="leaderboard && leaderboard.length">
             <h2>Leaderboard</h2>
+            <p>Ordered by: Box, Pts(points), SD(sets difference), GD(games difference)</p>
             <uib-progressbar animate="false" value="percent" type="{{type}}"><b>{{percent}}% ({{played}}/{{total}})</b></uib-progressbar>
             <table class="table table-bordered table-striped table-condensed table-responsive">
                 <thead>
@@ -12,11 +13,7 @@
                     <th>P</th>
                     <th>W</th>
                     <th>L</th>
-                    <th>+G</th>
-                    <th>-G</th>
                     <th>GD</th>
-                    <th>+S</th>
-                    <th>-S</th>
                     <th>SD</th>
                     <th>Pts</th>
                 </tr>
@@ -28,11 +25,7 @@
                     <td>{{player.played}}</td>
                     <td>{{player.won}}</td>
                     <td>{{player.lost}}</td>
-                    <td>{{player.gamesFor}}</td>
-                    <td>{{player.gamesAgainst}}</td>
                     <td>{{player.gamesDiff}}</td>
-                    <td>{{player.setsFor}}</td>
-                    <td>{{player.setsAgainst}}</td>
                     <td>{{player.setsDiff}}</td>
                     <td>{{player.score}}</td>
                 </tr>

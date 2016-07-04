@@ -1,7 +1,7 @@
 <div class="row" ng-show="tableRows">
     <div class="well">
         <h2>{{boxleague.name}} - {{boxName}}</h2>
-        Click on a table cell to enter your score in the <strong>Scoreboard.</strong>
+        <p>Click on a table cell to enter your score in the <a href="#/setsHelp">Scoreboard</a></p>
         <table class="table table-bordered table-striped table-condensed table-responsive">
             <thead>
             <tr>
@@ -43,6 +43,7 @@
 <div class="row" ng-show="leaderboard && leaderboard.length">
     <div class="well">
         <h2>Leaderboard</h2>
+        <p>Ordered by: Pts(points), SD(sets difference), GD(games difference)</p>
         <uib-progressbar animate="false" value="percent" type="{{type}}"><b>{{percent}}% ({{played}}/{{total}})</b></uib-progressbar>
         <table class="table table-bordered table-striped table-condensed table-responsive">
             <thead>

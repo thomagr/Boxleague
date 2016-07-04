@@ -983,7 +983,7 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, 
                 $rootScope.playerGamesCache[id] = response.data || [];
 
                 $http.get('/games/awayId/' + id).then(function (response) {
-                    $rootScope.playerGamesCache[id].concat(response.data || []);
+                    $rootScope.playerGamesCache[id] = $rootScope.playerGamesCache[id].concat(response.data || []);
 
                     success($rootScope.playerGamesCache[id]);
                 }, root.getError);
