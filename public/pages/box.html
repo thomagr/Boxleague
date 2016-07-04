@@ -5,12 +5,12 @@
         <table class="table table-bordered table-striped table-condensed table-responsive">
             <thead>
             <tr>
-                <th ng-repeat="header in tableHeaders" ng-class="{notAvailable: isNotAvailable(0,[header],0)}">{{header}}</th>
+                <th ng-repeat="header in tableHeaders" ng-class="{headerTitle: $first, notAvailable: isNotAvailable(0,[header],0)}">{{header}}</th>
             </tr>
             </thead>
             <tbody>
             <tr ng-repeat="row in tableRows">
-                <td ng-repeat="column in row track by $index" ng-class="{rowTitle: $first}">
+                <td ng-repeat="column in row track by $index" ng-class="{rowTitle: $first, scoreNoGame: getCellScore(column,row,$index) === 'x'}">
                     <div ng-if="readOnly(column,row,$index)"
                          ng-class="{scoreNoGame: getCellScore(column,row,$index) === 'x', notAvailable: isNotAvailable(column,row,$index)}">
                         {{getCellScore(column,row,$index)}}
