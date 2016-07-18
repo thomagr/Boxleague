@@ -1,9 +1,17 @@
 <div class="row" ng-show="games">
     <div class="well">
-        <h2>Head to Head</h2>
-        <select ng-options="player as player.name for player in played | orderBy:['name']" ng-model="selected" ng-change="change(selected)"><option value=""></option></select>
-        <div ng-show="selected">
-            <h3>{{name}} vs {{selected.name}}</h3>
+        <h2>Head to Head - {{home.name}}</h2>
+        <select ng-options="player as player.name for player in players | orderBy:['name']" ng-model="home"
+                ng-change="changeHome(home)">
+            <option value=""></option>
+        </select>
+        <span style="margin-left:20px;margin-right:20px">vs</span>
+        <select ng-options="player as player.name for player in played | orderBy:['name']" ng-model="away"
+                ng-change="changeAway(away)">
+            <option value=""></option>
+        </select>
+        <div ng-show="away">
+            <h3>{{home.name}} vs {{away.name}}</h3>
             <table class="table table-bordered table-striped table-condensed table-responsive">
                 <thead>
                 <tr>
@@ -54,5 +62,4 @@
         >
         </generic-table>
     </div>
-</div>
 </div>

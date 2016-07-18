@@ -5,10 +5,9 @@
             <table class="table table-bordered table-striped table-condensed table-responsive">
                 <tr ng-repeat="column in columns">
                     <td style="vertical-align: middle;">
-                        <!--<b>{{toTitleCase(column)}}</b></td>-->
                         <b>{{column | toTitleCase}}</b></td>
                     <td>
-                        <div ng-switch on="columnType(column)">
+                        <div ng-switch="columnType(column)">
                             <div ng-switch-when="string">
                                 <div ng-if="!edit || readOnly(column)">{{data[column] | formatString}}</div>
                                 <div ng-if="edit && !readOnly(column)"><input class="form-control" ng-model="data[column]"></div>
@@ -30,6 +29,7 @@
                     </td>
                 </tr>
             </table>
+            <p ng-if="(edit || admin) && title === 'Player'"><a ng-href="#/password/{{id}}">Change password</a></p>
             <button ng-if="edit" type="submit" class="btn btn-success" ng-click="submit()">Save</button>
             <button ng-if="admin" type="button" class="btn btn-danger" ng-click="delete()">Delete</button>
         </form>

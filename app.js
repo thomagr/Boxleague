@@ -1,6 +1,6 @@
 var express = require('express'),
     http = require('http'),
-    path = require('path'),
+//path = require('path'),
     bodyParser = require('body-parser'),
     cookieParser = require('cookie-parser'),
     Cloudant = require('cloudant'),
@@ -8,25 +8,54 @@ var express = require('express'),
     session = require('express-session'),
     uuid = require('node-uuid'),
     LocalStrategy = require('passport-local').Strategy,
-    request = require('request');
+    request = require('request'),
+    nodemailer = require('nodemailer'),
+    passwordHash = require('password-hash');
+
+var tmpPassword = process.env.tmpPassword;
+
+var emailUser = process.env.emailUsername;
+var emailPassword = process.env.emailPassword;
+
+var cloudantUser = process.env.cloudantUsername;
+var cloudantProductionUser = process.env.cloudantProductionUser;
+var cloudantPassword = process.env.cloudantPassword;
+
+if (!tmpPassword || !emailUser || !emailPassword || !cloudantUser || !cloudantPassword || !cloudantProductionUser) {
+    throw 'Mandatory environment variables have not been set.';
+}
 
 //==================================================================
 // Define the strategy to be used by PassportJS
 passport.use(new LocalStrategy(function (username, password, done) {
-        console.log('checking password');
-        var player = isRegisteredUser(cache, 'players', username);
-        if (player && /*username === "admin" &&*/ password === "t3nn1s") {
-            console.log('user %s has logged in', username);
-            return done(null, {
-                name: username
-            });
-        }
+    console.log('checking password');
 
+    var player = isRegisteredUser(cache, 'players', username);
+    if (!player) {
         return done(null, false, {
             message: 'Incorrect login details.'
         });
     }
-));
+
+    var verify = false;
+    var user = findOneCacheItem(cache, 'users', 'playerId', player._id);
+    if (user) {
+        verify = passwordHash.verify(password, user.password);
+    } else {
+        verify = password === tmpPassword;
+    }
+
+    if (verify) {
+            console.log('user %s has logged in', username);
+            return done(null, {
+                name: username
+            });
+    } else {
+        return done(null, false, {
+            message: 'Incorrect login details.'
+        });
+    }
+}));
 // Serialized and deserialized methods when got from session
 passport.serializeUser(function (user, done) {
     done(null, user);
@@ -77,9 +106,7 @@ app.use(bodyParser.urlencoded({
 }));
 
 //===============CLOUDANT===============
-var user = process.env.username || "thomagr";
-var password = process.env.password || "EJS-13grt";
-var production = user === "boxleague";
+var production = cloudantUser === cloudantProductionUser;
 console.log("Environment production: %s", production);
 
 var cache = {};
@@ -89,7 +116,7 @@ function deleteCache(cache, name) {
 
     if (!cache[name]){
         return
-    };
+    }
 
     // delete all objects by id
     var j = cache[name].length;
@@ -121,7 +148,7 @@ function updateCache(cache, name, data) {
     return false;
 }
 function loadCache(cache, name, data) {
-    console.log('loading cache ' + name);
+    console.log('loading cache %s with %d items', name, data.length);
 
     if(!cache[name]){
         cache[name] = data;
@@ -163,12 +190,21 @@ function findCacheItem(cache, name, index, id) {
     }
     return results;
 }
+function findOneCacheItem(cache, name, index, id) {
+    console.log('findOneCacheItem cache %s by %s == %s', name, index, id);
+    var find = findCacheItem(cache, name, index, id);
+    if (find && find.length) {
+        return find[0];
+    } else {
+        return undefined;
+    }
+}
 function removeCacheItem(cache, name, data) {
     console.log('removeCacheItem cache ' + name);
 
     if (!cache[name]){
         return
-    };
+    }
 
     for(var index=0;index<cache[name].length;index++){
         if (data._id === cache[name][index]._id) {
@@ -195,8 +231,6 @@ function isRegisteredUser(cache, name, user) {
     }
 }
 
-var genuuid = uuid.v4();
-
 //=============================Routes=================================
 // client
 //app.use(express.static(__dirname + '/public/pages'));
@@ -220,7 +254,6 @@ app.get('/', function (req, res) {
     console.log('app.get(/)');
     res.sendFile(__dirname + '/public/index.html');
 });
-
 // route to test if the user is logged in or not
 app.get('/loggedin', function (req, res) {
     console.log('req.user : %s', JSON.stringify(req.user));
@@ -229,7 +262,7 @@ app.get('/loggedin', function (req, res) {
         var player = isRegisteredUser(cache, 'players', req.user.name);
         if (!player) {
             req.logOut();
-            res.status(401).send("Error not found");
+            res.status(401).send("User is not registered");
         } else {
             res.send(player);
         }
@@ -237,86 +270,110 @@ app.get('/loggedin', function (req, res) {
         res.send('0');
     }
 });
-// route to log in
 app.post('/login', passport.authenticate('local'), function (req, res) {
     console.log('/login req.user: %s', JSON.stringify(req.user));
 
     var player = isRegisteredUser(cache, 'players', req.user.name);
     if (!player) {
         req.logOut();
-        res.status(401).send("Error not found");
+        res.status(401).send("User is not registered");
     } else {
         res.send(player);
     }
 });
-// route to log out
 app.post('/logout', function (req, res) {
     console.log('/logout');
     req.logOut();
     res.status(200).end();
 });
 
-// service requests for readonly access to the database
-// app.get('/service', auth, function (req, res) {
-//     console.log('app.get(/service)');
-//     console.log(req.query);
-//
-//     // provide the name of the database
-//     var name = req.query.name;
-//
-//     // provide an id - optional
-//     var id = req.query.id;
-//
-//     console.log('service request:' + name + ' id:' + id);
-//
-//     if (typeof cache[name] != 'undefined' && typeof id == 'undefined') {
-//         console.log('from name cache');
-//         res.send(cache[name]);
-//     } else if (typeof cache[id] != 'undefined') {
-//         console.log('from id cache');
-//         res.send(cache[id]);
-//     } else {
-//         Cloudant({account: user, password: password}, function (er, cloudant) {
-//             if (er) {
-//                 console.log('Error login: %s', er.reason);
-//                 res.status(500).send(er.reason);
-//                 return;
-//             }
-//
-//             if (typeof name == 'undefined') {
-//                 res.status(400).send('error service name not defined');
-//                 return;
-//             }
-//
-//             // use a database object
-//             var database = cloudant.use(name);
-//
-//             // if id is not defined then get the list
-//             if (typeof id == 'undefined') {
-//                 database.list({include_docs: true}, function (er, body) {
-//                     if (er) {
-//                         console.log('Error login: %s', er.reason);
-//                         res.status(er.statusCode).send(er.reason);
-//                         return;
-//                     }
-//                     loadCache(cache, name, body);
-//                     res.send(body);
-//                 });
-//             } else {
-//                 // use the id and get it
-//                 database.get(id, function (er, body) {
-//                     if (er) {
-//                         console.log('Error login: %s', er.reason);
-//                         res.status(er.statusCode).send(er.reason);
-//                         return;
-//                     }
-//                     loadCache(cache, id, body);
-//                     res.send(body);
-//                 });
-//             }
-//         });
-//     }
-// });
+app.post('/resetPassword', function (req, res) {
+    console.log('/resetPassword: %s', JSON.stringify(req.body));
+
+    var player = isRegisteredUser(cache, 'players', req.body.username);
+
+    if (!player) {
+        res.status(500).send("Username not found.");
+        return;
+    }
+
+    if (!player.email) {
+        res.status(500).send("User does not have an email address. Please contact your administrator.");
+        return;
+    }
+
+    var textPassword = Math.random().toString(36).substr(2, 8);
+    var hashPassword = passwordHash.generate(textPassword);
+
+    var data = {
+        playerId: player._id,
+        password: hashPassword
+    };
+
+    var user = findOneCacheItem(cache, 'users', 'playerId', player._id);
+    if (user) {
+        data._id = user._id;
+        data._rev = user._rev;
+    }
+
+    updateDoc(data, "users", res, function () {
+        var message = {
+            to: [player.email], subject: "Boxleague password reset",
+            text: "Your password has been reset to " + textPassword + ".\nPlease login and update your password by going to your settings."
+        };
+        sendMailFunction(message);
+    });
+});
+app.post('/password', auth, function (req, res) {
+    console.log('/password: %s', JSON.stringify(req.body));
+
+    var player = isRegisteredUser(cache, 'players', req.body.username);
+
+    if (!player) {
+        res.status(500).send("Username not found.");
+        return;
+    }
+
+    if (!player.email) {
+        res.status(500).send("User does not have an email address. Please add an email address in settings.");
+        return;
+    }
+
+    var currentPassword = req.body.current;
+    var textPassword = req.body.password;
+    var hashPassword = passwordHash.generate(textPassword);
+
+    var verify = false;
+    var user = findOneCacheItem(cache, 'users', 'playerId', player._id);
+    if (user) {
+        verify = passwordHash.verify(currentPassword, user.password);
+    } else {
+        verify = currentPassword === tmpPassword;
+    }
+
+    if (!verify) {
+        res.status(500).send("Current password did not match.");
+        return;
+    }
+
+    var data = {
+        playerId: player._id,
+        password: hashPassword
+    };
+
+    if (user) {
+        data._id = user._id;
+        data._rev = user._rev;
+    }
+
+    updateDoc(data, "users", res, function () {
+        var message = {
+            to: [player.email], subject: "Boxleague password saved",
+            text: "Your new password has been saved."
+        };
+        sendMailFunction(message);
+    });
+});
 
 var readDoc = function (name, res, id) {
     console.log('readDoc %s', name);
@@ -334,10 +391,12 @@ var readDoc = function (name, res, id) {
         return;
     }
 
-    Cloudant({account: user, password: password}, function (error, cloudant) {
+    Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
             console.log('Error login: %s', error.reason);
-            if(res){res.status(500).send(error.reason)};
+            if (res) {
+                res.status(500).send(error.reason)
+            }
             return;
         }
 
@@ -384,7 +443,7 @@ var findDocs = function (name, index, id, res) {
         return;
     }
 
-    Cloudant({account: user, password: password}, function (error, cloudant) {
+    Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
             console.log('Error login: %s', error.reason);
             if(res){res.status(500).send(error.reason)}
@@ -407,18 +466,17 @@ var findDocs = function (name, index, id, res) {
         });
     });
 };
-
-//findDocs("games", "boxleagueId", "21506efae2378b137e169013c478366b");
-//findDocs("boxleagues", "active", "yes");
-
-var updateDoc = function (data, name, res) {
+var updateDoc = function (data, name, res, success, fail) {
     console.log('updateDoc %s', name);
     console.log(JSON.stringify(data));
 
-    Cloudant({account: user, password: password}, function (error, cloudant) {
+    Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
             console.log('Error login: %s', error.reason);
             res.status(500).send(error.reason);
+            if (fail) {
+                fail(error.reason);
+            }
             return;
         }
 
@@ -428,12 +486,18 @@ var updateDoc = function (data, name, res) {
             if (error) {
                 console.log('Error list %s: %s', name, error.reason);
                 res.status(error.statusCode).send(error.reason);
+                if (fail) {
+                    fail(error.reason);
+                }
             } else {
                 console.log("Data:", JSON.stringify(response));
                 data._id = response.id;
                 data._rev = response.rev;
                 updateCache(cache, name, data);
                 res.status(200).send(response);
+                if (success) {
+                    success();
+                }
             }
         });
     });
@@ -442,7 +506,7 @@ var bulkUpdateDoc = function (data, name, res) {
     console.log('bulkUpdateDoc %s', name);
     console.log(JSON.stringify(data));
 
-    Cloudant({account: user, password: password}, function (error, cloudant) {
+    Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
             console.log('Error login: %s', error.reason);
             res.status(500).send(error.reason);
@@ -476,7 +540,7 @@ var deleteDoc = function (id, rev, name, res) {
         return;
     }
 
-    Cloudant({account: user, password: password}, function (error, cloudant) {
+    Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
             console.log('Error login: %s', error.reason);
             res.status(500).send(error.reason);
@@ -498,11 +562,6 @@ var deleteDoc = function (id, rev, name, res) {
         });
     });
 };
-
-// initialise the players list to allow for logins
-readDoc("players");
-//readDoc("boxleagues");
-//readDoc("games");
 
 app.get('/player/:id', auth, function (req, res) {
     console.log(req.url);
@@ -574,10 +633,6 @@ app.post('/boxleagues', auth, function (req, res) {
     console.log(req.url);
     bulkUpdateDoc(req.body, "boxleagues", res);
 });
-// app.post('/boxleague', auth, function (req, res) {
-//     console.log(req.url);
-//     updateDoc(req.body, "boxleagues", res);
-// });
 
 app.post('/submitDoc', auth, function (req, res) {
     console.log('app.post(/submitDoc)');
@@ -645,101 +700,8 @@ app.post('/submitDocs', auth, function (req, res) {
         });
     });
 });
-// app.post('/submitNewPlayers', auth, function (req, res) {
-//     console.log('app.post(/submitNewPlayers)');
-//
-//     if (!req.body) {
-//         return res.status(400).send('missing data');
-//     }
-//
-//     var databaseName = "players";
-//     var data = [];
-//     req.body.forEach(function (player) {
-//         data.push({
-//             name: player.name,
-//             mobile: player.mobile,
-//             home: player.home,
-//             email: player.email
-//         });
-//     })
-//
-//     Cloudant({account: user, password: password}, function (er, cloudant) {
-//         if (er) {
-//             console.log('Error login: %s', er.reason);
-//             res.status(500).send(er.reason);
-//             return;
-//         }
-//
-//         var database = cloudant.use(databaseName);
-//         deleteCache(cache, databaseName);
-//         var docs = {docs: data};
-//
-//         console.log(docs);
-//
-//         database.bulk(docs, function (er, data) {
-//             if (er) {
-//                 res.status(er.statusCode).send(er.reason);
-//             } else {
-//                 res.status(200).send(data);
-//             }
-//         });
-//     });
-// });
-// app.post('/submitNewBoxleague', auth, function (req, res) {
-//     console.log('app.post(/submitNewBoxleague)');
-//
-//     if (!req.body) {
-//         return res.status(400).send('missing boxleague data');
-//     }
-//
-//     var boxleague = req.body;
-//
-//     if (!boxleague.end) {
-//         res.status(400).send('missing boxleague end date');
-//         return;
-//     }
-//
-//     if (!boxleague.start) {
-//         res.status(400).send('missing boxleague start date');
-//         return;
-//     }
-//
-//     if (!boxleague.name) {
-//         res.status(400).send('missing boxleague name');
-//         return;
-//     }
-//
-//     if (!boxleague.boxes && !boxleague.boxes.length) {
-//         res.status(400).send('missing boxleague boxes data');
-//         return;
-//     }
-//
-//     var databaseName = "boxleague";
-//
-//     Cloudant({account: user, password: password}, function (er, cloudant) {
-//         if (er) {
-//             console.log('Error login: %s', er.reason);
-//             res.status(500).send(er.reason);
-//             return;
-//         }
-//
-//         var database = cloudant.use(databaseName);
-//         deleteCache(cache, databaseName);
-//         var docs = boxleague;
-//
-//         console.log(docs);
-//
-//         database.insert(docs, function (er, data) {
-//             if (er) {
-//                 res.status(400).send(er.message);
-//             } else {
-//                 res.status(200).send(data);
-//             }
-//         });
-//     });
-// });
 
-// stuff for the weather
+//=============================Weather=================================
 var weatherDaily = [];
 var weatherHourly = [];
 var appId = 'dfa92a2daab9476f51718353645f1c85';
@@ -756,7 +718,6 @@ app.get('/weatherDaily', auth, function (req, res) {
         res.status(200).send(weatherDaily[location]);
         return;
     }
-    ;
 
     var requestUrl = 'http://api.openweathermap.org/data/2.5/forecast/daily?q=' + location + '&cnt=' + days + '&appid=' + appId + '&format=json';
 
@@ -781,7 +742,6 @@ app.get('/weatherHourly', auth, function (req, res) {
         res.status(200).send(weatherHourly[location]);
         return;
     }
-    ;
 
     var requestUrl = 'http://api.openweathermap.org/data/2.5/forecast?q=' + location + '&cnt=' + hours + '&appid=' + appId + '&format=json';
 
@@ -800,6 +760,82 @@ setInterval(function () {
     weatherDaily = [];
     weatherHourly = [];
 }, 1000 * 60 * 60);
+
+//=============================Emailing=================================
+// create reusable transporter object using the default SMTP transport
+var transporter = nodemailer.createTransport("SMTP", {
+    service: "iCloud",  // sets automatically host, port and connection security settings
+    auth: {
+        user: emailUser,
+        pass: emailPassword
+    }
+});
+
+var mailOptions = {
+    from: "Boxleague<" + emailUser + "@icloud.com>", // sender address
+    to: emailUser + "@icloud.com", // comma delimited list of receivers
+    subject: "Start up", // Subject line
+    text: "Boxleague starting" // plain body
+};
+
+var sendMailFunction = function (message, success, fail) {
+    var email = {};
+    email.from = mailOptions.from;
+    email.to = message.to.join(",");
+    email.subject = message.subject;
+    email.text = message.text;
+    email.text += "\n\nSupport email: " + mailOptions.from;
+
+    console.log(JSON.stringify(email));
+
+    // send mail with defined transport object
+    try {
+        transporter.sendMail(email, function (error, info) {
+            if (error) {
+                console.log('Message error: ' + error);
+                if (fail) {
+                    fail(error);
+                }
+            } else {
+                console.log('Message sent: ' + JSON.stringify(info));
+                if (success) {
+                    success(info);
+                }
+            }
+        });
+    }
+    catch (error) {
+        console.log('Message exception error: ' + error);
+        fail(error);
+    }
+};
+var sendMail = function (message, res) {
+    sendMailFunction(message, function (info) {
+        res.status(200).send(info);
+    }, function (error) {
+        res.status(500).send(error);
+    });
+};
+
+app.post('/message', auth, function (req, res) {
+    console.log(req.url);
+
+    var message = req.body;
+    sendMail(message, res);
+});
+
+console.log(JSON.stringify(mailOptions));
+
+transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+        return console.log(error);
+    }
+    console.log('Message sent: ' + JSON.stringify(info));
+});
+
+// initialise the players list to allow for logins
+readDoc("players");
+readDoc("users");
 
 http.createServer(app).listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));

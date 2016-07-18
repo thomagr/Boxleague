@@ -55,7 +55,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand brand nav-login" href="#/">Boxleague Singles</a>
+                <a class="navbar-brand brand nav-login" href="#/">Boxleague</a>
             </div>
             <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
                 <ul class="nav navbar-nav">
@@ -69,6 +69,9 @@
                                 File</a></li>
                             <li class="divider"></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/importPlayers">Players</a></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/nextBoxleague"><i
+                                    class="fa fa-arrow-right"></i>
+                                Next Boxleague</a></li>
                         </ul>
                     </li>
                     <li ng-hide="!myBox" ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i
@@ -90,8 +93,6 @@
                             Head To Head</a></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/boxleagues"><i
                                     class="fa fa-server"></i> Boxleagues</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/nextBoxleague"><i class="fa fa-arrow-right"></i>
-                                Next Boxleague</a></li>
                             <li class="divider"></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/rules"><i class="fa fa-book"></i>
                                 Rules</a></li>
@@ -123,10 +124,11 @@
         </div>
     </div>
     <div ng-if="loading" class="row">
-        <div class="loader" style="align: center"></div>
+        <div class="loader"></div>
     </div>
 </div>
-<div ng-class="{container: isAuth}">
+<!--<div ng-class="{container: isAuth}">-->
+<div class="container">
     <div ng-view></div>
 </div>
 </body>

@@ -1,8 +1,9 @@
 boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", function ($routeProvider, $locationProvider, $httpProvider) {
     //================================================
-    // Check if the user is connected
+    // Check if the user is valid
     //================================================
     var checkLoggedin = function ($q, $timeout, $http, $location, $rootScope) {
+        console.log("checkLoggedin");
         // Initialize a new promise
         var deferred = $q.defer();
 
@@ -13,12 +14,15 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
                 $rootScope.isAuth = true;
                 $rootScope.login = response.name;
                 $rootScope.admin = $rootScope.login === 'Admin';
+
                 deferred.resolve();
             }
             // Not Authenticated
             else {
                 $rootScope.isAuth = false;
                 deferred.reject();
+                $rootScope.currentUrl = $location.url();
+                console.log("Redirecting original URL %s to /login", $location.url());
                 $location.url('/login');
             }
         });
@@ -51,7 +55,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
                 $rootScope.requesting = $rootScope.requesting || 0;
                 $rootScope.requesting++;
                 $timeout(function() {
-                    if ($rootScope.requesting > 0) {
+                    if ($rootScope.requesting > 0 && $rootScope.isAuth) {
                         $rootScope.loading = true;
                     }
                 }, 500);
@@ -60,10 +64,20 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
 
             response: function(response) {
                 $rootScope.requesting--;
-                if($rootScope.requesting === 0){
+                if ($rootScope.requesting <= 0) {
                     $rootScope.loading = false;
+                    $rootScope.requesting = 0;
                 }
                 return response;
+            },
+
+            responseError: function (response) {
+                $rootScope.requesting--;
+                if ($rootScope.requesting <= 0) {
+                    $rootScope.loading = false;
+                    $rootScope.requesting = 0;
+                }
+                return $q.reject(response);
             }
         };
     });
@@ -80,6 +94,15 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         resolve: {
             loggedin: checkLoggedin
         }
+    }).when('/password/:id', {
+        templateUrl: 'pages/password.html',
+        controller: 'passwordCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
+    }).when('/forgotPassword', {
+        templateUrl: 'pages/forgotPassword.html',
+        controller: 'passwordCtrl'
     }).when('/rules', {
         templateUrl: 'pages/rules.html',
         controller: 'welcomeCtrl',

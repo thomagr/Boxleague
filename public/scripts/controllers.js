@@ -185,6 +185,7 @@ boxleagueApp.factory('tennisService', function (commonService) {
             boxes: boxes
         }
     };
+
     root.createBox = function (name, players, games) {
 
         commonService.check(name, "string");
@@ -887,13 +888,13 @@ boxleagueApp.factory('tennisService', function (commonService) {
 
     return root;
 });
-boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, tennisService) {
+boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, commonService, tennisService) {
     var root = {};
 
     root.getError = function (response) {
         $rootScope.alerts.push({
             type: "danger",
-            msg: "Getting boxleague data failed: " + response.data
+            msg: "Getting boxleague data failed with error: " + response.data
         });
     };
 
@@ -915,6 +916,7 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, 
         if ($rootScope.playersCache) {
             success($rootScope.playersCache);
         } else {
+            $log.info("Requesting players");
             $http.get('players').then(function (response) {
                 if (response && response.data && response.data.length) {
                     $rootScope.playersCache = response.data;
@@ -999,6 +1001,11 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, 
         delete $rootScope.playersCache;
     };
 
+    root.resetGamesCache = function () {
+        delete $rootScope.playerGamesCache;
+        delete $rootScope.gamesCache;
+    };
+
     root.saveBoxleague = function (boxleague, games, players) {
         console.log("posting boxleague data ...");
 
@@ -1008,33 +1015,6 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, 
         boxleague = tennisService.createBoxleague("0", boxleague.name, boxleague.start, boxleague.end, []);
         // delete the id as this will be created by the database
         delete boxleague._id;
-
-        // // clean data
-        // var data = [];
-        // $scope.newPlayers.forEach(function (player) {
-        //     data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
-        // });
-        //
-        // $http.post('/players', JSON.stringify(data)).then(function () {
-        //     $rootScope.alerts.push({type: "success", msg: "Players saved"});
-        //     $http.get('/players').then(function (response) {
-        //         $scope.currentPlayers = response.data;
-        //     }, function (response) {
-        //         $scope.currentPlayers = [];
-        //         $rootScope.alerts.push({
-        //             type: "warning",
-        //             msg: "Read failed with error '" + response.data
-        //         });
-        //     });
-        // }, function (response) {
-        //     $rootScope.alerts.push({
-        //         type: "danger",
-        //         msg: "Request failed with response '" + response.data + "' and status code: " + response.status
-        //     });
-        // });
-
-        // var data = {database: 'boxleagues', doc: boxleague};
-        // var promise = $http.post('submitDoc', JSON.stringify(data));
 
         var data = [];
         data.push(boxleague);
@@ -1077,26 +1057,20 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, 
                 // now save the boxleague for the second time with the boxes containing players and games
                 boxleague.boxes = boxes;
 
-                // var data = {database: 'boxleagues', doc: boxleague};
-                // var promise = $http.post('submitDoc', JSON.stringify(data));
-
                 var data = [];
                 data.push(boxleague);
                 var promise = $http.post('boxleagues', JSON.stringify(data));
 
-                promise.success(function (response, status) {
+                promise.success(function () {
                     $rootScope.alerts.push({type: "success", msg: "#3 Saved boxleague boxes"});
 
                     root.resetCache();
-                    delete $rootScope.boxleague;
-                    delete $rootScope.games;
-                    delete $rootScope.players;
                 });
 
                 promise.error(function (response, status) {
                     $rootScope.alerts.push({
                         type: "danger",
-                        msg: "Saving boxleage with boxes request failed with response '" + response + "' and status code: " + status
+                        msg: "Saving boxleage with boxes request failed with response: " + response + " and status code: " + status
                     });
                 });
             });
@@ -1104,7 +1078,7 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, 
             promise.error(function (response, status) {
                 $rootScope.alerts.push({
                     type: "danger",
-                    msg: "Saving games request failed with response '" + response + "' and status code: " + status
+                    msg: "Saving games request failed with response: " + response + " and status code: " + status
                 });
             });
         });
@@ -1112,9 +1086,80 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, commonService, 
         promise.error(function (response, status) {
             $rootScope.alerts.push({
                 type: "danger",
-                msg: "Saving initial boxleague request failed with response '" + response + "' and status code: " + status
+                msg: "Saving initial boxleague request failed with response: " + response + " and status code: " + status
             });
         });
+    };
+
+    // create code objects
+    root.createMessage = function (from, to, subject, text) {
+
+        commonService.check(from, "string");
+        commonService.check(subject, "string");
+        commonService.check(text, "string");
+        commonService.check(to, "array");
+
+        var date = $filter('date')(new Date(), "EEE, MMM d, yyyy 'at' hh:mm a");
+
+        return {
+            from: from,
+            to: to,
+            subject: subject,
+            date: date,
+            text: text
+        }
+    };
+
+    root.sendMessage = function (message) {
+        var data = {
+            from: message.from,
+            to: message.to,
+            subject: message.subject + " " + message.date,
+            text: message.text
+        };
+        console.log(data);
+        $http.post('message', JSON.stringify(data)).then(function (response) {
+        }, root.getError);
+    };
+
+    root.scoreUpdate = function (game, players) {
+
+        var home = commonService.findById(players, game.homeId);
+        var away = commonService.findById(players, game.awayId);
+
+        if ($rootScope.login != home.name && !home.email) {
+            $rootScope.alerts.push({
+                type: "warning",
+                msg: home.name + " does not have an email address and therefore can not be notified of the new score."
+            });
+            return;
+        }
+
+        if ($rootScope.login != away.name && !away.email) {
+            $rootScope.alerts.push({
+                type: "warning",
+                msg: away.name + " does not have an email address and therefore can not be notified of the new score."
+            });
+            return;
+        }
+
+        var date = game.date;
+        var box = game.box;
+        var score = game.score;
+
+        var subject = "Boxleage '" + box + "' score update";
+
+        var content = [];
+        content.push("Boxleage score updated by " + $rootScope.login);
+        content.push(" ");
+        content.push(home.name + " vs " + away.name + ": " + score);
+        if (date) {
+            var tmp = $filter('date')(date, "EEE, MMM d, yyyy");
+            content.push("Played: " + tmp);
+        }
+
+        var message = root.createMessage($rootScope.login, [home.email, away.email], subject, content.join("\n"));
+        root.sendMessage(message);
     };
 
     return root;
@@ -1177,6 +1222,102 @@ boxleagueApp.filter('boxesSort', function ($filter) {
 });
 
 //CONTROLLERS
+boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $log, $http, $location, $routeParams, httpService, commonService, __env) {
+    $rootScope.production = __env.production;
+    $rootScope.myBox = true;
+
+    $scope.loginSubmit = function () {
+        $http.post('/login', {username: $scope.username, password: $scope.password}).then(function (response) {
+            $rootScope.login = response.data.name;
+            $rootScope.alerts = [];
+            if ($rootScope.login === "Admin") {
+                $location.url('/');
+            } else {
+                switch ($rootScope.currentUrl) {
+                    case undefined:
+                    case "/":
+                    case "/login":
+                        $location.url("/myBox");
+                        break;
+                    default:
+                        $location.url($rootScope.currentUrl);
+
+                }
+                $log.info("Restoring original URL %s", $location.url());
+            }
+        }, function () {
+            $rootScope.alerts.push({
+                type: "danger",
+                msg: "The username or password entered is incorrect."
+            });
+        })
+    };
+
+    // required for message alerts
+    $rootScope.close = function (index) {
+        $rootScope.alerts.splice(index, 1);
+    };
+});
+boxleagueApp.controller('passwordCtrl', function ($scope, $rootScope, $log, $http, $location, $routeParams, httpService, commonService) {
+    $log.info("tableCtrl");
+
+    var id = $routeParams.id;
+
+    if (id) {
+        httpService.getPlayers(function (players) {
+            var player = commonService.findById(players, id);
+            $scope.username = player.name;
+
+            if ($rootScope.login !== "Admin") {
+                var login = commonService.findByName(players, $rootScope.login);
+
+                // unless admin force the player to the correct one
+                if (player._id !== login._id) {
+                    $location.url("/password/" + login._id);
+                }
+            }
+        });
+    }
+
+    $scope.passwordSubmit = function () {
+        $http.post('/password', {
+            username: $scope.username,
+            current: $scope.current,
+            password: $scope.password
+        }).then(function () {
+            $rootScope.alerts.push({
+                type: "success",
+                msg: "Saved."
+            });
+        }, function (response) {
+            $rootScope.alerts.push({
+                type: "danger",
+                msg: "Saving password failed: " + response.data
+            });
+        });
+        $location.url("/settings");
+    };
+
+    $scope.resetPasswordSubmit = function () {
+        $http.post('/resetPassword', {username: $scope.username}).then(function () {
+            $rootScope.alerts.push({
+                type: "info",
+                msg: "A new temporary password has been emailed."
+            });
+            $location.url("/login");
+        }, function (response) {
+            $rootScope.alerts.push({
+                type: "danger",
+                msg: "There has been a problem resetting your password: " + response.data
+            });
+        });
+    };
+
+    $scope.passwordInvalid = function () {
+        return $scope.password !== $scope.confirm
+    };
+});
+
 boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', '$http', '$timeout', function ($scope, $log, $resource, $routeParams, $http, $timeout) {
     $log.info("forcastCtrl");
 
@@ -1277,6 +1418,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
 
     var table = $routeParams.name;
     var id = $routeParams.id;
+    $scope.id = id;
 
     if (table === "boxleague" && !$rootScope.admin) {
         $location.url('/boxleague/' + id + '/boxes');
@@ -1381,6 +1523,13 @@ boxleagueApp.controller('settingsMainCtrl', ['$rootScope', '$log', '$location', 
     $log.info("settingsMainCtrl");
 
     httpService.getPlayers(function (players) {
+        var player = commonService.findByName(players, $rootScope.login);
+        if (!player.email) {
+            $rootScope.alerts.push({
+                type: "warning",
+                msg: 'You do not have an Email address registered. Please enter a valid email address and save.'
+            });
+        }
         $location.url('/form/player/' + commonService.findByName(players, $rootScope.login)._id);
     })
 }]);
@@ -1757,7 +1906,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
     $scope.save = function (id) {
         console.log('Saving game ' + id);
 
-        httpService.resetCache($rootScope);
+        httpService.resetGamesCache($rootScope);
 
         var game = commonService.findById($scope.games, id);
         // clean data before save
@@ -1771,13 +1920,16 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
             game = commonService.findById($scope.games, id);
             game._rev = response.rev;
             $rootScope.alerts.push({type: "success", msg: " Saved"});
+
+            httpService.scoreUpdate(game, $scope.players);
+
             setUpBox();
         });
 
         promise.error(function (response) {
             $rootScope.alerts.push({
                 type: "danger",
-                msg: "Save failed with error '" + response + "'. Refresh the page, check and try again."
+                msg: "Save failed with error: " + response + ". Refresh the page, check and try again."
             });
         });
     };
@@ -2064,6 +2216,8 @@ boxleagueApp.controller('headToHeadMainCtrl', ['$rootScope', '$log', '$location'
 boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$location', '$http', '$routeParams', 'httpService', 'commonService', 'tennisService', function ($scope, $log, $rootScope, $location, $http, $routeParams, httpService, commonService, tennisService) {
     $log.info("headToHeadCtrl");
 
+    var id = $routeParams.id;
+
     var setUp = function (id, boxleagues, players, games) {
         $scope.name = commonService.findById(players, id).name;
         $scope.players = players;
@@ -2109,18 +2263,20 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
         };
     };
 
-    var id = $routeParams.id;
-
     // get all of the required data
     httpService.getBoxleagues(function (boxleagues) {
         httpService.getPlayers(function (players) {
+            $scope.home = commonService.findById(players, id);
             httpService.getPlayerGames(id, function (games) {
                 setUp(id, boxleagues, players, games);
             });
         });
     });
 
-    $scope.change = function (selected) {
+    $scope.changeHome = function (selected) {
+        $location.url("headToHead/" + selected._id);
+    };
+    $scope.changeAway = function (selected) {
 
         if (!selected) {
             $scope.searchName = '';
@@ -2132,10 +2288,10 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
         var games = [];
 
         $scope.games.forEach(function (game) {
-            if (game.homeId === $scope.selected._id) {
+            if (game.homeId === selected._id) {
                 games.push(game);
             }
-            if (game.awayId === $scope.selected._id) {
+            if (game.awayId === selected._id) {
                 games.push(game);
             }
         });
@@ -2158,7 +2314,7 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
     }, function (response) {
         $rootScope.alerts.push({
             type: "warning",
-            msg: "Read failed with error '" + response.data + "'"
+            msg: "Read failed with error: " + response.data
         });
     });
 
@@ -2578,7 +2734,7 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
         $scope.currentPlayers = [];
         $rootScope.alerts.push({
             type: "warning",
-            msg: "Read failed with error '" + response.data
+            msg: "Read failed with error: " + response.data
         });
     });
 
@@ -2610,13 +2766,13 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
                 $scope.currentPlayers = [];
                 $rootScope.alerts.push({
                     type: "warning",
-                    msg: "Read failed with error '" + response.data
+                    msg: "Read failed with error: " + response.data
                 });
             });
         }, function (response) {
             $rootScope.alerts.push({
                 type: "danger",
-                msg: "Request failed with response '" + response.data + "' and status code: " + response.status
+                msg: "Request failed with response: " + response.data + " and status code: " + response.status
             });
         });
 
