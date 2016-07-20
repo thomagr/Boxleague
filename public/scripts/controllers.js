@@ -1380,7 +1380,7 @@ boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '
         var columns = commonService.getColumns($scope.rows);
         var filter = commonService.filterColumns(columns);
 
-        // place schedule at the front if present
+        // place name at the front if present
         if (filter.indexOf("name") !== -1) {
             filter = commonService.arraySplice(filter, "name");
             filter.unshift("name");

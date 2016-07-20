@@ -25,10 +25,20 @@ if (!tmpPassword || !emailUser || !emailPassword || !cloudantUser || !cloudantPa
     throw 'Mandatory environment variables have not been set.';
 }
 
+var production = cloudantUser === cloudantProductionUser;
+console.info("Environment production: %s", production);
+
+if (production) {
+    console.debug = function () {
+    };
+} else {
+    console.debug = console.log;
+}
+
 //==================================================================
 // Define the strategy to be used by PassportJS
 passport.use(new LocalStrategy(function (username, password, done) {
-    console.log('checking password');
+    console.debug('checking password');
 
     var player = isRegisteredUser(cache, 'players', username);
     if (!player) {
@@ -46,7 +56,7 @@ passport.use(new LocalStrategy(function (username, password, done) {
     }
 
     if (verify) {
-            console.log('user %s has logged in', username);
+        console.info('user %s has logged in', username);
             return done(null, {
                 name: username
             });
@@ -65,12 +75,12 @@ passport.deserializeUser(function (user, done) {
 });
 // Define a middleware function to be used for every secured routes
 var auth = function (req, res, next) {
-    console.log('checking isAuthenticated');
+    console.debug('checking isAuthenticated');
     if (!req.isAuthenticated()) {
-        console.log('is Authenticated false');
+        console.debug('is Authenticated false');
         res.status(401).send("not authenticated");
     } else {
-        console.log('is Authenticated true');
+        console.debug('is Authenticated true');
         next();
     }
 };
@@ -81,10 +91,9 @@ var app = express();
 // Default logger on all calls
 app.use(function (req, res, next) {
     var now = new Date();
-    console.log('-----------------------------');
-    console.log('Request  : %s', now);
-    console.log('req.query: %s', JSON.stringify(req.query));
-    console.log('req.url  : %s', req.url);
+    console.debug('Request  : %s', now);
+    console.debug('req.query: %s', JSON.stringify(req.query, null, 2));
+    console.debug('req.url  : %s', req.url);
     next();
 });
 
@@ -106,13 +115,10 @@ app.use(bodyParser.urlencoded({
 }));
 
 //===============CLOUDANT===============
-var production = cloudantUser === cloudantProductionUser;
-console.log("Environment production: %s", production);
-
 var cache = {};
 
 function deleteCache(cache, name) {
-    console.log('deleting cache ' + name);
+    console.debug('deleting cache ' + name);
 
     if (!cache[name]){
         return
@@ -123,7 +129,7 @@ function deleteCache(cache, name) {
 
     while (j--) {
         if (cache[cache[name][j].id]) {
-            console.log('deleting cache id ' + cache[name][j].id);
+            console.debug('deleting cache id ' + cache[name][j].id);
             delete cache[cache[name][j].id];
         }
     }
@@ -131,55 +137,44 @@ function deleteCache(cache, name) {
 }
 // update - return true if found and updated
 function updateCache(cache, name, data) {
-    console.log('updating cache ' + name);
+    console.debug('updating cache ' + name);
 
     if (!cache[name]){
+        cache[name] = [data];
         return
     }
 
-    for(var index=0;index<cache[name].length;index++){
-        if (data._id === cache[name][index]._id) {
-            console.log('Before: ' + JSON.stringify(cache[name][index]));
-            cache[name][index] = data;
-            console.log('After: ' + JSON.stringify(cache[name][index]));
-            return true;
-        }
+    var obj = findOneCacheItem(cache, name, "_id", data._id);
+
+    if (obj) {
+        console.debug('Before: ' + JSON.stringify(obj, null, 2));
+        Object.assign(obj, data);
+        console.debug('After: ' + JSON.stringify(obj, null, 2));
+    } else {
+        cache[name].push(data);
     }
+
     return false;
 }
 function loadCache(cache, name, data) {
-    console.log('loading cache %s with %d items', name, data.length);
+    console.info('loading cache %s with %d items', name, data.length);
 
     if(!cache[name]){
         cache[name] = data;
     } else {
         data.forEach(function(item){
-            if(!updateCache(cache, name, data)){
-                cache[name].push(item);
-            }
+            updateCache(cache, name, data);
         })
-    }
-}
-function readCacheItem(cache, name, id) {
-    console.log('readCacheItem cache ' + name);
-
-    if (!cache[name]){
-        return
-    }
-
-    for(var i=0;i<cache[name].length;i++){
-        if (id === cache[name][i]._id) {
-            return cache[name][i];
-        }
     }
 }
 // find items by an index and its id
 function findCacheItem(cache, name, index, id) {
-    console.log('findCacheItem cache %s by %s == %s', name, index, id);
+    console.debug('findCacheItem cache %s by %s == %s', name, index, id);
 
     var results = [];
 
     if (!cache[name]){
+        console.debug('findCacheItem cache %s by %s == %s - not found', name, index, id);
         return
     }
 
@@ -188,10 +183,12 @@ function findCacheItem(cache, name, index, id) {
             results.push(cache[name][i]);
         }
     }
+
+    console.debug('findCacheItem cache %s by %s == %s - %d found', name, index, id, results.length);
     return results;
 }
 function findOneCacheItem(cache, name, index, id) {
-    console.log('findOneCacheItem cache %s by %s == %s', name, index, id);
+    console.debug('findOneCacheItem cache %s by %s == %s', name, index, id);
     var find = findCacheItem(cache, name, index, id);
     if (find && find.length) {
         return find[0];
@@ -200,7 +197,7 @@ function findOneCacheItem(cache, name, index, id) {
     }
 }
 function removeCacheItem(cache, name, data) {
-    console.log('removeCacheItem cache ' + name);
+    console.debug('removeCacheItem cache ' + name);
 
     if (!cache[name]){
         return
@@ -214,7 +211,7 @@ function removeCacheItem(cache, name, data) {
     }
 }
 function isRegisteredUser(cache, name, user) {
-    console.log('isRegisteredUser cache ' + name + ' user ' + user);
+    console.debug('isRegisteredUser cache ' + name + ' user ' + user);
 
     if(cache[name]){
         for (var i = 0; i < cache[name].length; i++) {
@@ -239,24 +236,24 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/public/pages'));
 if(production){
     app.get('/scripts/env.js', function (req, res) {
-        console.log('app.get(/environment)');
+        console.debug('app.get(/environment)');
         res.sendFile(__dirname + '/public/scripts/production/env.js');
     });
 } else {
     app.get('/scripts/env.js', function (req, res) {
-        console.log('app.get(/environment)');
+        console.debug('app.get(/environment)');
         res.sendFile(__dirname + '/public/scripts/development/env.js');
     });
 }
 
 // route to homepage
 app.get('/', function (req, res) {
-    console.log('app.get(/)');
+    console.debug('app.get(/)');
     res.sendFile(__dirname + '/public/index.html');
 });
 // route to test if the user is logged in or not
 app.get('/loggedin', function (req, res) {
-    console.log('req.user : %s', JSON.stringify(req.user));
+    console.debug('req.user : %s', JSON.stringify(req.user, null, 2));
 
     if (req.isAuthenticated()) {
         var player = isRegisteredUser(cache, 'players', req.user.name);
@@ -271,7 +268,7 @@ app.get('/loggedin', function (req, res) {
     }
 });
 app.post('/login', passport.authenticate('local'), function (req, res) {
-    console.log('/login req.user: %s', JSON.stringify(req.user));
+    console.info('/login req.user: %s', JSON.stringify(req.user, null, 2));
 
     var player = isRegisteredUser(cache, 'players', req.user.name);
     if (!player) {
@@ -282,13 +279,13 @@ app.post('/login', passport.authenticate('local'), function (req, res) {
     }
 });
 app.post('/logout', function (req, res) {
-    console.log('/logout');
+    console.info('/logout');
     req.logOut();
     res.status(200).end();
 });
 
 app.post('/resetPassword', function (req, res) {
-    console.log('/resetPassword: %s', JSON.stringify(req.body));
+    console.debug('/resetPassword: %s', JSON.stringify(req.body, null, 2));
 
     var player = isRegisteredUser(cache, 'players', req.body.username);
 
@@ -325,7 +322,7 @@ app.post('/resetPassword', function (req, res) {
     });
 });
 app.post('/password', auth, function (req, res) {
-    console.log('/password: %s', JSON.stringify(req.body));
+    console.debug('/password: %s', JSON.stringify(req.body, null, 2));
 
     var player = isRegisteredUser(cache, 'players', req.body.username);
 
@@ -376,24 +373,24 @@ app.post('/password', auth, function (req, res) {
 });
 
 var readDoc = function (name, res, id) {
-    console.log('readDoc %s', name);
+    console.debug('readDoc %s', name);
 
     if(id) {
-        var item = readCacheItem(cache, name, id);
+        var item = findOneCacheItem(cache, name, "_id", id);
         if (item) {
-            console.log("returning item from cache");
+            console.debug("returning item from cache");
             res.send(item);
             return;
         }
     } else if(cache[name]) {
-        console.log("returning cache");
+        console.debug("returning cache");
         res.send(cache[name]);
         return;
     }
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
-            console.log('Error login: %s', error.reason);
+            console.error('Error login: %s', error.reason);
             if (res) {
                 res.status(500).send(error.reason)
             }
@@ -407,8 +404,10 @@ var readDoc = function (name, res, id) {
         if (typeof id === 'undefined') {
             database.list({include_docs: true}, function (error, response) {
                 if (error) {
-                    console.log('Error list %s: %s', name, error.reason);
-                    if(res){res.status(error.statusCode).send(error.reason)}
+                    console.error('Error list %s: %s', name, error.reason);
+                    if (res) {
+                        res.status(error.statusCode).send(error.reason)
+                    }
                     return;
                 }
                 // convert the output from docs to objects
@@ -418,35 +417,44 @@ var readDoc = function (name, res, id) {
                     items.push(item.doc);
                 });
                 loadCache(cache, name, items);
-                if(res){res.send(items)}
+                if (res) {
+                    res.send(items)
+                }
             });
         } else {
             // use the id and get it
             database.get(id, function (er, body) {
                 if (er) {
-                    console.log('Error login: %s', er.reason);
-                    if(res){res.status(er.statusCode).send(er.reason)}
+                    console.error('Error login: %s', er.reason);
+                    if (res) {
+                        res.status(er.statusCode).send(er.reason)
+                    }
                     return;
                 }
-                if(res){res.send(body)}
+                if (res) {
+                    updateCache(cache, name, body);
+                    res.send(body)
+                }
             });
         }
     });
 };
 var findDocs = function (name, index, id, res) {
-    console.log('findDocs %s by %s == %s', name, index, id);
+    console.debug('findDocs %s by %s == %s', name, index, id);
 
     var item = findCacheItem(cache, name, index, id);
     if (item && item.length) {
-        console.log("returning item from cache");
+        console.debug("returning item from cache");
         res.send(item);
         return;
     }
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
-            console.log('Error login: %s', error.reason);
-            if(res){res.status(500).send(error.reason)}
+            console.error('Error login: %s', error.reason);
+            if (res) {
+                res.status(500).send(error.reason)
+            }
             return;
         }
 
@@ -458,21 +466,24 @@ var findDocs = function (name, index, id, res) {
 
         database.find({selector:selector}, function (er, response) {
             if (er) {
-                console.log('Error login: %s', er.reason);
+                console.error('Error login: %s', er.reason);
                 if(res){res.status(er.statusCode).send(er.reason)}
                 return;
             }
-            if(res){res.send(response.docs)}
+            if (res) {
+                loadCache(cache, name, response.docs);
+                res.send(response.docs)
+            }
         });
     });
 };
 var updateDoc = function (data, name, res, success, fail) {
-    console.log('updateDoc %s', name);
-    console.log(JSON.stringify(data));
+    console.debug('updateDoc %s', name);
+    console.debug(JSON.stringify(data, null, 2));
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
-            console.log('Error login: %s', error.reason);
+            console.error('Error login: %s', error.reason);
             res.status(500).send(error.reason);
             if (fail) {
                 fail(error.reason);
@@ -484,13 +495,13 @@ var updateDoc = function (data, name, res, success, fail) {
 
         database.insert(data, function (error, response) {
             if (error) {
-                console.log('Error list %s: %s', name, error.reason);
+                console.error('Error list %s: %s', name, error.reason);
                 res.status(error.statusCode).send(error.reason);
                 if (fail) {
                     fail(error.reason);
                 }
             } else {
-                console.log("Data:", JSON.stringify(response));
+                console.debug("Data:", JSON.stringify(response, null, 2));
                 data._id = response.id;
                 data._rev = response.rev;
                 updateCache(cache, name, data);
@@ -503,12 +514,12 @@ var updateDoc = function (data, name, res, success, fail) {
     });
 };
 var bulkUpdateDoc = function (data, name, res) {
-    console.log('bulkUpdateDoc %s', name);
-    console.log(JSON.stringify(data));
+    console.debug('bulkUpdateDoc %s', name);
+    console.debug(JSON.stringify(data, null, 2));
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
-            console.log('Error login: %s', error.reason);
+            console.error('Error login: %s', error.reason);
             res.status(500).send(error.reason);
             return;
         }
@@ -517,15 +528,15 @@ var bulkUpdateDoc = function (data, name, res) {
         var docs = {docs: data};
         database.bulk(docs, function (error, response) {
             if (error) {
-                console.log('Error list %s: %s', name, error.reason);
+                console.error('Error list %s: %s', name, error.reason);
                 res.status(error.statusCode).send(error.reason);
             } else {
-                console.log("Response:", JSON.stringify(response));
+                console.debug("Response:", JSON.stringify(response, null, 2));
                 for(var i=0;i<response.length;i++){
                     data[i]._id =response[i].id;
                     data[i]._rev =response[i].rev;
                 }
-                console.log("Data:", JSON.stringify(data));
+                console.debug("Data:", JSON.stringify(data, null, 2));
                 deleteCache(cache, name);
                 res.status(200).send(data);
             }
@@ -533,8 +544,8 @@ var bulkUpdateDoc = function (data, name, res) {
     });
 };
 var deleteDoc = function (id, rev, name, res) {
-    console.log('deleteDoc %s', name);
-    console.log('id: %s, rev: %s', id, rev);
+    console.debug('deleteDoc %s', name);
+    console.debug('id: %s, rev: %s', id, rev);
     if(!id || !rev){
         res.status(500).send("id or rev missing in delete request");
         return;
@@ -542,7 +553,7 @@ var deleteDoc = function (id, rev, name, res) {
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
-            console.log('Error login: %s', error.reason);
+            console.error('Error login: %s', error.reason);
             res.status(500).send(error.reason);
             return;
         }
@@ -551,10 +562,10 @@ var deleteDoc = function (id, rev, name, res) {
 
         database.destroy(id, rev, function (error, response) {
             if (error) {
-                console.log('Error list %s: %s', name, error.reason);
+                console.error('Error list %s: %s', name, error.reason);
                 res.status(error.statusCode).send(error.reason);
             } else {
-                console.log("Data:", JSON.stringify(response));
+                console.debug("Data:", JSON.stringify(response, null, 2));
                 response._id = response.id; // because the response had id and not _id
                 removeCacheItem(cache, name, response);
                 res.status(200).send(response);
@@ -564,78 +575,61 @@ var deleteDoc = function (id, rev, name, res) {
 };
 
 app.get('/player/:id', auth, function (req, res) {
-    console.log(req.url);
     readDoc("players", res, req.params.id);
 });
 app.post('/player/:id', auth, function (req, res) {
-    console.log(req.url);
     updateDoc(req.body, "players", res);
 });
 app.delete('/player/:id/:rev', auth, function (req, res) {
-    console.log(req.url);
     deleteDoc(req.params.id, req.params.rev, "players", res);
 });
 app.get('/players', auth, function (req, res) {
-    console.log(req.url);
     readDoc("players", res);
 });
 app.post('/players', auth, function (req, res) {
-    console.log(req.url);
     bulkUpdateDoc(req.body, "players", res);
 });
 
 app.get('/game/:id', auth, function (req, res) {
-    console.log(req.url);
     readDoc("games", res, req.params.id);
 });
 app.post('/game/:id', auth, function (req, res) {
-    console.log(req.url);
     updateDoc(req.body, "games", res);
 });
 app.delete('/game/:id/:rev', auth, function (req, res) {
-    console.log(req.url);
     deleteDoc(req.params.id, req.params.rev, "games", res);
 });
 app.get('/games', auth, function (req, res) {
-    console.log(req.url);
     readDoc("games", res);
 });
 app.get('/games/:field/:id', auth, function (req, res) {
-    console.log(req.url);
     findDocs("games", req.params.field, req.params.id, res);
 });
 app.post('/games', auth, function (req, res) {
-    console.log(req.url);
     bulkUpdateDoc(req.body, "games", res);
 });
 
 app.get('/boxleague/:id', auth, function (req, res) {
-    console.log(req.url);
     readDoc("boxleagues", res, req.params.id);
 });
 app.post('/boxleague/:id', auth, function (req, res) {
-    console.log(req.url);
     updateDoc(req.body, "boxleagues", res);
 });
 app.delete('/boxleague/:id/:rev', auth, function (req, res) {
-    console.log(req.url);
     deleteDoc(req.params.id, req.params.rev, "boxleagues", res);
 });
 app.get('/boxleagues', auth, function (req, res) {
-    console.log(req.url);
     readDoc("boxleagues", res);
 });
 app.get('/boxleagues/:active', auth, function (req, res) {
-    console.log(req.url);
     findDocs("boxleagues", "active", req.params.active, res);
 });
 app.post('/boxleagues', auth, function (req, res) {
-    console.log(req.url);
     bulkUpdateDoc(req.body, "boxleagues", res);
 });
 
 app.post('/submitDoc', auth, function (req, res) {
-    console.log('app.post(/submitDoc)');
+    console.debug('app.post(/submitDoc)');
 
     if (!req.body) {
         res.status(400).send('missing data');
@@ -657,7 +651,7 @@ app.post('/submitDoc', auth, function (req, res) {
     updateDoc(doc, databaseName, res);
 });
 app.post('/submitDocs', auth, function (req, res) {
-    console.log('app.post(/submitDocs)');
+    console.debug('app.post(/submitDocs)');
 
     if (!req.body) {
         res.status(400).send('missing body');
@@ -678,7 +672,7 @@ app.post('/submitDocs', auth, function (req, res) {
 
     Cloudant({account: user, password: password}, function (er, cloudant) {
         if (er) {
-            console.log('Error login: %s', er.reason);
+            console.debug('Error login: %s', er.reason);
             res.status(500).send(er.reason);
             return;
         }
@@ -687,11 +681,11 @@ app.post('/submitDocs', auth, function (req, res) {
         deleteCache(cache, databaseName);
         var docs = {docs: data};
 
-        console.log(docs);
+        console.debug(docs);
 
         database.bulk(docs, function (er, data) {
-            console.log("Error:", er);
-            console.log("Data:", data);
+            console.debug("Error:", er);
+            console.debug("Data:", data);
             if (er) {
                 res.status(er.statusCode).send(er.reason);
             } else {
@@ -707,14 +701,14 @@ var weatherHourly = [];
 var appId = 'dfa92a2daab9476f51718353645f1c85';
 
 app.get('/weatherDaily', auth, function (req, res) {
-    console.log('app.get(/weatherDaily)');
-    console.log(req.query);
+    console.debug('app.get(/weatherDaily)');
+    console.debug(req.query);
 
     var location = req.query.location;
     var days = '5';
 
     if (weatherDaily[location]) {
-        console.log('sending from cache');
+        console.debug('sending from cache');
         res.status(200).send(weatherDaily[location]);
         return;
     }
@@ -731,14 +725,14 @@ app.get('/weatherDaily', auth, function (req, res) {
     });
 });
 app.get('/weatherHourly', auth, function (req, res) {
-    console.log('app.get(/weatherHourly)');
-    console.log(req.query);
+    console.debug('app.get(/weatherHourly)');
+    console.debug(req.query);
 
     var location = req.query.location;
     var hours = '5';
 
     if (weatherHourly[location]) {
-        console.log('sending from cache');
+        console.debug('sending from cache');
         res.status(200).send(weatherHourly[location]);
         return;
     }
@@ -756,7 +750,7 @@ app.get('/weatherHourly', auth, function (req, res) {
 });
 // reset the weather cache every hour
 setInterval(function () {
-    console.log('refreshing weather cache');
+    console.debug('refreshing weather cache');
     weatherDaily = [];
     weatherHourly = [];
 }, 1000 * 60 * 60);
@@ -786,18 +780,18 @@ var sendMailFunction = function (message, success, fail) {
     email.text = message.text;
     email.text += "\n\nSupport email: " + mailOptions.from;
 
-    console.log(JSON.stringify(email));
+    console.debug(JSON.stringify(email, null, 2));
 
     // send mail with defined transport object
     try {
         transporter.sendMail(email, function (error, info) {
             if (error) {
-                console.log('Message error: ' + error);
+                console.debug('Message error: ' + error);
                 if (fail) {
                     fail(error);
                 }
             } else {
-                console.log('Message sent: ' + JSON.stringify(info));
+                console.debug('Message sent: ' + JSON.stringify(info, null, 2));
                 if (success) {
                     success(info);
                 }
@@ -805,7 +799,7 @@ var sendMailFunction = function (message, success, fail) {
         });
     }
     catch (error) {
-        console.log('Message exception error: ' + error);
+        console.debug('Message exception error: ' + error);
         fail(error);
     }
 };
@@ -818,19 +812,19 @@ var sendMail = function (message, res) {
 };
 
 app.post('/message', auth, function (req, res) {
-    console.log(req.url);
+    console.debug(req.url);
 
     var message = req.body;
     sendMail(message, res);
 });
 
-console.log(JSON.stringify(mailOptions));
+console.debug(JSON.stringify(mailOptions, null, 2));
 
 transporter.sendMail(mailOptions, function (error, info) {
     if (error) {
-        return console.log(error);
+        return console.debug(error);
     }
-    console.log('Message sent: ' + JSON.stringify(info));
+    console.debug('Message sent: ' + JSON.stringify(info, null, 2));
 });
 
 // initialise the players list to allow for logins
@@ -838,5 +832,5 @@ readDoc("players");
 readDoc("users");
 
 http.createServer(app).listen(app.get('port'), function () {
-    console.log('Express server listening on port ' + app.get('port'));
+    console.debug('Express server listening on port ' + app.get('port'));
 });
