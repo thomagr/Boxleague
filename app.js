@@ -830,6 +830,7 @@ transporter.sendMail(mailOptions, function (error, info) {
 // initialise the players list to allow for logins
 readDoc("players");
 readDoc("users");
+readDoc("boxleagues");
 
 http.createServer(app).listen(app.get('port'), function () {
     console.debug('Express server listening on port ' + app.get('port'));
