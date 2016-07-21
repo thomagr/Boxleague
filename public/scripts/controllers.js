@@ -25,24 +25,29 @@ boxleagueApp.factory('commonService', function () {
         return JSON.parse(JSON.stringify(obj));
     };
 
-    root.getColumns = function (rows) {
-        if (!rows) {
-            return [];
-        }
+    root.getColumns = function (data) {
         var columns = [];
-        rows.forEach(function (row) {
-            Object.keys(row).forEach(function (column) {
+
+        if (!data) {
+            columns;
+        }
+
+        if (data instanceof Array) {
+            data.forEach(function (row) {
+                Object.keys(row).forEach(function (column) {
+                    if (columns.indexOf(column) === -1) {
+                        columns.push(column);
+                    }
+                });
+            });
+        } else {
+            Object.keys(data).forEach(function (column) {
                 if (columns.indexOf(column) === -1) {
                     columns.push(column);
                 }
             });
-        });
-        columns.sort();
-        // if column name appears make it the first one in the array
-        if (columns.indexOf('name') !== -1) {
-            columns.splice(columns.indexOf('name'), 1);
-            columns.unshift('name');
         }
+
         return columns;
     };
 
@@ -54,19 +59,31 @@ boxleagueApp.factory('commonService', function () {
         return array;
     };
 
-    root.filterColumns = function (columns) {
-        var filter = [];
+    root.filterColumns = function (data) {
+        var columns = [];
         // skip columns that contain these fields - used to make the output human readable
         var skip = ['Id', '_id', '_rev', '$$hashKey', 'boxes', "boxleague", "language", "views"];
-        columns.forEach(function (column) {
+        data.forEach(function (column) {
             for (var i = 0; i < skip.length; i++) {
                 if (column.indexOf(skip[i]) >= 0) {
                     return;
                 }
             }
-            filter.push(column);
+            columns.push(column);
         });
-        return filter;
+        columns = columns.filter(root.unique);
+        columns.sort();
+
+        // force ordering
+        ['away', 'home', 'mobile', 'email', 'name'].forEach(function (item) {
+            // if column 'name' appears make it the first one in the array
+            if (columns.indexOf(item) !== -1) {
+                columns.splice(columns.indexOf(item), 1);
+                columns.unshift(item);
+            }
+        });
+
+        return columns;
     };
 
     root.filterRows = function (rows) {
@@ -167,9 +184,12 @@ boxleagueApp.factory('tennisService', function (commonService) {
     root.createBoxleague = function (id, name, start, end, boxes) {
 
         commonService.check(id, "string");
+
         commonService.check(name, "string");
+
         commonService.check(start, "Date");
         commonService.check(end, "Date");
+
         commonService.check(boxes, "array");
 
         return {
@@ -1224,6 +1244,7 @@ boxleagueApp.filter('boxesSort', function ($filter) {
 //CONTROLLERS
 boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $log, $http, $location, $routeParams, httpService, commonService, __env) {
     $rootScope.production = __env.production;
+    // set myBox to true for now, and then route to the page myBox which will reset if not available
     $rootScope.myBox = true;
 
     $scope.loginSubmit = function () {
@@ -1418,41 +1439,39 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
 
     var table = $routeParams.name;
     var id = $routeParams.id;
+    var columns = [];
+
+    $scope.title = $filter('toTitleCase')(table);
     $scope.id = id;
 
     if (table === "boxleague" && !$rootScope.admin) {
         $location.url('/boxleague/' + id + '/boxes');
         return;
+    } else if (table == "player") {
+        columns = columns.concat("email", "home", "mobile", "available");
     }
-
-    $scope.title = $filter('toTitleCase')(table);
-
-    // find all available columns
-    $http.get('/' + table + 's').then(function (response) {
-        var data = response.data;
-        var columns = commonService.getColumns(data);
-        var filter = commonService.filterColumns(columns);
-
-        // place schedule at the front if present
-        if (filter.indexOf("name") !== -1) {
-            filter = commonService.arraySplice(filter, "name");
-            filter.unshift("name");
-        }
-
-        $scope.columns = filter;
-
-    }, function (response) {
-        $scope.rows = [];
-        $scope.colunns = [];
-        $rootScope.alerts.push({
-            type: "warning",
-            msg: "Read " + table + " failed with error '" + response.data
-        });
-    });
 
     // get the specific object
     $http.get('/' + table + '/' + id).then(function (response) {
         $scope.data = response.data;
+
+        columns = columns.concat(commonService.getColumns($scope.data));
+        $scope.columns = commonService.filterColumns(columns);
+
+        // enhance the data if normalised
+        ['homeId', 'awayId'].forEach(function (item) {
+            if ($scope.data[item]) {
+                httpService.getPlayers(function (players) {
+                    $scope.data[item.replace("Id", "")] = commonService.findById(players, $scope.data[item]).name;
+                    columns = columns.concat(commonService.getColumns($scope.data));
+                    $scope.columns = commonService.filterColumns(columns);
+                })
+            }
+        });
+
+        // replace the title with name if present
+        $scope.title = $scope.data['name'] || $scope.title;
+
         if ($scope.data.name && $scope.data.name === $rootScope.login || $rootScope.admin) {
             $scope.edit = true;
         }
@@ -1542,21 +1561,17 @@ boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$loca
         httpService.getPlayers(function (players) {
 
             var loginId = commonService.findByName(players, $rootScope.login)._id;
-            var found = false;
             for (var i = 0; i < boxleague.boxes.length; i++) {
                 var box = boxleague.boxes[i];
                 if (box.playerIds.indexOf(loginId) !== -1) {
+                    $rootScope.myBox = true;
                     $location.url('/boxleague/' + boxleague._id + '/box/' + box.name);
-                    found = true;
-                    $scope.loading = false;
-
                     return;
                 }
             }
-            if(!found){
-                $location.url('/welcome');
-                $rootScope.myBox = false;
-            }
+
+            $location.url('/welcome');
+            $rootScope.myBox = false;
             $scope.loading = false;
         });
     });

@@ -27,8 +27,10 @@ if (!tmpPassword || !emailUser || !emailPassword || !cloudantUser || !cloudantPa
 
 var production = cloudantUser === cloudantProductionUser;
 console.info("Environment production: %s", production);
+var environment = "Development";
 
 if (production) {
+    environment = "Production";
     console.debug = function () {
     };
 } else {
@@ -425,7 +427,7 @@ var readDoc = function (name, res, id) {
             // use the id and get it
             database.get(id, function (er, body) {
                 if (er) {
-                    console.error('Error login: %s', er.reason);
+                    console.error('Error get: %s', er.reason);
                     if (res) {
                         res.status(er.statusCode).send(er.reason)
                     }
@@ -466,7 +468,7 @@ var findDocs = function (name, index, id, res) {
 
         database.find({selector:selector}, function (er, response) {
             if (er) {
-                console.error('Error login: %s', er.reason);
+                console.error('Error find: %s', er.reason);
                 if(res){res.status(er.statusCode).send(er.reason)}
                 return;
             }
@@ -768,7 +770,7 @@ var transporter = nodemailer.createTransport("SMTP", {
 var mailOptions = {
     from: "Boxleague<" + emailUser + "@icloud.com>", // sender address
     to: emailUser + "@icloud.com", // comma delimited list of receivers
-    subject: "Start up", // Subject line
+    subject: environment + " start up", // Subject line
     text: "Boxleague starting" // plain body
 };
 
