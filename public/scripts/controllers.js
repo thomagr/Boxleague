@@ -1437,22 +1437,22 @@ boxleagueApp.controller('tableCtrl', ['$scope', '$log', '$http', '$rootScope', '
 boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$routeParams', '$location', '$filter', 'httpService', 'commonService', function ($scope, $log, $http, $rootScope, $routeParams, $location, $filter, httpService, commonService) {
     $log.info("formCtrl");
 
-    var table = $routeParams.name;
-    var id = $routeParams.id;
+    $scope.table = $routeParams.name;
+    $scope.id = $routeParams.id;
+
     var columns = [];
 
-    $scope.title = $filter('toTitleCase')(table);
-    $scope.id = id;
+    $scope.title = $filter('toTitleCase')($scope.table);
 
-    if (table === "boxleague" && !$rootScope.admin) {
-        $location.url('/boxleague/' + id + '/boxes');
+    if ($scope.table === "boxleague" && !$rootScope.admin) {
+        $location.url('/boxleague/' + $scope.id + '/boxes');
         return;
-    } else if (table == "player") {
+    } else if ($scope.table == "player") {
         columns = columns.concat("email", "home", "mobile", "available");
     }
 
     // get the specific object
-    $http.get('/' + table + '/' + id).then(function (response) {
+    $http.get('/' + $scope.table + '/' + $scope.id).then(function (response) {
         $scope.data = response.data;
 
         columns = columns.concat(commonService.getColumns($scope.data));
@@ -1470,7 +1470,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         });
 
         // replace the title with name if present
-        $scope.title = $scope.data['name'] || $scope.title;
+        $scope.title = $scope.data.name || $scope.title;
 
         if ($scope.data.name && $scope.data.name === $rootScope.login || $rootScope.admin) {
             $scope.edit = true;
@@ -1480,7 +1480,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         $scope.colunns = [];
         $rootScope.alerts.push({
             type: "warning",
-            msg: "Read " + table + " failed with error '" + response.data
+            msg: "Read " + $scope.table + " failed with error '" + response.data
         });
     });
 
@@ -1509,7 +1509,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         if (data.available && data.available === "yes")
             delete data.available;
 
-        $http.post('/' + table + '/' + $scope._id, JSON.stringify(data)).then(function (response) {
+        $http.post('/' + $scope.table + '/' + $scope._id, JSON.stringify(data)).then(function (response) {
             $scope.data._id = response.data.id;
             $scope.data._rev = response.data.rev;
             $rootScope.alerts.push({type: "success", msg: " Saved"});
@@ -1523,7 +1523,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
     $scope.delete = function () {
         console.log("deleting data ...");
 
-        $http.delete('/' + table + '/' + $scope.data._id + '/' + $scope.data._rev).then(function () {
+        $http.delete('/' + $scope.table + '/' + $scope.data._id + '/' + $scope.data._rev).then(function () {
             $rootScope.alerts.push({type: "success", msg: "Deleted"});
         }, function (response) {
             $rootScope.alerts.push({
@@ -1535,7 +1535,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
 
     // don't allow player names to change
     $scope.readOnly = function (column) {
-        return table === "player" && column === "name"
+        return $scope.table === "player" && column === "name"
     }
 }]);
 boxleagueApp.controller('settingsMainCtrl', ['$rootScope', '$log', '$location', 'httpService', 'commonService', function ($rootScope, $log, $location, httpService, commonService) {
