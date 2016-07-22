@@ -58,7 +58,7 @@ passport.use(new LocalStrategy(function (username, password, done) {
     }
 
     if (verify) {
-        console.info('user %s has logged in', username);
+        console.info('User %s has logged in', username);
             return done(null, {
                 name: username
             });
@@ -228,6 +228,8 @@ function isRegisteredUser(cache, name, user) {
     } else if(user === "Admin"){
         return {name: "Admin"};
     }
+
+    console.error('User %s is not registered', user);
 }
 
 //=============================Routes=================================
@@ -270,18 +272,19 @@ app.get('/loggedin', function (req, res) {
     }
 });
 app.post('/login', passport.authenticate('local'), function (req, res) {
-    console.info('/login req.user: %s', JSON.stringify(req.user, null, 2));
+    console.debug('/login req.user: %s', JSON.stringify(req.user, null, 2));
 
     var player = isRegisteredUser(cache, 'players', req.user.name);
     if (!player) {
         req.logOut();
-        res.status(401).send("User is not registered");
+        res.status(401).send("Username not found.");
     } else {
         res.send(player);
     }
 });
 app.post('/logout', function (req, res) {
-    console.info('/logout');
+    console.debug('/logout');
+    console.info('User %s has logged out', req.user.name);
     req.logOut();
     res.status(200).end();
 });
@@ -415,8 +418,10 @@ var readDoc = function (name, res, id) {
                 // convert the output from docs to objects
                 var rows = response.rows;
                 var items = [];
-                rows.forEach(function(item){
-                    items.push(item.doc);
+                rows.forEach(function (item) {
+                    if (!(item.doc.language && item.doc.views)) { // filter out views
+                        items.push(item.doc);
+                    }
                 });
                 loadCache(cache, name, items);
                 if (res) {
@@ -444,12 +449,13 @@ var readDoc = function (name, res, id) {
 var findDocs = function (name, index, id, res) {
     console.debug('findDocs %s by %s == %s', name, index, id);
 
-    var item = findCacheItem(cache, name, index, id);
-    if (item && item.length) {
-        console.debug("returning item from cache");
-        res.send(item);
-        return;
-    }
+    // can't use the cache because we don't know if its all loaded
+    // var item = findCacheItem(cache, name, index, id);
+    // if (item && item.length) {
+    //     console.debug("returning item from cache");
+    //     res.send(item);
+    //     return;
+    // }
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
@@ -473,7 +479,8 @@ var findDocs = function (name, index, id, res) {
                 return;
             }
             if (res) {
-                loadCache(cache, name, response.docs);
+                // don't load the cache
+                //loadCache(cache, name, response.docs);
                 res.send(response.docs)
             }
         });
@@ -605,7 +612,7 @@ app.get('/games', auth, function (req, res) {
     readDoc("games", res);
 });
 app.get('/games/:field/:id', auth, function (req, res) {
-    findDocs("games", req.params.field, req.params.id, res);
+    findDocs("games", req.params.field, req.params.id, res, false);
 });
 app.post('/games', auth, function (req, res) {
     bulkUpdateDoc(req.body, "games", res);
@@ -835,5 +842,5 @@ readDoc("users");
 readDoc("boxleagues");
 
 http.createServer(app).listen(app.get('port'), function () {
-    console.debug('Express server listening on port ' + app.get('port'));
+    console.info('Express server listening on port ' + app.get('port'));
 });

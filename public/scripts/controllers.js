@@ -75,7 +75,7 @@ boxleagueApp.factory('commonService', function () {
         columns.sort();
 
         // force ordering
-        ['away', 'home', 'mobile', 'email', 'name'].forEach(function (item) {
+        ['away', 'home', 'mobile', 'email', 'name', 'end', 'start'].forEach(function (item) {
             // if column 'name' appears make it the first one in the array
             if (columns.indexOf(item) !== -1) {
                 columns.splice(columns.indexOf(item), 1);
@@ -911,14 +911,14 @@ boxleagueApp.factory('tennisService', function (commonService) {
 boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, commonService, tennisService) {
     var root = {};
 
-    root.getError = function (response) {
+    root.httpGetError = function (response) {
         $rootScope.alerts.push({
             type: "danger",
-            msg: "Getting boxleague data failed with error: " + response.data
+            msg: "Getting data failed with error: " + response.data
         });
     };
 
-    root.getActiveBoxleague = function (success) {
+    root.getActiveBoxleague = function (success, fail) {
         if ($rootScope.activeBoxleague) {
             success($rootScope.activeBoxleague);
         } else {
@@ -926,9 +926,16 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
                 if (response && response.data && response.data.length === 1) {
                     success(response.data[0]);
                 } else {
-                    root.getError({data: "No active boxleague found"});
+                    if (fail) {
+                        fail();
+                    }
                 }
-            }, root.getError);
+            }, function (response) {
+                root.httpGetError(response);
+                if (fail) {
+                    fail();
+                }
+            });
         }
     };
 
@@ -942,9 +949,9 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
                     $rootScope.playersCache = response.data;
                     success($rootScope.playersCache);
                 } else {
-                    root.getError({data: "No players found"});
+                    root.httpGetError({data: "No players found"});
                 }
-            }, root.getError);
+            }, root.httpGetError);
         }
     };
 
@@ -957,9 +964,9 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
                     $rootScope.boxleaguesCache = response.data;
                     success($rootScope.boxleaguesCache);
                 } else {
-                    root.getError({data: "No boxleagues found"});
+                    root.httpGetError({data: "No boxleagues found"});
                 }
-            }, root.getError);
+            }, root.httpGetError);
         }
     };
 
@@ -973,9 +980,9 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
                     $rootScope.boxleagueIdCache[id] = response.data;
                     success($rootScope.boxleagueIdCache[id]);
                 } else {
-                    root.getError({data: "No boxleague for id " + id + " found"});
+                    root.httpGetError({data: "No boxleague for id " + id + " found"});
                 }
-            }, root.getError);
+            }, root.httpGetError);
         }
     };
 
@@ -990,9 +997,9 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
 
                     success($rootScope.gamesCache[id]);
                 } else {
-                    root.getError({data: "No games for boxleague id " + id + " found"});
+                    root.httpGetError({data: "No games for boxleague id " + id + " found"});
                 }
-            }, root.getError);
+            }, root.httpGetError);
         }
     };
 
@@ -1008,8 +1015,8 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
                     $rootScope.playerGamesCache[id] = $rootScope.playerGamesCache[id].concat(response.data || []);
 
                     success($rootScope.playerGamesCache[id]);
-                }, root.getError);
-            }, root.getError);
+                }, root.httpGetError);
+            }, root.httpGetError);
         }
     };
 
@@ -1139,7 +1146,7 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
         };
         console.log(data);
         $http.post('message', JSON.stringify(data)).then(function (response) {
-        }, root.getError);
+        }, root.httpGetError);
     };
 
     root.scoreUpdate = function (game, players) {
@@ -1231,6 +1238,11 @@ boxleagueApp.filter('leaderboardSort', function ($filter) {
         return $filter('orderBy')(input, ['-box', 'score', 'setsDiff', 'gamesDiff', 'name'], true);
     }
 });
+boxleagueApp.filter('boxleaguesSort', function ($filter) {
+    return function (input) {
+        return $filter('orderBy')(input, ['end'], true);
+    }
+});
 boxleagueApp.filter('boxesSort', function ($filter) {
     return function (input) {
         if (typeof input === "string") {
@@ -1280,7 +1292,7 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $log, $http, $
     };
 });
 boxleagueApp.controller('passwordCtrl', function ($scope, $rootScope, $log, $http, $location, $routeParams, httpService, commonService) {
-    $log.info("tableCtrl");
+    $log.info("passwordCtrl");
 
     var id = $routeParams.id;
 
@@ -1559,7 +1571,6 @@ boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$loca
 
     httpService.getActiveBoxleague(function (boxleague) {
         httpService.getPlayers(function (players) {
-
             var loginId = commonService.findByName(players, $rootScope.login)._id;
             for (var i = 0; i < boxleague.boxes.length; i++) {
                 var box = boxleague.boxes[i];
@@ -1569,11 +1580,12 @@ boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$loca
                     return;
                 }
             }
-
             $location.url('/welcome');
             $rootScope.myBox = false;
             $scope.loading = false;
         });
+    }, function () {
+        $scope.loading = false;
     });
 }]);
 boxleagueApp.controller('scoreboardCtrl', function ($scope, $log, $uibModalInstance, tennisService, game) {
@@ -1694,11 +1706,16 @@ boxleagueApp.controller('scoreboardCtrl', function ($scope, $log, $uibModalInsta
     // initialise
     $scope.sets = tennisService.scoreToSets($scope.score);
 });
-boxleagueApp.controller('boxleagueCtrl', ['$log', '$location', 'httpService', function ($log, $location, httpService) {
-    $log.info("boxleagueCtrl");
+boxleagueApp.controller('boxleagueMainCtrl', ['$log', '$location', '$filter', 'httpService', function ($log, $location, $filter, httpService) {
+    $log.info("boxleagueMainCtrl");
 
     httpService.getActiveBoxleague(function (boxleague) {
         $location.url('/boxleague/' + boxleague._id + '/boxes');
+    }, function () {
+        httpService.getBoxleagues(function (boxleagues) {
+            boxleagues = $filter('boxleaguesSort')(boxleagues);
+            $location.url('/boxleague/' + boxleagues[0]._id + '/boxes');
+        })
     });
 }]);
 boxleagueApp.controller('boxesCtrl', ['$scope', '$log', '$routeParams', 'httpService', 'commonService', function ($scope, $log, $routeParams, httpService, commonService) {
@@ -2088,11 +2105,16 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         }
     };
 }]);
-boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', 'httpService', function ($scope, $rootScope, $log, $location, $http, httpService) {
+boxleagueApp.controller('leaderboardMainCtrl', ['$scope', '$rootScope', '$log', '$location', '$http', '$filter', 'httpService', function ($scope, $rootScope, $log, $location, $http, $filter, httpService) {
     $log.info("leaderboardMainCtrl");
 
     httpService.getActiveBoxleague(function (boxleague) {
         $location.url('/boxleague/' + boxleague._id + '/leaderboard');
+    }, function () {
+        httpService.getBoxleagues(function (boxleagues) {
+            boxleagues = $filter('boxleaguesSort')(boxleagues);
+            $location.url('/boxleague/' + boxleagues[0]._id + '/leaderboard');
+        })
     });
 }]);
 boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', 'httpService', 'tennisService', function ($scope, $log, $resource, $routeParams, $rootScope, httpService, tennisService) {
