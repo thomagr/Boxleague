@@ -955,6 +955,22 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
         }
     };
 
+    root.getGames = function (success) {
+        if ($rootScope.gamesCache) {
+            success($rootScope.gamesCache);
+        } else {
+            $log.info("Requesting games");
+            $http.get('games').then(function (response) {
+                if (response && response.data && response.data.length) {
+                    $rootScope.gamesCache = response.data;
+                    success($rootScope.gamesCache);
+                } else {
+                    root.httpGetError({data: "No games found"});
+                }
+            }, root.httpGetError);
+        }
+    };
+
     root.getBoxleagues = function (success) {
         if ($rootScope.boxleaguesCache) {
             success($rootScope.boxleaguesCache);
@@ -2907,7 +2923,6 @@ boxleagueApp.controller('importPlayersXlsCtrl', ['$scope', '$log', function ($sc
         reader.readAsBinaryString($scope.changeEvent.target.files[0]);
     })
 }]);
-// control for manual input
 boxleagueApp.controller('importPlayersManualCtrl', ['$scope', '$log', function ($scope, $log) {
     $log.info("importPlayersManualCtrl");
 
@@ -2942,4 +2957,73 @@ boxleagueApp.controller('importPlayersManualCtrl', ['$scope', '$log', function (
         return (newMap.indexOf($scope.data.name) === -1 && currentMap.indexOf($scope.data.name) === -1);
     }
 }]);
+boxleagueApp.controller('managePlayersCtrl', ['$scope', '$rootScope', '$log', '$http', 'httpService', 'commonService', function ($scope, $rootScope, $log, $http, httpService, commonService) {
+    $log.info("managePlayersCtrl");
+
+    var difference = function (a1, a2) {
+        var result = [];
+        var map = a2.map(function (item) {
+            return item._id
+        });
+        for (var i = 0; i < a1.length; i++) {
+            if (map.indexOf(a1[i]._id) === -1) {
+                result.push(a1[i]);
+            }
+        }
+        return result;
+    };
+
+    httpService.getPlayers(function (players) {
+        $scope.players = players;
+        var columns = commonService.getColumns(players);
+        columns = commonService.filterColumns(columns);
+        $scope.playersColumns = columns;
+
+        httpService.getGames(function (games) {
+            $scope.games = games;
+            var columns = commonService.getColumns(games);
+            columns = commonService.filterColumns(columns);
+            $scope.gamesColumns = columns;
+
+            var ids = [];
+            games.forEach(function (item) {
+                ids.push(item.homeId);
+                ids.push(item.awayId)
+            });
+            ids = ids.filter(commonService.unique);
+
+            $scope.activePlayers = ids.map(function (item) {
+                return commonService.findById(players, item);
+            });
+
+            $scope.nonActivePlayers = difference(players, $scope.activePlayers)
+        });
+    });
+
+    $scope.sortReverse = false;
+    $scope.searchName = '';
+    $scope.sortType = '';
+
+    $scope.sortColumn = function (column) {
+        $scope.sortType = column;
+        $scope.sortReverse = !$scope.sortReverse;
+        return (column);
+    }
+
+    $scope.delete = function () {
+        console.log("deleting data ...");
+
+        $scope.nonActivePlayers.forEach(function (item) {
+            $http.delete('/player/' + item._id + '/' + item._rev).then(function () {
+                $rootScope.alerts.push({type: "success", msg: "Deleted " + item.name});
+            }, function (response) {
+                $rootScope.alerts.push({
+                    type: "danger",
+                    msg: "Delete failed with error '" + response.data + "'. Refresh the page, check and try again."
+                });
+            });
+        })
+    };
+}]);
+
 

@@ -211,6 +211,12 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         resolve: {
             loggedin: checkLoggedin
         }
+    }).when('/managePlayers', {
+        templateUrl: 'pages/managePlayers.html',
+        controller: 'managePlayersCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/forcast/:location', {
         templateUrl: 'pages/forcast.html',
         controller: 'forcastCtrl',

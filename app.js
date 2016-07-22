@@ -31,8 +31,8 @@ var environment = "Development";
 
 if (production) {
     environment = "Production";
-    console.debug = function () {
-    };
+    console.debug = console.log;//function () {
+    //};
 } else {
     console.debug = console.log;
 }
