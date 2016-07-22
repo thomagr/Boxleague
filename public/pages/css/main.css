@@ -24,7 +24,6 @@
 }
 
 /* For handling mobile devices */
-
 @media (max-width: 767px) {
     .navbar-mobile {
         display: initial;

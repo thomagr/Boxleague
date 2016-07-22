@@ -12,7 +12,8 @@
         </select>
         <div ng-show="away">
             <h3>{{home.name}} vs {{away.name}}</h3>
-            <table class="table table-bordered table-striped table-condensed table-responsive">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-condensed">
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -44,6 +45,7 @@
                 </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>

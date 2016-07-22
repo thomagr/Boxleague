@@ -4,7 +4,8 @@
         <input placeholder="Search" ng-model="searchName">
     </div>
 </div>
-<table class="table table-bordered table-striped table-condensed table-responsive">
+<div class="table-responsive">
+    <table class="table table-bordered table-striped table-condensed">
     <tr>
         <th ng-repeat="column in columns track by $index">
             <a href ng-click="sortColumn(column)">
@@ -21,3 +22,4 @@
         </td>
     </tr>
 </table>
+</div>

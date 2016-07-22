@@ -2,7 +2,8 @@
     <div class="well" ng-show="data">
         <h2>{{title}}</h2>
         <form>
-            <table class="table table-bordered table-striped table-condensed table-responsive">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-condensed">
                 <tr ng-repeat="column in columns">
                     <td style="vertical-align: middle;">
                         <b>{{column | toTitleCase}}</b></td>
@@ -29,6 +30,7 @@
                     </td>
                 </tr>
             </table>
+            </div>
             <p ng-if="(edit || admin) && table === 'player'"><a ng-href="#/password/{{id}}">Change password</a></p>
             <button ng-if="edit" type="submit" class="btn btn-success" ng-click="submit()">Save</button>
             <button ng-if="admin" type="button" class="btn btn-danger" ng-click="delete()">Delete</button>

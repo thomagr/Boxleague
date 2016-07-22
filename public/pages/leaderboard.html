@@ -5,7 +5,8 @@
             <h2>Leaderboard</h2>
             <p>Ordered by: Box, Pts(points), SD(sets difference), GD(games difference)</p>
             <uib-progressbar animate="false" value="percent" type="{{type}}"><b>{{percent}}% ({{played}}/{{total}})</b></uib-progressbar>
-            <table class="table table-bordered table-striped table-condensed table-responsive">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-condensed">
                 <thead>
                 <tr>
                     <th>Box</th>
@@ -31,6 +32,7 @@
                 </tr>
                 </tbody>
             </table>
+            </div>
         </div>
         <div ng-hide="leaderboard && leaderboard.length">
             No current scores in boxleague
