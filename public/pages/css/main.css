@@ -23,6 +23,10 @@
     left: 10px;
 }
 
+.highlight {
+    border-top: 2pt solid black;
+}
+
 /* For handling mobile devices */
 @media (max-width: 767px) {
     .navbar-mobile {

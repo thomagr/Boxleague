@@ -1,11 +1,26 @@
 <div class="row" style="margin-top: 20px;">
+    <!--<div class="well" ng-hide="nextBox">-->
     <div class="well">
-        <form class="form-inline">
-            <input type="text" class="form-control" placeholder="Boxleague" ng-model="boxleague.name" ng-required="true">
-
+        <h2>Choose File</h2>
+        <!--<div class="fileUpload btn btn-default">-->
+        <!--<input type="file" class="upload" file-input name="changeEvent"/>-->
+        <!--</div>-->
+        <div class="fileUpload btn btn-default">
+            <input type="file" onchange="angular.element(this).scope().setFile(this)" ng-model="file">
+        </div>
+        <!--<div>-->
+        <!--<div file-select="file"></div>-->
+        <!--</div>-->
+    </div>
+    <!--<div class="well" ng-show="nextBox && !boxleague">-->
+    <div class="well">
+        <h2>Create Boxleague</h2>
+        <form name="createForm" class="form-inline">
+            <input type="text" class="form-control" placeholder="Boxleague Name" ng-model="name"
+                   ng-required="true">
             <div class="input-group">
                 <input placeholder="Start Date" type="text" class="form-control" uib-datepicker-popup="{{format}}"
-                       ng-model="boxleague.start" is-open="startPopUp.opened" datepicker-options="dateOptions"
+                       ng-model="start" is-open="startPopUp.opened" datepicker-options="dateOptions"
                        ng-required="true" close-text="Close" alt-input-formats="altInputFormats"/>
             <span class="input-group-btn">
                 <button type="button" class="btn btn-default" ng-click="openStartPopUp()"><i
@@ -14,28 +29,47 @@
             </div>
             <div class="input-group">
                 <input placeholder="End Date" type="text" class="form-control" uib-datepicker-popup="{{format}}"
-                       ng-model="boxleague.end" is-open="endPopUp.opened" datepicker-options="dateOptions" ng-required="true"
+                       ng-model="end" is-open="endPopUp.opened" datepicker-options="dateOptions"
+                       ng-required="true"
                        close-text="Close" alt-input-formats="altInputFormats"/>
             <span class="input-group-btn">
                 <button type="button" class="btn btn-default" ng-click="openEndPopUp()"><i
                         class="glyphicon glyphicon-calendar"></i></button>
             </span>
             </div>
-            <button type="submit" class="btn btn-success" ng-click="submit()">Save</button>
             <button type="button" class="btn btn-info" ng-click="reset()">Reset</button>
+            <button type="button" class="btn btn-success" ng-click="createBoxleague()"
+                    ng-disabled="createForm.$invalid">Create
+            </button>
         </form>
     </div>
-</div>
-<!--<div class="row" ng-hide="boxleague.boxes" style="margin-top: 20px;">-->
+    <!--<div class="well" ng-show="nextBox && !boxleague">-->
     <div class="well">
-        <div class="fileUpload btn btn-default">
-            <input type="file" class="upload" file-input name="changeEvent"/>
-        </div>
+        <h2>Boxes and Players</h2>
+        <table class="table table-bordered table-condensed" style="margin-bottom:0px">
+            <thead>
+            <tr>
+                <th>Box</th>
+                <th>Name</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="player in nextBox| orderBy:['newBox', 'name']"
+                ng-class="{highlight : $index % 6 === 0 }">
+                <td>{{player. newBox}}</td>
+                <td>{{player.name}}</td>
+            </tr>
+            </tbody>
+        </table>
     </div>
-<!--</div>-->
-<!--<div class="row" ng-show="boxleague.boxes">-->
+    <!--<div class="well" ng-show="nextBox && boxleague">-->
     <div class="well">
         <h1>{{boxleague.name}}</h1>
+        <div style="margin-bottom:10px">
+            <button type="submit" class="btn btn-success" ng-disabled="createForm.$invalid || !boxleague"
+                    ng-click="submit()">Save
+            </button>
+        </div>
         <div class="row">
             <div ng-repeat="box in boxleague.boxes | orderBy:sortElement">
                 <div class="col-sm-4">
@@ -44,4 +78,4 @@
             </div>
         </div>
     </div>
-<!--</div>-->
+</div>

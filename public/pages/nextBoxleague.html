@@ -1,64 +1,71 @@
-<div class="row" ng-show="boxleague">
-<div class="well">
-        <table class="table table-condensed table-responsive" style="margin-bottom:0px">
-            <tr>
-                <th style="border:none"><h2>Current</h2></th>
-                <th style="border:none"><h2>Next</h2></th>
-            </tr>
-            <tr>
-                <td style="border:none">
-                    <div ng-show="leaderboard && leaderboard.length">
-                        <table class="table table-bordered table-striped table-condensed table-responsive" style="margin-bottom:0px">
-                            <thead>
-                            <tr>
-                                <th>Box</th>
-                                <th>Name</th>
-                                <th>P</th>
-                                <th>SD</th>
-                                <th>GD</th>
-                                <th>Pts</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr ng-repeat="player in leaderboard | leaderboardSort">
-                                <td>{{player.box}}</td>
-                                <td>{{player.name}}</td>
-                                <td>{{player.played}}</td>
-                                <td>{{player.setsDiff}}</td>
-                                <td>{{player.gamesDiff}}</td>
-                                <td>{{player.score}}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div ng-hide="leaderboard && leaderboard.length">
-                        No current scores in boxleague
-                    </div>
-                <td style="border:none">
-                    <div ng-show="nextBox && nextBox.length">
-                        <table class="table table-bordered table-striped table-condensed table-responsive" style="margin-bottom:0px">
-                            <thead>
-                            <tr>
-                                <th>Box</th>
-                                <th>Name</th>
-                                <th>Change</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr ng-repeat="player in nextBox| orderBy:['newBox', 'name']">
-                                <td>{{player.newBox}}</td>
-                                <td>{{player.name}}</td>
-                                <td>{{player.change}}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div ng-hide="nextBox && nextBox.length">
-                        No players in next boxleague
-                    </div>
-                </td>
-            </tr>
-        </table>
+<div class="row">
+    <div class="well">
+        <form name="importForm">
+            <button ng-disabled="nextBoxleage" class="btn btn-warning" ng-click="import()">Import next league</button>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-condensed" style="margin-bottom:0px">
+                <tr>
+                    <th style="border:none"><h2>Current</h2></th>
+                    <th style="border:none"><h2>Next</h2></th>
+                </tr>
+                <tr>
+                    <td style="border:none">
+                        <div ng-show="leaderboard && leaderboard.length">
+                            <table class="table table-bordered table-condensed" style="margin-bottom:0px">
+                                <thead>
+                                <tr>
+                                    <th>Box</th>
+                                    <th>Name</th>
+                                    <th>P</th>
+                                    <th>SD</th>
+                                    <th>GD</th>
+                                    <th>Pts</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr ng-repeat="player in leaderboard | leaderboardSort"
+                                    ng-class="{highlight : $index % 6 === 0}">
+                                    <td>{{player.box}}</td>
+                                    <td>{{player.name}}</td>
+                                    <td>{{player.played}}</td>
+                                    <td>{{player.setsDiff}}</td>
+                                    <td>{{player.gamesDiff}}</td>
+                                    <td>{{player.score}}</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div ng-hide="leaderboard && leaderboard.length">
+                            No current scores in boxleague
+                        </div>
+                    <td style="border:none">
+                        <div ng-show="nextBox && nextBox.length">
+                            <table class="table table-bordered table-condensed" style="margin-bottom:0px">
+                                <thead>
+                                <tr>
+                                    <th>Box</th>
+                                    <th>Name</th>
+                                    <th>Change</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr ng-repeat="player in nextBox | orderBy:['newBox', 'name']"
+                                    ng-class="{highlight : $index % 6 === 0 }">
+                                    <td>{{player.newBox}}</td>
+                                    <td>{{player.name}}</td>
+                                    <td>{{player.change}}</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div ng-hide="nextBox && nextBox.length">
+                            No players in next boxleague
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
         <div ng-if="removed.length">
             <h4>Removed</h4>
             <ul ng-repeat="player in removed">
@@ -75,16 +82,17 @@
     <div class="well">
         <h3>Players electing out of next round</h3>
         <form name="removeForm">
-            <select ng-options="player as player.name for player in nextBox | orderBy:['name']" ng-model="removeSelected" required></select>
+            <select ng-options="player as player.name for player in nextBox | orderBy:['name']"
+                    ng-model="removeSelected" required></select>
             <button ng-disabled="removeForm.$invalid" class="btn btn-warning" ng-click="remove()">Remove</button>
-
         </form>
     </div>
     <div class="well">
         <h3>Players joining next round</h3>
         <form name="addForm">
-        <select ng-options="player as player.name for player in players | orderBy:['name']" ng-model="playerSelected" required></select>
-        <select ng-options="box as box for box in boxNames" ng-model="boxSelected" required></select>
-        <button ng-disabled="addForm.$invalid" class="btn btn-warning" ng-click="add()">Add</button>
+            <select ng-options="player as player.name for player in players | orderBy:['name']"
+                    ng-model="playerSelected" required></select>
+            <select ng-options="box as box for box in boxNames" ng-model="boxSelected" required></select>
+            <button ng-disabled="addForm.$invalid" class="btn btn-warning" ng-click="add()">Add</button>
     </div>
 </div>

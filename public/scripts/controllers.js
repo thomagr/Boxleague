@@ -202,7 +202,9 @@ boxleagueApp.factory('tennisService', function (commonService) {
             end: end,
 
             // boxes
-            boxes: boxes
+            boxes: boxes,
+
+            active: 'no'
         }
     };
 
@@ -820,7 +822,7 @@ boxleagueApp.factory('tennisService', function (commonService) {
             gamesAway: gameStats.gamesAway
         };
     };
-    root.calculateLeaderboard = function (games, players) {
+    root.calculateLeaderboard = function (games, players, keepFreeWeek) {
         var leaderboard = [];
 
         var getRunningScore = function (player, box) {
@@ -852,7 +854,7 @@ boxleagueApp.factory('tennisService', function (commonService) {
             var awayPlayer = commonService.findById(players, game.awayId);
 
             // skip any free week games
-            if (homePlayer.name === "Free Week" || awayPlayer.name === "Free Week") {
+            if (!keepFreeWeek && (homePlayer.name === "Free Week" || awayPlayer.name === "Free Week")) {
                 return;
             }
 
@@ -2170,27 +2172,30 @@ boxleagueApp.controller('leaderboardCtrl', ['$scope', '$log', '$resource', '$rou
         });
     });
 }]);
-boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$filter', 'httpService', 'commonService', 'tennisService', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $filter, httpService, commonService, tennisService) {
+boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$routeParams', '$rootScope', '$http', '$filter', '$location', 'httpService', 'commonService', 'tennisService', function ($scope, $log, $resource, $routeParams, $rootScope, $http, $filter, $location, httpService, commonService, tennisService) {
     $log.info("nextBoxleagueCtrl");
 
-    httpService.getActiveBoxleague(function (boxleague) {
-        $scope.boxleague = boxleague;
-
+    var setup = function (boxleague) {
         httpService.getBoxleagueGames(boxleague._id, function (games) {
-            $scope.games = games;
-
             httpService.getPlayers(function (players) {
                 $scope.players = players;
-
-                nextBoxleague($scope.boxleague, $scope.games, $scope.players)
+                nextBoxleague(boxleague, games, players)
             });
         });
+    };
+
+    httpService.getActiveBoxleague(function (boxleague) {
+        setup(boxleague);
+    }, function () {
+        httpService.getBoxleagues(function (boxleagues) {
+            boxleagues = $filter('boxleaguesSort')(boxleagues);
+            setup(boxleagues[0]);
+        })
     });
 
     var nextBoxleague = function (boxleague, games, players) {
 
-        $scope.leaderboard = tennisService.calculateLeaderboard(games, players);
-
+        $scope.leaderboard = tennisService.calculateLeaderboard(games, players, true);
         $scope.leaderboard = $filter('leaderboardSort')($scope.leaderboard);
 
         // update the box information for players
@@ -2202,7 +2207,7 @@ boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$r
         });
         $scope.currentPlayers.sort();
 
-        $scope.nextBox = [];
+        $rootScope.nextBox = [];
 
         var boxNames = $scope.leaderboard.map(function (item) {
             return item.box
@@ -2220,7 +2225,6 @@ boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$r
             var box = commonService.findObjectsMatchingBox($scope.leaderboard, current);
             box.forEach(function (item) {
                 item.newBox = current;
-                item.box = current;
             });
 
             // promote
@@ -2240,23 +2244,27 @@ boxleagueApp.controller('nextBoxleagueCtrl', ['$scope', '$log', '$resource', '$r
             box[j].change = box[j].box !== box[j].newBox ? "demote" : "";
 
             box.forEach(function (item) {
-                $scope.nextBox.push(item);
+                $rootScope.nextBox.push(item);
             })
         }
     };
 
     $scope.removed = [];
     $scope.remove = function () {
-        $scope.nextBox.splice(commonService.arrayObjectIndexOf($scope.nextBox, $scope.removeSelected.name, 'name'), 1);
+        $rootScope.nextBox.splice(commonService.arrayObjectIndexOf($rootScope.nextBox, $scope.removeSelected.name, 'name'), 1);
         $scope.removed.push($scope.removeSelected);
     };
 
     $scope.added = [];
     $scope.add = function () {
-        $scope.nextBox.push({name: $scope.playerSelected.name, newBox: $scope.boxSelected, change: 'added'});
+        $rootScope.nextBox.push({name: $scope.playerSelected.name, newBox: $scope.boxSelected, change: 'added'});
         $scope.added.push($scope.playerSelected);
 
     };
+
+    $scope.import = function () {
+        $location.url('/importBoxleagueFile');
+    }
 }]);
 boxleagueApp.controller('headToHeadMainCtrl', ['$rootScope', '$log', '$location', 'httpService', 'commonService', function ($rootScope, $log, $location, httpService, commonService) {
     $log.info("headToHeadMainCtrl");
@@ -2453,14 +2461,6 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
                     matches.forEach(function (pairing) {
                         var players = pairing.split(",v.,");
 
-                        // player fix
-                        if (players[0] === "Anthony Dore") {
-                            players[0] = "Antony Dore"
-                        }
-                        if (players[1] === "Anthony Dore") {
-                            players[1] = "Antony Dore"
-                        }
-
                         var game = tennisService.createGame(idCount.toString(),
                             commonService.findByName($rootScope.players, players[0]),
                             commonService.findByName($rootScope.players, players[1]),
@@ -2537,31 +2537,47 @@ boxleagueApp.controller('importBoxleagueCtrl', ['$scope', '$log', '$http', '$roo
 boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '$rootScope', 'httpService', 'tennisService', 'commonService', function ($scope, $log, $http, $rootScope, httpService, tennisService, commonService) {
     $log.info("importBoxleagueFileCtrl");
 
+    $scope.reset = function () {
+        delete $scope.games;
+        delete $scope.boxleague;
+
+        delete $scope.name;
+        delete $scope.start;
+        delete $scope.end;
+
+        delete $scope.nextBox;
+
+        if ($scope.element) {
+            angular.element($scope.element).val(null);
+        }
+        // if($scope.fileChooser){
+        //     $scope.fileChooser.val(null);
+        // }
+        // $scope.changeEvent = "";
+        // $scope.filename = "";
+    };
     $scope.playerLookup = function (id) {
         return commonService.findById($scope.players, id).name;
     };
-
-    var error = function (response) {
-        $rootScope.alerts.push({
-            type: "danger",
-            msg: response.data
-        });
+    $scope.submit = function () {
+        //var boxleague = tennisService.createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, $rootScope.boxleague.boxes);
+        httpService.saveBoxleague($rootScope.boxleague, $rootScope.games, $rootScope.players);
     };
+
+    $scope.reset();
+
+    if ($rootScope.boxleague) {
+        $scope.boxleague = $rootScope.boxleague;
+        $scope.games = $rootScope.games;
+
+        $scope.start = $scope.boxleague.start;
+        $scope.end = $scope.boxleague.end;
+        $scope.name = $scope.boxleague.name;
+    }
 
     httpService.getPlayers(function (players) {
         $scope.players = players;
-        if (!$rootScope.boxleague) {
-            $scope.boxleague = {};
-            $scope.boxleague.name = "Import";
-            $scope.boxleague.start = new Date;
-            $scope.boxleague.end = new Date;
-        } else {
-            $scope.boxleague = $rootScope.boxleague;
-        }
     });
-
-    $scope.changeEvent = "";
-    $scope.filename = "";
 
     // For Dates dialog
     $scope.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'dd-MM-yyyy', 'shortDate'];
@@ -2593,18 +2609,10 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
     };
     // end for Dates dialog
 
-    $scope.reset = function () {
-        delete $rootScope.games;
-        delete $rootScope.boxleague;
-        delete $scope.boxleagueName;
-        $scope.startDate = new Date;
-        $scope.endDate = new Date;
-    };
-
     var findPlayersInBox = function (source, box) {
         var players = [];
         source.forEach(function (item) {
-            if (item.box === box) {
+            if (item.newBox === box) {
                 players.push(item.name);
             }
         });
@@ -2613,156 +2621,205 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
         }
         return players;
     };
-
-    $scope.submit = function () {
-        //var boxleague = tennisService.createBoxleague("0", $scope.boxleagueName, $scope.startDate, $scope.endDate, $rootScope.boxleague.boxes);
-        httpService.saveBoxleague($rootScope.boxleague, $rootScope.games, $rootScope.players);
+    var error = function (response) {
+        $rootScope.alerts.push({
+            type: "danger",
+            msg: response.data
+        });
     };
 
-    $scope.$watch('changeEvent', function () {
-        if (!$scope.changeEvent) {
-            return
-        }
+    // $scope.$watch($scope.file, function(){
+    //     console.log('file selected');
+    //     if(!$scope.file){
+    //         return;
+    //     }
+    //     var reader = new FileReader();
+    //     reader.onload = function (evt) {
+    //         $scope.$apply(function () {
+    //             var data = evt.target.result;
+    //
+    //             $scope.nextBox = [];
+    //             var lines = data.split('\n');
+    //             lines.forEach(function (line) {
+    //                 if (!line || line.length === 0) {
+    //                     return;
+    //                 }
+    //                 var items = line.split(",");
+    //                 $scope.nextBox.push({name: items[0], box: items[1]});
+    //             });
+    //         })
+    //     };
+    //     reader.readAsBinaryString($scope.file);
+    // });
 
-        $scope.filename = $scope.changeEvent.target.files[0].name;
-        $scope.games = [];
 
+    // $scope.$watch('changeEvent', function () {
+    //     if (!$scope.changeEvent) {
+    //         return
+    //     }
+    //
+    //     $scope.filename = $scope.changeEvent.target.files[0].name;
+    //
+    //     var reader = new FileReader();
+    //     reader.onload = function (evt) {
+    //         $scope.$apply(function () {
+    //             var data = evt.target.result;
+    //
+    //             $scope.nextBox = [];
+    //             var lines = data.split('\n');
+    //             lines.forEach(function (line) {
+    //                 if (!line || line.length === 0) {
+    //                     return;
+    //                 }
+    //                 var items = line.split(",");
+    //                 $scope.nextBox.push({name: items[0], box: items[1]});
+    //             });
+    //         })
+    //     };
+    //     reader.readAsBinaryString($scope.changeEvent.target.files[0]);
+    // });
+
+    $scope.setFile = function (element) {
+        $scope.file = element.files[0];
+        $scope.element = element;
         var reader = new FileReader();
         reader.onload = function (evt) {
             $scope.$apply(function () {
                 var data = evt.target.result;
 
-                $scope.boxleague = tennisService.createBoxleague("0", $scope.boxleague.name, $scope.boxleague.start, $scope.boxleague.end, []);
-
-                var playersAndBox = [];
-                var boxNames = [];
+                $rootScope.nextBox = [];
                 var lines = data.split('\n');
                 lines.forEach(function (line) {
                     if (!line || line.length === 0) {
                         return;
                     }
                     var items = line.split(",");
-                    playersAndBox.push({name: items[0], box: items[1]});
-                    if (boxNames.indexOf(items[1]) === -1) {
-                        boxNames.push(items[1]);
-                    }
+                    $rootScope.nextBox.push({name: items[0], newBox: items[1]});
                 });
+            })
+        };
+        reader.readAsBinaryString($scope.file);
+    };
 
-                var idCount = 0; // temp id for games
-                var games = [];
-                boxNames.forEach(function (boxName) {
-                    var boxPlayers = findPlayersInBox(playersAndBox, boxName);
+    $scope.createBoxleague = function () {
 
-                    if (boxPlayers.length !== 6) {
-                        var msg = "Box " + name + " does not have the correct number of players";
-                        error({data: msg});
-                        throw msg;
-                    }
+        $scope.boxleague = tennisService.createBoxleague("0", $scope.name, $scope.start, $scope.end, []);
 
-                    // build the list of games from the players
-                    for (var i = 0; i < 6; i++) {
-                        for (var j = i + 1; j < 6; j++) {
-                            var game = tennisService.createGame(idCount.toString(),
-                                commonService.findByName($scope.players, boxPlayers[i]),
-                                commonService.findByName($scope.players, boxPlayers[j]),
-                                $scope.boxleague,
-                                boxName);
+        var boxNames = $rootScope.nextBox.map(function (item) {
+            return item.newBox
+        }).filter(commonService.unique);
 
-                            idCount++;
-                            games.push(game);
-                        }
-                    }
-                });
+        var idCount = 0; // temp id for games
+        var games = [];
+        boxNames.forEach(function (boxName) {
+            var boxPlayers = findPlayersInBox($rootScope.nextBox, boxName);
 
-                // check if a player exists already in the array of games
-                var findPlayer = function (games, Id) {
-                    for (var i = 0; i < games.length; i++) {
-                        if (games[i].homeId === Id || games[i].awayId === Id) {
-                            return true;
-                        }
-                    }
-                    return false;
-                };
+            if (boxPlayers.length !== 6) {
+                var msg = "Box " + name + " does not have the correct number of players";
+                error({data: msg});
+                throw msg;
+            }
 
-                // create size distinct(players) game sets
-                var findDistinct = function (games, size) {
-                    var start = 0;
-                    var results = [];
-                    while (results.length !== size && start < games.length - 1) {
-                        results = []; // reset
-                        results.push(games[start++]);
-                        for (var i = 0; i < games.length; i++) {
-                            if (!findPlayer(results, games[i].homeId) && !findPlayer(results, games[i].awayId)) {
-                                results.push(games[i]);
-                                if (results.length === size) {
-                                    return results;
-                                }
-                            }
-                        }
-                    }
-                    throw "Could not find distinct games"
-                };
+            // build the list of games from the players
+            for (var i = 0; i < 6; i++) {
+                for (var j = i + 1; j < 6; j++) {
+                    var game = tennisService.createGame(idCount.toString(),
+                        commonService.findByName($scope.players, boxPlayers[i]),
+                        commonService.findByName($scope.players, boxPlayers[j]),
+                        $scope.boxleague,
+                        boxName);
 
-                // return the difference between these arrays (what's left)
-                var difference = function (a1, a2) {
-                    var result = [];
-                    var map = a2.map(function (item) {
-                        return item._id
-                    });
-                    for (var i = 0; i < a1.length; i++) {
-                        if (map.indexOf(a1[i]._id) === -1) {
-                            result.push(a1[i]);
-                        }
-                    }
-                    return result;
-                };
+                    idCount++;
+                    games.push(game);
+                }
+            }
+        });
 
-                boxNames.forEach(function (boxName) {
-                    var boxGames = commonService.findObjectsMatchingBox(games, boxName);
-
-                    // create 5 weeks of games of 3 games per week
-                    var date = new Date($scope.boxleague.start);
-                    var toBePlayed = boxGames;
-                    var newGames = [];
-                    for (var i = 0; i < 5; i++) {
-                        var tmp = findDistinct(toBePlayed, 3);
-                        toBePlayed = difference(toBePlayed, tmp);
-                        tmp.forEach(function (game) {
-                            game.schedule = new Date(date);
-                            newGames.push(game);
-                        });
-                        date.setDate(date.getDate() + 7);
-                    }
-                    boxGames = newGames;
-
-                    var playerIds = [];
-                    boxGames.forEach(function (game) {
-                        if (playerIds.indexOf(game.homeId) === -1) {
-                            playerIds.push(game.homeId);
-                        }
-                        if (playerIds.indexOf(game.awayId) === -1) {
-                            playerIds.push(game.awayId);
-                        }
-                    });
-
-                    var boxPlayers = [];
-                    playerIds.forEach(function (id) {
-                        boxPlayers.push(commonService.findById($scope.players, id));
-                    });
-
-                    var box = tennisService.createBox(boxName, boxPlayers, boxGames);
-                    $scope.boxleague.boxes.push(box);
-                });
-
-                // copy to the rootScope
-                $rootScope.boxleague = $scope.boxleague;
-                $rootScope.players = $scope.players;
-                $rootScope.games = games;
-            });
+        // check if a player exists already in the array of games
+        var findPlayer = function (games, Id) {
+            for (var i = 0; i < games.length; i++) {
+                if (games[i].homeId === Id || games[i].awayId === Id) {
+                    return true;
+                }
+            }
+            return false;
         };
 
-        reader.readAsBinaryString($scope.changeEvent.target.files[0]);
-    })
+        // create size distinct(players) game sets
+        var findDistinct = function (games, size) {
+            var start = 0;
+            var results = [];
+            while (results.length !== size && start < games.length - 1) {
+                results = []; // reset
+                results.push(games[start++]);
+                for (var i = 0; i < games.length; i++) {
+                    if (!findPlayer(results, games[i].homeId) && !findPlayer(results, games[i].awayId)) {
+                        results.push(games[i]);
+                        if (results.length === size) {
+                            return results;
+                        }
+                    }
+                }
+            }
+            throw "Could not find distinct games"
+        };
+
+        // return the difference between these arrays (what's left)
+        var difference = function (a1, a2) {
+            var result = [];
+            var map = a2.map(function (item) {
+                return item._id
+            });
+            for (var i = 0; i < a1.length; i++) {
+                if (map.indexOf(a1[i]._id) === -1) {
+                    result.push(a1[i]);
+                }
+            }
+            return result;
+        };
+
+        boxNames.forEach(function (boxName) {
+            var boxGames = commonService.findObjectsMatchingBox(games, boxName);
+
+            // create 5 weeks of games of 3 games per week
+            var date = new Date($scope.boxleague.start);
+            var toBePlayed = boxGames;
+            var newGames = [];
+            for (var i = 0; i < 5; i++) {
+                var tmp = findDistinct(toBePlayed, 3);
+                toBePlayed = difference(toBePlayed, tmp);
+                tmp.forEach(function (game) {
+                    game.schedule = new Date(date);
+                    newGames.push(game);
+                });
+                date.setDate(date.getDate() + 7);
+            }
+            boxGames = newGames;
+
+            var playerIds = [];
+            boxGames.forEach(function (game) {
+                if (playerIds.indexOf(game.homeId) === -1) {
+                    playerIds.push(game.homeId);
+                }
+                if (playerIds.indexOf(game.awayId) === -1) {
+                    playerIds.push(game.awayId);
+                }
+            });
+
+            var boxPlayers = [];
+            playerIds.forEach(function (id) {
+                boxPlayers.push(commonService.findById($scope.players, id));
+            });
+
+            var box = tennisService.createBox(boxName, boxPlayers, boxGames);
+            $scope.boxleague.boxes.push(box);
+        });
+
+        // copy to the rootScope
+        $rootScope.boxleague = $scope.boxleague;
+        $rootScope.players = $scope.players;
+        $rootScope.games = games;
+    };
 }]);
 // parent control
 boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootScope', 'httpService', 'commonService', function ($scope, $log, $http, $rootScope, httpService, commonService) {
@@ -3008,7 +3065,7 @@ boxleagueApp.controller('managePlayersCtrl', ['$scope', '$rootScope', '$log', '$
         $scope.sortType = column;
         $scope.sortReverse = !$scope.sortReverse;
         return (column);
-    }
+    };
 
     $scope.delete = function () {
         console.log("deleting data ...");

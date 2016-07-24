@@ -679,7 +679,7 @@ app.post('/submitDocs', auth, function (req, res) {
     }
     var data = req.body.data;
 
-    Cloudant({account: user, password: password}, function (er, cloudant) {
+    Cloudant({account: cloudantUser, password: cloudantPassword}, function (er, cloudant) {
         if (er) {
             console.debug('Error login: %s', er.reason);
             res.status(500).send(er.reason);
