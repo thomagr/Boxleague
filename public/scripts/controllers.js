@@ -29,7 +29,7 @@ boxleagueApp.factory('commonService', function () {
         var columns = [];
 
         if (!data) {
-            columns;
+            return columns;
         }
 
         if (data instanceof Array) {
@@ -1568,7 +1568,7 @@ boxleagueApp.controller('formCtrl', ['$scope', '$log', '$http', '$rootScope', '$
         return $scope.table === "player" && column === "name"
     }
 }]);
-boxleagueApp.controller('settingsMainCtrl', ['$rootScope', '$log', '$location', 'httpService', 'commonService', function ($rootScope, $log, $location, httpService, commonService) {
+boxleagueApp.controller('settingsMainCtrl', ['$scope', '$rootScope', '$log', '$location', 'httpService', 'commonService', function ($scope, $rootScope, $log, $location, httpService, commonService) {
     $log.info("settingsMainCtrl");
 
     httpService.getPlayers(function (players) {
@@ -1580,6 +1580,7 @@ boxleagueApp.controller('settingsMainCtrl', ['$rootScope', '$log', '$location', 
             });
         }
         $location.url('/form/player/' + commonService.findByName(players, $rootScope.login)._id);
+        //$scope.$apply();
     })
 }]);
 boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$location', 'httpService', 'commonService', function ($scope, $rootScope, $log, $location, httpService, commonService) {

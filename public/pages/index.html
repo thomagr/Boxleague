@@ -63,21 +63,22 @@
                             class="fa fa-lock icon-white"></i> Admin <span
                             class="caret"></span></a>
                         <ul uib-dropdown-menu>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueSpreadsheet"><i
-                                    class="fa fa-upload"></i> Boxleague
-                                Tim's xls</a></li>
+                            <!--<li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueSpreadsheet"><i-->
+                            <!--class="fa fa-upload"></i> Boxleague-->
+                            <!--Tim's xls</a></li>-->
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueFile"><i
                                     class="fa fa-upload"></i> Boxleague Text
                                 File</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/importPlayers"><i
-                                    class="fa fa-upload"></i> Players</a></li>
-                            <li class="divider"></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/managePlayers"><i
-                                    class="fa fa-user-times"></i>
-                                Manage Players</a></li>
                             <li ng-click="isCollapsed = !isCollapsed"><a href="#/nextBoxleague"><i
                                     class="fa fa-arrow-right"></i>
                                 Next Boxleague</a></li>
+                            <li class="divider"></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/importPlayers"><i
+                                    class="fa fa-upload"></i> Players</a></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/managePlayers"><i
+                                    class="fa fa-user-times"></i>
+                                Manage Players</a></li>
+
                         </ul>
                     </li>
                     <li ng-show="myBox" ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i

@@ -27,20 +27,32 @@ if (!tmpPassword || !emailUser || !emailPassword || !cloudantUser || !cloudantPa
 
 var production = cloudantUser === cloudantProductionUser;
 console.info("Environment production: %s", production);
-var environment = "Development";
+var environment = "";
+
+var DEBUG = (function () {
+    var timestamp = function () {
+    };
+    timestamp.toString = function () {
+        return "[DEBUG " + (new Date).toLocaleTimeString() + "]";
+    };
+
+    return {
+        log: console.log.bind(console, '%s', timestamp)
+    }
+})();
 
 if (production) {
     environment = "Production";
-    console.debug = console.log;//function () {
+    DEBUG.log = console.log;//function () {
     //};
 } else {
-    console.debug = console.log;
+    environment = "Development";
 }
 
 //==================================================================
 // Define the strategy to be used by PassportJS
 passport.use(new LocalStrategy(function (username, password, done) {
-    console.debug('checking password');
+    DEBUG.log('checking password');
 
     var player = isRegisteredUser(cache, 'players', username);
     if (!player) {
@@ -77,12 +89,12 @@ passport.deserializeUser(function (user, done) {
 });
 // Define a middleware function to be used for every secured routes
 var auth = function (req, res, next) {
-    console.debug('checking isAuthenticated');
+    DEBUG.log('checking isAuthenticated');
     if (!req.isAuthenticated()) {
-        console.debug('is Authenticated false');
+        DEBUG.log('is Authenticated false');
         res.status(401).send("not authenticated");
     } else {
-        console.debug('is Authenticated true');
+        DEBUG.log('is Authenticated true');
         next();
     }
 };
@@ -92,10 +104,10 @@ var app = express();
 
 // Default logger on all calls
 app.use(function (req, res, next) {
-    var now = new Date();
-    console.debug('Request  : %s', now);
-    console.debug('req.query: %s', JSON.stringify(req.query, null, 2));
-    console.debug('req.url  : %s', req.url);
+    //var now = new Date();
+    //DEBUG.log('Request  : ', now);
+    //DEBUG.log('req.query: ', JSON.stringify(req.query, null, 2));
+    DEBUG.log('req.url:', req.url);
     next();
 });
 
@@ -120,7 +132,7 @@ app.use(bodyParser.urlencoded({
 var cache = {};
 
 function deleteCache(cache, name) {
-    console.debug('deleting cache ' + name);
+    DEBUG.log('deleting cache ' + name);
 
     if (!cache[name]){
         return
@@ -131,15 +143,14 @@ function deleteCache(cache, name) {
 
     while (j--) {
         if (cache[cache[name][j].id]) {
-            console.debug('deleting cache id ' + cache[name][j].id);
+            DEBUG.log('deleting cache id ' + cache[name][j].id);
             delete cache[cache[name][j].id];
         }
     }
     delete cache[name];
 }
-// update - return true if found and updated
 function updateCache(cache, name, data) {
-    console.debug('updating cache ' + name);
+    DEBUG.log('updating cache ' + name);
 
     if (!cache[name]){
         cache[name] = [data];
@@ -149,9 +160,9 @@ function updateCache(cache, name, data) {
     var obj = findOneCacheItem(cache, name, "_id", data._id);
 
     if (obj) {
-        console.debug('Before: ' + JSON.stringify(obj, null, 2));
+        DEBUG.log('Before: ' + JSON.stringify(obj, null, 2));
         Object.assign(obj, data);
-        console.debug('After: ' + JSON.stringify(obj, null, 2));
+        DEBUG.log('After: ' + JSON.stringify(obj, null, 2));
     } else {
         cache[name].push(data);
     }
@@ -165,18 +176,17 @@ function loadCache(cache, name, data) {
         cache[name] = data;
     } else {
         data.forEach(function(item){
-            updateCache(cache, name, data);
+            updateCache(cache, name, item);
         })
     }
 }
-// find items by an index and its id
 function findCacheItem(cache, name, index, id) {
-    console.debug('findCacheItem cache %s by %s == %s', name, index, id);
+    DEBUG.log('findCacheItem cache ', name, index, id);
 
     var results = [];
 
     if (!cache[name]){
-        console.debug('findCacheItem cache %s by %s == %s - not found', name, index, id);
+        DEBUG.log('findCacheItem cache not found', name, index, id);
         return
     }
 
@@ -186,11 +196,11 @@ function findCacheItem(cache, name, index, id) {
         }
     }
 
-    console.debug('findCacheItem cache %s by %s == %s - %d found', name, index, id, results.length);
+    DEBUG.log('findCacheItem cache found', name, index, id, results.length);
     return results;
 }
 function findOneCacheItem(cache, name, index, id) {
-    console.debug('findOneCacheItem cache %s by %s == %s', name, index, id);
+    DEBUG.log('findOneCacheItem cache ', name, index, id);
     var find = findCacheItem(cache, name, index, id);
     if (find && find.length) {
         return find[0];
@@ -199,7 +209,7 @@ function findOneCacheItem(cache, name, index, id) {
     }
 }
 function removeCacheItem(cache, name, data) {
-    console.debug('removeCacheItem cache ' + name);
+    DEBUG.log('removeCacheItem cache ' + name);
 
     if (!cache[name]){
         return
@@ -212,8 +222,9 @@ function removeCacheItem(cache, name, data) {
         }
     }
 }
+
 function isRegisteredUser(cache, name, user) {
-    console.debug('isRegisteredUser cache ' + name + ' user ' + user);
+    DEBUG.log('isRegisteredUser cache ' + name + ' user ' + user);
 
     if(cache[name]){
         for (var i = 0; i < cache[name].length; i++) {
@@ -240,24 +251,25 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/public/pages'));
 if(production){
     app.get('/scripts/env.js', function (req, res) {
-        console.debug('app.get(/environment)');
+        DEBUG.log('req.url: /scripts/production/env.js');
         res.sendFile(__dirname + '/public/scripts/production/env.js');
     });
 } else {
     app.get('/scripts/env.js', function (req, res) {
-        console.debug('app.get(/environment)');
+        DEBUG.log('req.url: /scripts/development/env.js');
         res.sendFile(__dirname + '/public/scripts/development/env.js');
     });
 }
 
 // route to homepage
 app.get('/', function (req, res) {
-    console.debug('app.get(/)');
+    DEBUG.log('app.get /');
     res.sendFile(__dirname + '/public/index.html');
 });
 // route to test if the user is logged in or not
 app.get('/loggedin', function (req, res) {
-    console.debug('req.user : %s', JSON.stringify(req.user, null, 2));
+    DEBUG.log('app.get /loggedin');
+    DEBUG.log('req.user: ', JSON.stringify(req.user, null, 2));
 
     if (req.isAuthenticated()) {
         var player = isRegisteredUser(cache, 'players', req.user.name);
@@ -272,7 +284,7 @@ app.get('/loggedin', function (req, res) {
     }
 });
 app.post('/login', passport.authenticate('local'), function (req, res) {
-    console.debug('/login req.user: %s', JSON.stringify(req.user, null, 2));
+    DEBUG.log('app.post /login req.user: ', JSON.stringify(req.user, null, 2));
 
     var player = isRegisteredUser(cache, 'players', req.user.name);
     if (!player) {
@@ -283,14 +295,14 @@ app.post('/login', passport.authenticate('local'), function (req, res) {
     }
 });
 app.post('/logout', function (req, res) {
-    console.debug('/logout');
+    DEBUG.log('app.post /logout');
     console.info('User %s has logged out', req.user.name);
     req.logOut();
     res.status(200).end();
 });
 
 app.post('/resetPassword', function (req, res) {
-    console.debug('/resetPassword: %s', JSON.stringify(req.body, null, 2));
+    DEBUG.log('app.post /resetPassword: ', JSON.stringify(req.body, null, 2));
 
     var player = isRegisteredUser(cache, 'players', req.body.username);
 
@@ -318,7 +330,7 @@ app.post('/resetPassword', function (req, res) {
         data._rev = user._rev;
     }
 
-    updateDoc(data, "users", res, function () {
+    postDocument(data, "users", res, function () {
         var message = {
             to: [player.email], subject: "Boxleague password reset",
             text: "Your password has been reset to " + textPassword + ".\nPlease login and update your password by going to your settings."
@@ -327,7 +339,7 @@ app.post('/resetPassword', function (req, res) {
     });
 });
 app.post('/password', auth, function (req, res) {
-    console.debug('/password: %s', JSON.stringify(req.body, null, 2));
+    DEBUG.log('app.post /password: ', JSON.stringify(req.body, null, 2));
 
     var player = isRegisteredUser(cache, 'players', req.body.username);
 
@@ -368,7 +380,7 @@ app.post('/password', auth, function (req, res) {
         data._rev = user._rev;
     }
 
-    updateDoc(data, "users", res, function () {
+    postDocument(data, "users", res, function () {
         var message = {
             to: [player.email], subject: "Boxleague password saved",
             text: "Your new password has been saved."
@@ -377,18 +389,18 @@ app.post('/password', auth, function (req, res) {
     });
 });
 
-var readDoc = function (name, res, id) {
-    console.debug('readDoc %s', name);
+var getDocument = function (name, res, id) {
+    DEBUG.log('getDocument', name);
 
     if(id) {
         var item = findOneCacheItem(cache, name, "_id", id);
         if (item) {
-            console.debug("returning item from cache");
+            DEBUG.log("returning item from cache");
             res.send(item);
             return;
         }
     } else if(cache[name]) {
-        console.debug("returning cache");
+        DEBUG.log("returning cache");
         res.send(cache[name]);
         return;
     }
@@ -446,13 +458,13 @@ var readDoc = function (name, res, id) {
         }
     });
 };
-var findDocs = function (name, index, id, res) {
-    console.debug('findDocs %s by %s == %s', name, index, id);
+var findDocument = function (name, index, id, res) {
+    DEBUG.log('findDocument ', name, index, id);
 
     // can't use the cache because we don't know if its all loaded
     // var item = findCacheItem(cache, name, index, id);
     // if (item && item.length) {
-    //     console.debug("returning item from cache");
+    //     DEBUG.log("returning item from cache");
     //     res.send(item);
     //     return;
     // }
@@ -486,9 +498,9 @@ var findDocs = function (name, index, id, res) {
         });
     });
 };
-var updateDoc = function (data, name, res, success, fail) {
-    console.debug('updateDoc %s', name);
-    console.debug(JSON.stringify(data, null, 2));
+var postDocument = function (data, name, res, success, fail) {
+    DEBUG.log('postDocument ', name);
+    DEBUG.log(JSON.stringify(data, null, 2));
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
@@ -510,7 +522,7 @@ var updateDoc = function (data, name, res, success, fail) {
                     fail(error.reason);
                 }
             } else {
-                console.debug("Data:", JSON.stringify(response, null, 2));
+                DEBUG.log("Data:", JSON.stringify(response, null, 2));
                 data._id = response.id;
                 data._rev = response.rev;
                 updateCache(cache, name, data);
@@ -522,9 +534,9 @@ var updateDoc = function (data, name, res, success, fail) {
         });
     });
 };
-var bulkUpdateDoc = function (data, name, res) {
-    console.debug('bulkUpdateDoc %s', name);
-    console.debug(JSON.stringify(data, null, 2));
+var bulkPostDocument = function (data, name, res) {
+    DEBUG.log('bulkPostDocument ', name);
+    DEBUG.log(JSON.stringify(data, null, 2));
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (error, cloudant) {
         if (error) {
@@ -540,21 +552,21 @@ var bulkUpdateDoc = function (data, name, res) {
                 console.error('Error list %s: %s', name, error.reason);
                 res.status(error.statusCode).send(error.reason);
             } else {
-                console.debug("Response:", JSON.stringify(response, null, 2));
+                DEBUG.log("Response:", JSON.stringify(response, null, 2));
                 for(var i=0;i<response.length;i++){
                     data[i]._id =response[i].id;
                     data[i]._rev =response[i].rev;
                 }
-                console.debug("Data:", JSON.stringify(data, null, 2));
+                DEBUG.log("Data:", JSON.stringify(data, null, 2));
                 deleteCache(cache, name);
                 res.status(200).send(data);
             }
         });
     });
 };
-var deleteDoc = function (id, rev, name, res) {
-    console.debug('deleteDoc %s', name);
-    console.debug('id: %s, rev: %s', id, rev);
+var deleteDocument = function (id, rev, name, res) {
+    DEBUG.log('deleteDocument ', name);
+    DEBUG.log('id rev ', id, rev);
     if(!id || !rev){
         res.status(500).send("id or rev missing in delete request");
         return;
@@ -574,7 +586,7 @@ var deleteDoc = function (id, rev, name, res) {
                 console.error('Error list %s: %s', name, error.reason);
                 res.status(error.statusCode).send(error.reason);
             } else {
-                console.debug("Data:", JSON.stringify(response, null, 2));
+                DEBUG.log("Data:", JSON.stringify(response, null, 2));
                 response._id = response.id; // because the response had id and not _id
                 removeCacheItem(cache, name, response);
                 res.status(200).send(response);
@@ -584,61 +596,61 @@ var deleteDoc = function (id, rev, name, res) {
 };
 
 app.get('/player/:id', auth, function (req, res) {
-    readDoc("players", res, req.params.id);
+    getDocument("players", res, req.params.id);
 });
 app.post('/player/:id', auth, function (req, res) {
-    updateDoc(req.body, "players", res);
+    postDocument(req.body, "players", res);
 });
 app.delete('/player/:id/:rev', auth, function (req, res) {
-    deleteDoc(req.params.id, req.params.rev, "players", res);
+    deleteDocument(req.params.id, req.params.rev, "players", res);
 });
 app.get('/players', auth, function (req, res) {
-    readDoc("players", res);
+    getDocument("players", res);
 });
 app.post('/players', auth, function (req, res) {
-    bulkUpdateDoc(req.body, "players", res);
+    bulkPostDocument(req.body, "players", res);
 });
 
 app.get('/game/:id', auth, function (req, res) {
-    readDoc("games", res, req.params.id);
+    getDocument("games", res, req.params.id);
 });
 app.post('/game/:id', auth, function (req, res) {
-    updateDoc(req.body, "games", res);
+    postDocument(req.body, "games", res);
 });
 app.delete('/game/:id/:rev', auth, function (req, res) {
-    deleteDoc(req.params.id, req.params.rev, "games", res);
+    deleteDocument(req.params.id, req.params.rev, "games", res);
 });
 app.get('/games', auth, function (req, res) {
-    readDoc("games", res);
+    getDocument("games", res);
 });
 app.get('/games/:field/:id', auth, function (req, res) {
-    findDocs("games", req.params.field, req.params.id, res, false);
+    findDocument("games", req.params.field, req.params.id, res, false);
 });
 app.post('/games', auth, function (req, res) {
-    bulkUpdateDoc(req.body, "games", res);
+    bulkPostDocument(req.body, "games", res);
 });
 
 app.get('/boxleague/:id', auth, function (req, res) {
-    readDoc("boxleagues", res, req.params.id);
+    getDocument("boxleagues", res, req.params.id);
 });
 app.post('/boxleague/:id', auth, function (req, res) {
-    updateDoc(req.body, "boxleagues", res);
+    postDocument(req.body, "boxleagues", res);
 });
 app.delete('/boxleague/:id/:rev', auth, function (req, res) {
-    deleteDoc(req.params.id, req.params.rev, "boxleagues", res);
+    deleteDocument(req.params.id, req.params.rev, "boxleagues", res);
 });
 app.get('/boxleagues', auth, function (req, res) {
-    readDoc("boxleagues", res);
+    getDocument("boxleagues", res);
 });
 app.get('/boxleagues/:active', auth, function (req, res) {
-    findDocs("boxleagues", "active", req.params.active, res);
+    findDocument("boxleagues", "active", req.params.active, res);
 });
 app.post('/boxleagues', auth, function (req, res) {
-    bulkUpdateDoc(req.body, "boxleagues", res);
+    bulkPostDocument(req.body, "boxleagues", res);
 });
 
 app.post('/submitDoc', auth, function (req, res) {
-    console.debug('app.post(/submitDoc)');
+    DEBUG.log('app.post /submitDoc');
 
     if (!req.body) {
         res.status(400).send('missing data');
@@ -657,10 +669,10 @@ app.post('/submitDoc', auth, function (req, res) {
     }
     var doc = req.body.doc;
 
-    updateDoc(doc, databaseName, res);
+    postDocument(doc, databaseName, res);
 });
 app.post('/submitDocs', auth, function (req, res) {
-    console.debug('app.post(/submitDocs)');
+    DEBUG.log('app.post /submitDocs');
 
     if (!req.body) {
         res.status(400).send('missing body');
@@ -681,7 +693,7 @@ app.post('/submitDocs', auth, function (req, res) {
 
     Cloudant({account: cloudantUser, password: cloudantPassword}, function (er, cloudant) {
         if (er) {
-            console.debug('Error login: %s', er.reason);
+            DEBUG.log('Error login: ', er.reason);
             res.status(500).send(er.reason);
             return;
         }
@@ -690,11 +702,11 @@ app.post('/submitDocs', auth, function (req, res) {
         deleteCache(cache, databaseName);
         var docs = {docs: data};
 
-        console.debug(docs);
+        DEBUG.log(docs);
 
         database.bulk(docs, function (er, data) {
-            console.debug("Error:", er);
-            console.debug("Data:", data);
+            DEBUG.log("Error:", er);
+            DEBUG.log("Data:", data);
             if (er) {
                 res.status(er.statusCode).send(er.reason);
             } else {
@@ -710,14 +722,14 @@ var weatherHourly = [];
 var appId = 'dfa92a2daab9476f51718353645f1c85';
 
 app.get('/weatherDaily', auth, function (req, res) {
-    console.debug('app.get(/weatherDaily)');
-    console.debug(req.query);
+    DEBUG.log('app.get /weatherDaily');
+    DEBUG.log(req.query);
 
     var location = req.query.location;
     var days = '5';
 
     if (weatherDaily[location]) {
-        console.debug('sending from cache');
+        DEBUG.log('sending from cache');
         res.status(200).send(weatherDaily[location]);
         return;
     }
@@ -734,14 +746,14 @@ app.get('/weatherDaily', auth, function (req, res) {
     });
 });
 app.get('/weatherHourly', auth, function (req, res) {
-    console.debug('app.get(/weatherHourly)');
-    console.debug(req.query);
+    DEBUG.log('app.get /weatherHourly');
+    DEBUG.log(req.query);
 
     var location = req.query.location;
     var hours = '5';
 
     if (weatherHourly[location]) {
-        console.debug('sending from cache');
+        DEBUG.log('sending from cache');
         res.status(200).send(weatherHourly[location]);
         return;
     }
@@ -759,7 +771,7 @@ app.get('/weatherHourly', auth, function (req, res) {
 });
 // reset the weather cache every hour
 setInterval(function () {
-    console.debug('refreshing weather cache');
+    DEBUG.log('refreshing weather cache');
     weatherDaily = [];
     weatherHourly = [];
 }, 1000 * 60 * 60);
@@ -789,18 +801,18 @@ var sendMailFunction = function (message, success, fail) {
     email.text = message.text;
     email.text += "\n\nSupport email: " + mailOptions.from;
 
-    console.debug(JSON.stringify(email, null, 2));
+    DEBUG.log(JSON.stringify(email, null, 2));
 
     // send mail with defined transport object
     try {
         transporter.sendMail(email, function (error, info) {
             if (error) {
-                console.debug('Message error: ' + error);
+                DEBUG.log('Message error: ' + error);
                 if (fail) {
                     fail(error);
                 }
             } else {
-                console.debug('Message sent: ' + JSON.stringify(info, null, 2));
+                DEBUG.log('Message sent: ' + JSON.stringify(info, null, 2));
                 if (success) {
                     success(info);
                 }
@@ -808,7 +820,7 @@ var sendMailFunction = function (message, success, fail) {
         });
     }
     catch (error) {
-        console.debug('Message exception error: ' + error);
+        DEBUG.log('Message exception error: ' + error);
         fail(error);
     }
 };
@@ -821,25 +833,26 @@ var sendMail = function (message, res) {
 };
 
 app.post('/message', auth, function (req, res) {
-    console.debug(req.url);
+    DEBUG.log(req.url);
 
     var message = req.body;
     sendMail(message, res);
 });
 
-console.debug(JSON.stringify(mailOptions, null, 2));
+DEBUG.log(JSON.stringify(mailOptions, null, 2));
 
 transporter.sendMail(mailOptions, function (error, info) {
     if (error) {
-        return console.debug(error);
+        return DEBUG.log(error);
     }
-    console.debug('Message sent: ' + JSON.stringify(info, null, 2));
+    DEBUG.log('Message sent: ' + JSON.stringify(info, null, 2));
 });
 
-// initialise the players list to allow for logins
-readDoc("players");
-readDoc("users");
-readDoc("boxleagues");
+// Load all the data into cache
+getDocument("players"); // required for login
+getDocument("users");
+getDocument("boxleagues");
+getDocument("games");
 
 http.createServer(app).listen(app.get('port'), function () {
     console.info('Express server listening on port ' + app.get('port'));

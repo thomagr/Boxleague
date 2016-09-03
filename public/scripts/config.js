@@ -20,10 +20,11 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
             // Not Authenticated
             else {
                 $rootScope.isAuth = false;
-                deferred.reject();
                 $rootScope.currentUrl = $location.url();
                 console.log("Redirecting original URL %s to /login", $location.url());
                 $location.url('/login');
+
+                deferred.reject();
             }
         });
 
@@ -54,6 +55,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
             request: function(config) {
                 $rootScope.requesting = $rootScope.requesting || 0;
                 $rootScope.requesting++;
+                console.log('Request: %s, %s, %s', config.method, $rootScope.requesting, config.url);
                 $timeout(function() {
                     if ($rootScope.requesting > 0 && $rootScope.isAuth) {
                         $rootScope.loading = true;
@@ -63,6 +65,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
             },
 
             response: function(response) {
+                console.log('Response: %s, %s, %s', $rootScope.requesting, response.status, response.config.url);
                 $rootScope.requesting--;
                 if ($rootScope.requesting <= 0) {
                     $rootScope.loading = false;
@@ -72,6 +75,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
             },
 
             responseError: function (response) {
+                console.log('Response: %s, %s, %s', $rootScope.requesting, response.status, response.config.url);
                 $rootScope.requesting--;
                 if ($rootScope.requesting <= 0) {
                     $rootScope.loading = false;
@@ -129,16 +133,16 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }
     }).when('/boxleague', {
         templateUrl: 'pages/empty.html',
-        controller: 'boxleagueMainCtrl',
-        resolve: {
-            loggedin: checkLoggedin
-        }
+        controller: 'boxleagueMainCtrl'//,
+        // resolve: {
+        //     loggedin: checkLoggedin
+        // }
     }).when('/leaderboard', {
         templateUrl: 'pages/empty.html',
-        controller: 'leaderboardMainCtrl',
-        resolve: {
-            loggedin: checkLoggedin
-        }
+        controller: 'leaderboardMainCtrl'//,
+        // resolve: {
+        //     loggedin: checkLoggedin
+        // }
     }).when('/boxleague/:id/boxes', {
         templateUrl: 'pages/boxes.html',
         controller: 'boxesCtrl',
@@ -165,22 +169,22 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }        
     }).when('/myBox', {
         controller: 'myBoxMainCtrl',
-        templateUrl: 'pages/noBox.html',
-        resolve: {
-            loggedin: checkLoggedin
-        }
+        templateUrl: 'pages/noBox.html'//,
+        // resolve: {
+        //     loggedin: checkLoggedin
+        // }
     }).when('/settings', {
         templateUrl: 'pages/empty.html',
-        controller: 'settingsMainCtrl',
-        resolve: {
-            loggedin: checkLoggedin
-        }
+        controller: 'settingsMainCtrl'//,
+        // resolve: {
+        //     loggedin: checkLoggedin
+        // }
     }).when('/headToHead', {
         templateUrl: 'pages/empty.html',
-        controller: 'headToHeadMainCtrl',
-        resolve: {
-            loggedin: checkLoggedin
-        }
+        controller: 'headToHeadMainCtrl'//,
+        // resolve: {
+        //     loggedin: checkLoggedin
+        // }
     }).when('/headToHead/:id', {
         templateUrl: 'pages/headToHead.html',
         controller: 'headToHeadCtrl',
