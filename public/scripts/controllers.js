@@ -1273,15 +1273,22 @@ boxleagueApp.filter('boxesSort', function ($filter) {
 
 //CONTROLLERS
 boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $log, $http, $location, $routeParams, httpService, commonService, __env) {
+    $log.info("mainCtrl");
+
     $rootScope.production = __env.production;
     // set myBox to true for now, and then route to the page myBox which will reset if not available
     $rootScope.myBox = true;
+    $rootScope.alerts = [];
 
     $scope.loginSubmit = function () {
         $http.post('/login', {username: $scope.username, password: $scope.password}).then(function (response) {
+
             $rootScope.login = response.data.name;
+            $rootScope.isAuth = true;
+            $rootScope.admin = $rootScope.login === 'Admin';
+
             $rootScope.alerts = [];
-            if ($rootScope.login === "Admin") {
+            if ($rootScope.admin === "Admin") {
                 $location.url('/');
             } else {
                 switch ($rootScope.currentUrl) {
@@ -1303,12 +1310,20 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $log, $http, $
             });
         })
     };
-
-    // required for message alerts
-    $rootScope.close = function (index) {
-        $rootScope.alerts.splice(index, 1);
-    };
 });
+
+boxleagueApp.controller('logoutCtrl', function ($scope, $rootScope, $log, $http, $location) {
+    $log.info("logoutCtrl");
+
+    $http.post('/logout');
+
+    delete $rootScope.login;
+    delete $rootScope.isAuth;
+    delete $rootScope.admin;
+
+    $location.url("/login");
+});
+
 boxleagueApp.controller('passwordCtrl', function ($scope, $rootScope, $log, $http, $location, $routeParams, httpService, commonService) {
     $log.info("passwordCtrl");
 
@@ -1826,7 +1841,7 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         $scope.boxColumns = filter;
         $scope.boxSortType = "schedule";
         $scope.boxSortReverse = false;
-        $scope.boxSearchName = "";
+        $scope.boxSearchName = "";//$rootScope.login;
         $scope.gamesType = "game";
         $scope.sortBoxColumn = function (column) {
             $scope.boxSortType = column;

@@ -90,11 +90,12 @@ passport.deserializeUser(function (user, done) {
 // Define a middleware function to be used for every secured routes
 var auth = function (req, res, next) {
     DEBUG.log('checking isAuthenticated');
+    DEBUG.log(req.user);
     if (!req.isAuthenticated()) {
-        DEBUG.log('is Authenticated false');
+        DEBUG.log('isAuthenticated false');
         res.status(401).send("not authenticated");
     } else {
-        DEBUG.log('is Authenticated true');
+        DEBUG.log('isAuthenticated true');
         next();
     }
 };

@@ -7,26 +7,30 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         // Initialize a new promise
         var deferred = $q.defer();
 
-        // Make an AJAX call to check if the user is logged in
-        $http.get('/loggedin').success(function (response) {
-            // Authenticated
-            if (response !== '0') {
-                $rootScope.isAuth = true;
-                $rootScope.login = response.name;
-                $rootScope.admin = $rootScope.login === 'Admin';
+        if (!$rootScope.isAuth) {
+            // Make an AJAX call to get the login details
+            $http.get('/loggedin').success(function (response) {
+                // Authenticated
+                if (response !== '0') {
+                    $rootScope.isAuth = true;
+                    $rootScope.login = response.name;
+                    $rootScope.admin = $rootScope.login === 'Admin';
 
-                deferred.resolve();
-            }
-            // Not Authenticated
-            else {
-                $rootScope.isAuth = false;
-                $rootScope.currentUrl = $location.url();
-                console.log("Redirecting original URL %s to /login", $location.url());
-                $location.url('/login');
+                    deferred.resolve();
+                }
+                // Not Authenticated
+                else {
+                    $rootScope.isAuth = false;
+                    $rootScope.currentUrl = $location.url();
+                    console.log("Redirecting original URL %s to /login", $location.url());
+                    $location.url('/login');
 
-                deferred.reject();
-            }
-        });
+                    deferred.reject();
+                }
+            });
+        } else {
+            deferred.resolve();
+        }
 
         return deferred.promise;
     };
@@ -92,6 +96,9 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
     $routeProvider.when('/login', {
         templateUrl: 'pages/login.html',
         controller: 'mainCtrl'
+    }).when('/logout', {
+        templateUrl: 'pages/login.html',
+        controller: 'logoutCtrl'
     }).when('/', {
         templateUrl: 'pages/welcome.html',
         controller: 'welcomeCtrl',

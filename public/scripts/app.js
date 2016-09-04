@@ -3,7 +3,7 @@ var boxleagueApp = angular.module('boxleagueApp', ['ngRoute', 'ngResource', 'ui.
 
 // ROUTES
 
-boxleagueApp.run(function ($rootScope, $http) {
+boxleagueApp.run(function ($rootScope) {
 
     $rootScope.alerts = [];
 
@@ -57,12 +57,10 @@ boxleagueApp.run(function ($rootScope, $http) {
     //         return promise.resolve("success");
     //     }
     // };
-    
-    // Logout function is available in any pages
-    $rootScope.logout = function () {
-        $rootScope.message = 'Logged out.';
-        //$rootScope.isAuth = false;
-        $http.post('/logout');
+
+    // required for message alerts
+    $rootScope.close = function (index) {
+        $rootScope.alerts.splice(index, 1);
     };
 });
 
