@@ -1,6 +1,6 @@
 <div class="row" style="margin-top: 20px;">
-    <!--<div class="well" ng-hide="nextBox">-->
-    <div class="well">
+    <div class="well" ng-hide="nextBox">
+        <!--<div class="well">-->
         <h2>Choose File</h2>
         <!--<div class="fileUpload btn btn-default">-->
         <!--<input type="file" class="upload" file-input name="changeEvent"/>-->
@@ -13,7 +13,7 @@
         <!--</div>-->
     </div>
     <!--<div class="well" ng-show="nextBox && !boxleague">-->
-    <div class="well">
+    <div class="well" ng-show="nextBox">
         <h2>Create Boxleague</h2>
         <form name="createForm" class="form-inline">
             <input type="text" class="form-control" placeholder="Boxleague Name" ng-model="name"
@@ -43,8 +43,8 @@
             </button>
         </form>
     </div>
-    <!--<div class="well" ng-show="nextBox && !boxleague">-->
-    <div class="well">
+    <div class="well" ng-show="nextBox">
+        <!--<div class="well">-->
         <h2>Boxes and Players</h2>
         <table class="table table-bordered table-condensed" style="margin-bottom:0px">
             <thead>
@@ -62,8 +62,8 @@
             </tbody>
         </table>
     </div>
-    <!--<div class="well" ng-show="nextBox && boxleague">-->
-    <div class="well">
+    <div class="well" ng-show="boxleague">
+        <!--<div class="well">-->
         <h1>{{boxleague.name}}</h1>
         <div style="margin-bottom:10px">
             <button type="submit" class="btn btn-success" ng-disabled="createForm.$invalid || !boxleague"
