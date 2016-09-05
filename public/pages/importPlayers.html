@@ -1,33 +1,41 @@
 <div class="row">
     <div class="well">
-        <h2>Import File</h2>
-        <div>
-            <table class="table" style="margin-bottom: 0px;">
-                <tr>
-                    <td>
-                        <label class="control-label">CSV File</label>
-                    </td>
-                    <td>
-                        <div class="fileUpload btn btn-default" ng-controller="importPlayersFileCtrl">
-                            <input type="file" class="upload" file-input name="changeEvent"/>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label class="control-label">Spreadsheet</label>
-                    </td>
-                    <td>
-                        <div class="fileUpload btn btn-default" ng-controller="importPlayersXlsCtrl">
-                            <input type="file" class="upload" file-input name="changeEvent"/>
-                        </div>
-                    </td>
-            </table>
+        <h2>Choose File</h2>
+        <p><strong>File Format:</strong> full name[,email,mobile,home]</p>
+        <div class="fileUpload btn btn-default">
+            <input type="file" onchange="angular.element(this).scope().setFile(this)" ng-model="file">
         </div>
     </div>
-</div>
+    <!--<h2>Choose File</h2>-->
+    <!--<div>-->
+    <!--<table class="table" style="margin-bottom: 0px;">-->
+    <!--<tr>-->
+    <!--<td>-->
+    <!--<label class="control-label">CSV File</label>-->
+    <!--</td>-->
+    <!--<td>-->
+    <!--<div class="fileUpload btn btn-default" ng-controller="importPlayersFileCtrl">-->
+    <!--&lt;!&ndash;<input type="file" class="upload" file-input name="changeEvent"/>&ndash;&gt;-->
+    <!--<input type="file" onchange="angular.element(this).scope().setFile(this)" ng-model="file">-->
+    <!--</div>-->
+    <!--</td>-->
+    <!--</tr>-->
+    <!--<tr>-->
+    <!--<td>-->
+    <!--<label class="control-label">Spreadsheet</label>-->
+    <!--</td>-->
+    <!--<td>-->
+    <!--<div class="fileUpload btn btn-default" ng-controller="importPlayersXlsCtrl">-->
+    <!--<input type="file" class="upload" file-input name="changeEvent"/>-->
+    <!--</div>-->
+    <!--</td>-->
+    <!--</tr>-->
+    <!--</table>-->
+    <!--</div>-->
+    </div>
 
 <div class="row" ng-controller="importPlayersManualCtrl">
+    <!--<div class="row">-->
     <div class="well">
         <h2>Manual Add</h2>
         <form name="addForm" novalidate>
@@ -43,12 +51,13 @@
 </div>
 
 <div class="row" ng-show="newPlayers.length">
+    <!--<div class="row">-->
     <div class="well">
-        <div ng-show="newPlayers && newPlayers.length">
+        <!--<div ng-show="newPlayers && newPlayers.length">-->
             <form class="form-inline">
                 <button type="submit" class="btn btn-success" ng-click="submit()">Save</button>
             </form>
-        </div>
+        <!--</div>-->
         <h2>New Players</h2>
         <generic-table
                 rows="newPlayers"
@@ -61,10 +70,12 @@
         >
         </generic-table>
     </div>
-</div>
+    </div>
+<!--</div>-->
 
-<div class="row" ng-show="currentPlayers.length">
-    <div class="well">
+<!--<div class="row" ng-show="currentPlayers.length">-->
+<div class="row">
+    <div class="well" ng-show="currentPlayers.length">
         <h2>Current Players</h2>
         <generic-table
                 rows="currentPlayers"
@@ -74,6 +85,7 @@
                 search-name="searchName"
                 to-title-case="toTitleCase"
                 sort-column="sortBoxColumn"
+                type="type"
         >
         </generic-table>
     </div>

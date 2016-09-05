@@ -206,7 +206,7 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }
     }).when('/importPlayers', {
         templateUrl: 'pages/importPlayers.html',
-        controller: 'importPlayersCtrl',
+        controller: 'importPlayersFileCtrl',
         resolve: {
             loggedin: checkLoggedin
         }

@@ -1311,7 +1311,6 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $log, $http, $
         })
     };
 });
-
 boxleagueApp.controller('logoutCtrl', function ($scope, $rootScope, $log, $http, $location) {
     $log.info("logoutCtrl");
 
@@ -1323,7 +1322,6 @@ boxleagueApp.controller('logoutCtrl', function ($scope, $rootScope, $log, $http,
 
     $location.url("/login");
 });
-
 boxleagueApp.controller('passwordCtrl', function ($scope, $rootScope, $log, $http, $location, $routeParams, httpService, commonService) {
     $log.info("passwordCtrl");
 
@@ -1383,7 +1381,6 @@ boxleagueApp.controller('passwordCtrl', function ($scope, $rootScope, $log, $htt
         return $scope.password !== $scope.confirm
     };
 });
-
 boxleagueApp.controller('forcastCtrl', ['$scope', '$log', '$resource', '$routeParams', '$http', '$timeout', function ($scope, $log, $resource, $routeParams, $http, $timeout) {
     $log.info("forcastCtrl");
 
@@ -2838,8 +2835,77 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
     };
 }]);
 // parent control
-boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootScope', 'httpService', 'commonService', function ($scope, $log, $http, $rootScope, httpService, commonService) {
-    $log.info("importPlayersCtrl");
+// boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootScope', 'httpService', 'commonService', function ($scope, $log, $http, $rootScope, httpService, commonService) {
+//     $log.info("importPlayersCtrl");
+//
+//     $rootScope.alerts = [];
+//
+//     $scope.currentPlayers = [];
+//     $scope.newPlayers = [];
+//
+//     $http.get('/players').then(function (response) {
+//         $scope.currentPlayers = response.data;
+//         var filter = commonService.filterColumns(commonService.getColumns($scope.currentPlayers));
+//         // place schedule at the front if present
+//         if (filter.indexOf("name") !== -1) {
+//             filter = commonService.arraySplice(filter, "name");
+//             filter.unshift("name");
+//         }
+//         $scope.columns = filter;
+//
+//     }, function (response) {
+//         $scope.currentPlayers = [];
+//         $rootScope.alerts.push({
+//             type: "warning",
+//             msg: "Read failed with error: " + response.data
+//         });
+//     });
+//
+//     $scope.sortType = 'name';    // set the default sort type
+//     $scope.sortReverse = false;  // set the default sort order
+//     $scope.searchName = '';      // set the default search/filter term
+//     $scope.type = 'player';      // set the default search/filter term
+//     $scope.sortColumn = function (column) {
+//         $scope.sortType = column;
+//         $scope.sortReverse = !$scope.sortReverse;
+//         return (column);
+//     };
+//
+//     $scope.submit = function () {
+//
+//         console.log("posting new player data ...");
+//
+//         // clean data
+//         var data = [];
+//         $scope.newPlayers.forEach(function (player) {
+//             data.push({name: player.name, mobile: player.mobile, home: player.home, email: player.email});
+//         });
+//
+//         $http.post('/players', JSON.stringify(data)).then(function () {
+//             $rootScope.alerts.push({type: "success", msg: "Players saved"});
+//             $http.get('/players').then(function (response) {
+//                 $scope.currentPlayers = response.data;
+//             }, function (response) {
+//                 $scope.currentPlayers = [];
+//                 $rootScope.alerts.push({
+//                     type: "warning",
+//                     msg: "Read failed with error: " + response.data
+//                 });
+//             });
+//         }, function (response) {
+//             $rootScope.alerts.push({
+//                 type: "danger",
+//                 msg: "Request failed with response: " + response.data + " and status code: " + response.status
+//             });
+//         });
+//
+//         $scope.newPlayers = [];
+//         $scope.currentPlayers = [];
+//     };
+// }]);
+// control for file import
+boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$rootScope', 'httpService', 'commonService', function ($scope, $log, $http, $rootScope, httpService, commonService) {
+    $log.info("importPlayersFileCtrl");
 
     $rootScope.alerts = [];
 
@@ -2905,10 +2971,47 @@ boxleagueApp.controller('importPlayersCtrl', ['$scope', '$log', '$http', '$rootS
         $scope.newPlayers = [];
         $scope.currentPlayers = [];
     };
-}]);
-// control for file import
-boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', function ($scope, $log) {
-    $log.info("importPlayersFileCtrl");
+
+    $scope.setFile = function (element) {
+        $scope.file = element.files[0];
+        $scope.element = element;
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+            $scope.$apply(function () {
+                var data = evt.target.result;
+
+                $scope.newPlayers = [];
+                var lines = data.split('\n');
+                lines.forEach(function (line) {
+                    if (!line || line.length === 0) {
+                        return;
+                    }
+                    var items = line.split(",");
+                    if (items[0].length === 0) {
+                        return
+                    }
+                    var name = items[0];
+                    var email = items[1];
+                    var mobile = items[2];
+                    var home = items[3];
+
+                    var player = {name: name, mobile: mobile, home: home, email: email};
+
+                    var currentMap = $scope.currentPlayers.map(function (x) {
+                        return x.name
+                    });
+                    var newMap = $scope.newPlayers.map(function (x) {
+                        return x.name
+                    });
+
+                    if (currentMap.indexOf(name) === -1 && newMap.indexOf(name) === -1) {
+                        $scope.newPlayers.push(player);
+                    }
+                });
+            })
+        };
+        reader.readAsBinaryString($scope.file);
+    };
 
     $scope.$watch('changeEvent', function () {
         if (!$scope.changeEvent) {
