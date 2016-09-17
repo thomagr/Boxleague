@@ -1,7 +1,8 @@
 <div class="row">
     <div class="well">
         <form name="importForm">
-            <button ng-disabled="nextBoxleage" class="btn btn-warning" ng-click="import()">Import next league</button>
+            <button ng-disabled="nextBoxleage" class="btn btn-warning" ng-click="import()">Import Next Boxleague
+            </button>
         </form>
         <div class="table-responsive">
             <table class="table table-condensed" style="margin-bottom:0px">
@@ -15,8 +16,8 @@
                             <table class="table table-bordered table-condensed" style="margin-bottom:0px">
                                 <thead>
                                 <tr>
-                                    <th>Box</th>
                                     <th>Name</th>
+                                    <th>Box</th>
                                     <th>P</th>
                                     <th>SD</th>
                                     <th>GD</th>
@@ -26,8 +27,8 @@
                                 <tbody>
                                 <tr ng-repeat="player in leaderboard | leaderboardSort"
                                     ng-class="{highlight : $index % 6 === 0}">
-                                    <td>{{player.box}}</td>
                                     <td>{{player.name}}</td>
+                                    <td>{{player.box}}</td>
                                     <td>{{player.played}}</td>
                                     <td>{{player.setsDiff}}</td>
                                     <td>{{player.gamesDiff}}</td>
@@ -44,16 +45,16 @@
                             <table class="table table-bordered table-condensed" style="margin-bottom:0px">
                                 <thead>
                                 <tr>
-                                    <th>Box</th>
                                     <th>Name</th>
+                                    <th>Box</th>
                                     <th>Change</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 <tr ng-repeat="player in nextBox | orderBy:['newBox', 'name']"
                                     ng-class="{highlight : $index % 6 === 0 }">
-                                    <td>{{player.newBox}}</td>
                                     <td>{{player.name}}</td>
+                                    <td>{{player.newBox}}</td>
                                     <td>{{player.change}}</td>
                                 </tr>
                                 </tbody>

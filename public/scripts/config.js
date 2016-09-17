@@ -140,16 +140,16 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }
     }).when('/boxleague', {
         templateUrl: 'pages/empty.html',
-        controller: 'boxleagueMainCtrl'//,
-        // resolve: {
-        //     loggedin: checkLoggedin
-        // }
+        controller: 'boxleagueMainCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/leaderboard', {
         templateUrl: 'pages/empty.html',
-        controller: 'leaderboardMainCtrl'//,
-        // resolve: {
-        //     loggedin: checkLoggedin
-        // }
+        controller: 'leaderboardMainCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/boxleague/:id/boxes', {
         templateUrl: 'pages/boxes.html',
         controller: 'boxesCtrl',
@@ -176,22 +176,22 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         }        
     }).when('/myBox', {
         controller: 'myBoxMainCtrl',
-        templateUrl: 'pages/noBox.html'//,
-        // resolve: {
-        //     loggedin: checkLoggedin
-        // }
+        templateUrl: 'pages/noBox.html',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/settings', {
         templateUrl: 'pages/empty.html',
-        controller: 'settingsMainCtrl'//,
-        // resolve: {
-        //     loggedin: checkLoggedin
-        // }
+        controller: 'settingsMainCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/headToHead', {
         templateUrl: 'pages/empty.html',
-        controller: 'headToHeadMainCtrl'//,
-        // resolve: {
-        //     loggedin: checkLoggedin
-        // }
+        controller: 'headToHeadMainCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/headToHead/:id', {
         templateUrl: 'pages/headToHead.html',
         controller: 'headToHeadCtrl',

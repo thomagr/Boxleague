@@ -1277,8 +1277,12 @@ boxleagueApp.controller('mainCtrl', function ($scope, $rootScope, $log, $http, $
 
     $rootScope.production = __env.production;
     // set myBox to true for now, and then route to the page myBox which will reset if not available
-    $rootScope.myBox = true;
-    $rootScope.alerts = [];
+    //$rootScope.myBox = true;
+    //$rootScope.alerts = [];
+
+    delete $rootScope.login;
+    delete $rootScope.isAuth;
+    delete $rootScope.admin;
 
     $scope.loginSubmit = function () {
         $http.post('/login', {username: $scope.username, password: $scope.password}).then(function (response) {
@@ -1598,6 +1602,13 @@ boxleagueApp.controller('settingsMainCtrl', ['$scope', '$rootScope', '$log', '$l
 boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$location', 'httpService', 'commonService', function ($scope, $rootScope, $log, $location, httpService, commonService) {
     $log.info("myBoxMainCtrl");
 
+    $rootScope.myBox = false;
+
+    if ($rootScope.login == "Admin") {
+        $location.url('/welcome');
+        return;
+    }
+
     $scope.loading = true;
 
     httpService.getActiveBoxleague(function (boxleague) {
@@ -1608,12 +1619,15 @@ boxleagueApp.controller('myBoxMainCtrl', ['$scope', '$rootScope', '$log', '$loca
                 if (box.playerIds.indexOf(loginId) !== -1) {
                     $rootScope.myBox = true;
                     $location.url('/boxleague/' + boxleague._id + '/box/' + box.name);
-                    return;
+                    break;//out of for loop
                 }
             }
-            $location.url('/welcome');
-            $rootScope.myBox = false;
+
             $scope.loading = false;
+
+            if (!$rootScope.myBox) {
+                $location.url('/welcome');
+            }
         });
     }, function () {
         $scope.loading = false;
@@ -2551,6 +2565,10 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
     $log.info("importBoxleagueFileCtrl");
 
     $scope.reset = function () {
+        delete $rootScope.boxleague;
+        delete $rootScope.games;
+        delete $rootScope.nextBox;
+
         delete $scope.games;
         delete $scope.boxleague;
 
@@ -2577,7 +2595,7 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
         httpService.saveBoxleague($rootScope.boxleague, $rootScope.games, $rootScope.players);
     };
 
-    $scope.reset();
+//    $scope.reset();
 
     if ($rootScope.boxleague) {
         $scope.boxleague = $rootScope.boxleague;
