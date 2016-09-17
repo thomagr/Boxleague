@@ -2707,6 +2707,9 @@ boxleagueApp.controller('importBoxleagueFileCtrl', ['$scope', '$log', '$http', '
                         return;
                     }
                     var items = line.split(",");
+                    items.forEach(function (item, index, items) {
+                        items[index] = items[index].replace(/[^\x20-\x7E]+/g, '');
+                    });
                     $rootScope.nextBox.push({name: items[0], newBox: items[1]});
                 });
             })
@@ -2990,6 +2993,10 @@ boxleagueApp.controller('importPlayersFileCtrl', ['$scope', '$log', '$http', '$r
                     if (items[0].length === 0) {
                         return
                     }
+                    // remove non-printable characters
+                    items.forEach(function (item, index, items) {
+                        items[index] = items[index].replace(/[^\x20-\x7E]+/g, '');
+                    });
                     var name = items[0];
                     var email = items[1];
                     var mobile = items[2];

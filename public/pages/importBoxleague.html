@@ -2,6 +2,7 @@
     <!--<div class="well" ng-hide="nextBox">-->
     <div class="well">
         <h2>Choose File</h2>
+        <p><strong>File Format:</strong> box,name</p>
         <!--<div class="fileUpload btn btn-default">-->
         <!--<input type="file" class="upload" file-input name="changeEvent"/>-->
         <!--</div>-->
@@ -54,7 +55,8 @@
             </tr>
             </thead>
             <tbody>
-            <tr ng-repeat="player in nextBox| orderBy:['newBox', 'name']"
+            <!--<tr ng-repeat="player in nextBox| orderBy:['newBox', 'name']"-->
+            <tr ng-repeat="player in nextBox| boxesSort"
                 ng-class="{highlight : $index % 6 === 0 }">
                 <td>{{player. newBox}}</td>
                 <td>{{player.name}}</td>
