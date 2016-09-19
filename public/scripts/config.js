@@ -126,6 +126,18 @@ boxleagueApp.config(["$routeProvider", "$locationProvider", "$httpProvider", fun
         resolve: {
             loggedin: checkLoggedin
         }
+    }).when('/privacyPolicy', {
+        templateUrl: 'pages/privacyPolicy.html',
+        controller: 'welcomeCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
+    }).when('/contacts', {
+        templateUrl: 'pages/contacts.html',
+        controller: 'welcomeCtrl',
+        resolve: {
+            loggedin: checkLoggedin
+        }
     }).when('/table/:name', {
         templateUrl: 'pages/table.html',
         controller: 'tableCtrl',

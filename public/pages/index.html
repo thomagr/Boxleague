@@ -43,81 +43,91 @@
     <script src="scripts/directives.js"></script>
 </head>
 
-<body ng-controller="mainCtrl" ng-class="{backgroundImageProduction: production, backgroundImageDevelopment: !production}">
+<body ng-controller="mainCtrl"
+      ng-class="{backgroundImageProduction: production, backgroundImageDevelopment: !production}">
 <div ng-show="isAuth">
     <nav class="navbar navbar-inverse">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" ng-init="isCollapsed = true"
-                        ng-click="isCollapsed = !isCollapsed">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand brand nav-login" href="#/">Boxleague</a>
-            </div>
-            <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
-                <ul class="nav navbar-nav">
-                    <li ng-show="admin" uib-dropdown><a href="#" uib-dropdown-toggle><i
-                            class="fa fa-lock icon-white"></i> Admin <span
-                            class="caret"></span></a>
-                        <ul uib-dropdown-menu>
-                            <!--<li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueSpreadsheet"><i-->
-                            <!--class="fa fa-upload"></i> Boxleague-->
-                            <!--Tim's xls</a></li>-->
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueFile"><i
-                                    class="fa fa-upload"></i> Boxleague Text
-                                File</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/nextBoxleague"><i
-                                    class="fa fa-arrow-right"></i>
-                                Next Boxleague</a></li>
-                            <li class="divider"></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/importPlayers"><i
-                                    class="fa fa-upload"></i> Players</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/managePlayers"><i
-                                    class="fa fa-user-times"></i>
-                                Manage Players</a></li>
-
-                        </ul>
-                    </li>
-                    <li ng-show="myBox" ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i
-                            class="fa fa-cube"></i>
-                        My box</a></li>
-                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/boxleague"><i class="fa fa-cubes"></i>
-                        Boxes</a></li>
-                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/leaderboard"><i class="fa fa-calculator"></i>
-                        Leaderboard</a></li>
-                    <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-folder-o icon-white"></i>
-                        League<span
+        <div class="container">
+            <div class="row">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" ng-init="isCollapsed = true"
+                                ng-click="isCollapsed = !isCollapsed">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand brand nav-login" href="#/">Boxleague</a>
+                    </div>
+                    <div class="collapse navbar-collapse" uib-collapse="isCollapsed">
+                        <ul class="nav navbar-nav">
+                            <li ng-show="admin" uib-dropdown><a href="#" uib-dropdown-toggle><i
+                                    class="fa fa-lock icon-white"></i> Admin <span
                                 class="caret"></span></a>
-                        <ul uib-dropdown-menu>
-                            <!--<li ng-click="isCollapsed = !isCollapsed"><a href="#/table/games"><i-->
+                                <ul uib-dropdown-menu>
+                                    <!--<li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueSpreadsheet"><i-->
+                                    <!--class="fa fa-upload"></i> Boxleague-->
+                                    <!--Tim's xls</a></li>-->
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueFile"><i
+                                            class="fa fa-upload"></i> Boxleague Text
+                                        File</a></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/nextBoxleague"><i
+                                            class="fa fa-arrow-right"></i>
+                                        Next Boxleague</a></li>
+                                    <li class="divider"></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/importPlayers"><i
+                                            class="fa fa-upload"></i> Players</a></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/managePlayers"><i
+                                            class="fa fa-user-times"></i>
+                                        Manage Players</a></li>
+
+                                </ul>
+                            </li>
+                            <li ng-show="myBox" ng-click="isCollapsed = !isCollapsed"><a href="#/myBox"><i
+                                    class="fa fa-cube"></i>
+                                My box</a></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/boxleague"><i class="fa fa-cubes"></i>
+                                Boxes</a></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/leaderboard"><i
+                                    class="fa fa-calculator"></i>
+                                Leaderboard</a></li>
+                            <li uib-dropdown><a href="#" uib-dropdown-toggle><i class="fa fa-folder-o icon-white"></i>
+                                League<span
+                                        class="caret"></span></a>
+                                <ul uib-dropdown-menu>
+                                    <!--<li ng-click="isCollapsed = !isCollapsed"><a href="#/table/games"><i-->
                                     <!--class="fa fa-calendar"></i> Games</a></li>-->
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/players"><i
-                                    class="fa fa-users"></i> Players</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/headToHead"><i class="fa fa-bar-chart"></i>
-                            Head To Head</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/boxleagues"><i
-                                    class="fa fa-server"></i> Boxleagues</a></li>
-                            <li class="divider"></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/rules"><i class="fa fa-book"></i>
-                                Rules</a></li>
-                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/setsHelp"><i class="fa fa-info"></i>
-                                Entering Scores</a></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/players"><i
+                                            class="fa fa-users"></i> Players</a></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/headToHead"><i
+                                            class="fa fa-bar-chart"></i>
+                                        Head To Head</a></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/table/boxleagues"><i
+                                            class="fa fa-server"></i> Boxleagues</a></li>
+                                    <li class="divider"></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/rules"><i
+                                            class="fa fa-book"></i>
+                                        Rules</a></li>
+                                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/setsHelp"><i
+                                            class="fa fa-info"></i>
+                                        Entering Scores</a></li>
+                                </ul>
+                            </li>
                         </ul>
-                    </li>
-                </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a href="#/forcast/St Albans, England"><i
-                            class="fa fa-umbrella icon-white"></i> Weather</a></li>
-                    <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a href="#/settings"><i
-                            class="fa fa-cog icon-white"></i>
-                        Settings</a></li>
-                    <li ng-click="isCollapsed = !isCollapsed"><a href="#/logout"><i
-                            class="fa fa-power-off icon-white"></i> Log out</a></li>
-                </ul>
+                        <ul class="nav navbar-nav navbar-right">
+                            <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a
+                                    href="#/forcast/St Albans, England"><i
+                                    class="fa fa-umbrella icon-white"></i> Weather</a></li>
+                            <li ng-hide="admin" ng-click="isCollapsed = !isCollapsed"><a href="#/settings"><i
+                                    class="fa fa-cog icon-white"></i>
+                                Settings</a></li>
+                            <li ng-click="isCollapsed = !isCollapsed"><a href="#/logout"><i
+                                    class="fa fa-power-off icon-white"></i> Log out</a></li>
+                        </ul>
+                    </div>
             </div>
+        </div>
         </div>
     </nav>
 </div>
@@ -139,5 +149,17 @@
 <div class="container">
     <div ng-view></div>
 </div>
+<footer class="footer">
+    <div class="navbar-inverse">
+        <div class="container">
+            <div class="row">
+                <ul class="nav navbar-nav">
+                    <li><a style="padding-top:5px;padding-bottom:5px;" href="#/contacts">Contacts</a></li>
+                    <li><a style="padding-top:5px;padding-bottom:5px;" href="#/privacyPolicy">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>

@@ -1253,7 +1253,11 @@ boxleagueApp.filter('toTitleCase', function () {
 });
 boxleagueApp.filter('leaderboardSort', function ($filter) {
     return function (input) {
-        return $filter('orderBy')(input, ['-box', 'score', 'setsDiff', 'gamesDiff', 'name'], true);
+        if (typeof input === "string") {
+            return $filter('orderBy')(input.replace("Box ", ""), ['-box', 'score', 'setsDiff', 'gamesDiff', 'name'], true);
+        } else {
+            return input;
+        }
     }
 });
 boxleagueApp.filter('boxleaguesSort', function ($filter) {

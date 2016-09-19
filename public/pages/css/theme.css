@@ -6,6 +6,10 @@
     background-image: linear-gradient(to bottom, #777711 0, #000 100%);
 }
 
+.footer {
+    background-image: linear-gradient(to bottom, #777711 0, #000 100%);
+}
+
 .navbar-inverse .brand {
     color: #FFFFFF;
 }
@@ -16,7 +20,7 @@
 
 h1, h2, h3, h4, h5 {
     color: Olive;
-    margin-top: 0;
+    /*margin-top: 10px;*/
 }
 
 /* For Modal */
