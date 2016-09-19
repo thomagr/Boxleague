@@ -64,7 +64,7 @@
                         <ul class="nav navbar-nav">
                             <li ng-show="admin" uib-dropdown><a href="#" uib-dropdown-toggle><i
                                     class="fa fa-lock icon-white"></i> Admin <span
-                                class="caret"></span></a>
+                                    class="caret"></span></a>
                                 <ul uib-dropdown-menu>
                                     <!--<li ng-click="isCollapsed = !isCollapsed"><a href="#/importBoxleagueSpreadsheet"><i-->
                                     <!--class="fa fa-upload"></i> Boxleague-->
@@ -126,8 +126,8 @@
                                     class="fa fa-power-off icon-white"></i> Log out</a></li>
                         </ul>
                     </div>
+                </div>
             </div>
-        </div>
         </div>
     </nav>
 </div>
@@ -149,17 +149,20 @@
 <div class="container">
     <div ng-view></div>
 </div>
-<footer class="footer">
-    <div class="navbar-inverse">
-        <div class="container">
-            <div class="row">
-                <ul class="nav navbar-nav">
-                    <li><a style="padding-top:5px;padding-bottom:5px;" href="#/contacts">Contacts</a></li>
-                    <li><a style="padding-top:5px;padding-bottom:5px;" href="#/privacyPolicy">Privacy Policy</a></li>
-                </ul>
+<div ng-show="isAuth">
+    <footer class="footer">
+        <div class="navbar-inverse">
+            <div class="container">
+                <div class="row">
+                    <ul class="nav navbar-nav">
+                        <li><a style="padding-top:5px;padding-bottom:5px;" href="#/contacts">Contacts</a></li>
+                        <li><a style="padding-top:5px;padding-bottom:5px;" href="#/privacyPolicy">Privacy Policy</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
-</footer>
+    </footer>
+</div>
 </body>
 </html>
