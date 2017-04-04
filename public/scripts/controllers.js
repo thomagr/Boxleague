@@ -854,7 +854,7 @@ boxleagueApp.factory('tennisService', function (commonService) {
             var awayPlayer = commonService.findById(players, game.awayId);
 
             // skip any free week games
-            if (!keepFreeWeek && (homePlayer.name === "Free Week" || awayPlayer.name === "Free Week")) {
+            if (!keepFreeWeek && (homePlayer.name.match(/^Free Week/) || awayPlayer.name.match(/^Free Week/))) {
                 return;
             }
 
@@ -2021,9 +2021,9 @@ boxleagueApp.controller('boxCtrl', ['$scope', '$log', '$resource', '$routeParams
         }
         if (index === 0) {
             return true;
-        } else if (row[index].home === "Free Week") {
+        } else if (row[index].home && row[index].home.match(/^Free Week/)) {
             return true;
-        } else if (row[index].away === "Free Week") {
+        } else if (row[index].away && row[index].away.match(/^Free Week/)) {
             return true;
         } else if (row[index].home === $rootScope.login) {
             return false;
@@ -2310,6 +2310,8 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
 
     var id = $routeParams.id;
 
+    $scope.unlinked = []; // list of broken games (games without parent boxleagues
+
     var setUp = function (id, boxleagues, players, games) {
         $scope.name = commonService.findById(players, id).name;
         $scope.players = players;
@@ -2319,7 +2321,12 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
 
         games.forEach(function (game) {
             var index = commonService.arrayObjectIndexOf(boxleagues, game.boxleagueId, "_id");
-            game.boxleague = boxleagues[index].name;
+            // can't find boxleague
+            if(index !== -1) {
+                game.boxleague = boxleagues[index].name;
+            } else {
+                $scope.unlinked.push(game);
+            }
 
             if (game.score && game.score.length) {
                 hasScore.push(game);
@@ -2352,6 +2359,21 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
             $scope.sortType = column;
             $scope.sortReverse = !$scope.sortReverse;
             return (column);
+        };
+
+        $scope.delete = function () {
+            console.log("deleting data ...");
+
+            $scope.unlinked.forEach(function (item) {
+                $http.delete('/game/' + item._id + '/' + item._rev).then(function () {
+                    $rootScope.alerts.push({type: "success", msg: "Deleted " + item._id});
+                }, function (response) {
+                    $rootScope.alerts.push({
+                        type: "danger",
+                        msg: "Delete failed with error '" + response.data + "'. Refresh the page, check and try again."
+                    });
+                });
+            })
         };
     };
 
