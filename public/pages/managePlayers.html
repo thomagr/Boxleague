@@ -27,7 +27,7 @@
         >
         </generic-table>
     </div>
-    <div class="well" ng-show="nonActivePlayers.length === 0">
+    <div class="well" ng-hide="nonActivePlayers.length === 0">
         <form>
             <button ng-if="admin" type="button" class="btn btn-danger" ng-click="deleteNonActivePlayers()">Delete Non Active Players
             </button>
