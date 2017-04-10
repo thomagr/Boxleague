@@ -3200,32 +3200,91 @@ boxleagueApp.controller('managePlayersCtrl', ['$scope', '$rootScope', '$log', '$
         return result;
     };
 
-    httpService.getPlayers(function (players) {
-        $scope.players = players;
-        var columns = commonService.getColumns(players);
-        columns = commonService.filterColumns(columns);
-        $scope.playersColumns = columns;
-
-        httpService.getGames(function (games) {
-            $scope.games = games;
-            var columns = commonService.getColumns(games);
-            columns = commonService.filterColumns(columns);
-            $scope.gamesColumns = columns;
-
-            var ids = [];
-            games.forEach(function (item) {
-                ids.push(item.homeId);
-                ids.push(item.awayId)
+    // get all of the required data
+    httpService.getBoxleagues(function (boxleagues) {
+        httpService.getPlayers(function (players) {
+            httpService.getGames(function (games) {
+                setUp(boxleagues, players, games);
             });
-            ids = ids.filter(commonService.unique);
-
-            $scope.activePlayers = ids.map(function (item) {
-                return commonService.findById(players, item);
-            });
-
-            $scope.nonActivePlayers = difference(players, $scope.activePlayers)
         });
     });
+
+    function setUp(boxleagues, players, games){
+        $scope.boxleagues = boxleagues;
+        var columns = commonService.getColumns(boxleagues);
+        //columns = commonService.filterColumns(columns);
+        $scope.boxleaguesColumns = columns;
+
+        $scope.players = players;
+        columns = commonService.getColumns(players);
+        //columns = commonService.filterColumns(columns);
+        $scope.playersColumns = columns;
+
+        $scope.games = games;
+        columns = commonService.getColumns(games);
+        //columns = commonService.filterColumns(columns);
+        $scope.gamesColumns = columns;
+
+        // Find game ids in a boxleague which don't exist
+        var gameIds = games.map(function(item){
+            return item._id;
+        });
+        // Find players ids in a boxleague which don't exist
+        var playerIds = players.map(function(item){
+            return item._id;
+        });
+        $scope.ghostGames = []; // games in boxleagues that don't exist in the games database
+        $scope.activeGames = []; // games in boxleagues;
+        $scope.nonActiveGames = []; // games that don't exist in any boxleagues
+
+        $scope.ghostPlayers = []; // players in boxleagues that don't exist in the players database
+        $scope.activePlayers = []; // players in boxleagues;
+        $scope.nonActivePlayers = []; // players that don't exist in any boxleagues
+
+        boxleagues.forEach(function(boxleague){
+            console.log(boxleague.name);
+            boxleague.boxes.forEach(function(box){
+                console.log(box.name);
+                box.gameIds.forEach(function(id){
+                    if(gameIds.indexOf(id) === -1){
+                        $scope.ghostGames.push(id);
+                    } else {
+                        $scope.activeGames.push(id);
+                    }
+                });
+
+                box.playerIds.forEach(function(id){
+                    if(playerIds.indexOf(id) === -1){
+                        $scope.ghostPlayers.push(id);
+                    } else {
+                        $scope.activePlayers.push(id);
+                    }
+                });
+            });
+        });
+        $scope.activeGames = $scope.activeGames.filter(commonService.unique);
+        $scope.activeGames = $scope.activeGames.map(function (item) {
+            return commonService.findById(games, item);
+        });
+        $scope.nonActiveGames = difference(games, $scope.activeGames);
+
+        $scope.activePlayers = $scope.activePlayers.filter(commonService.unique);
+        $scope.activePlayers = $scope.activePlayers.map(function (item) {
+            return commonService.findById(players, item);
+        });
+        $scope.nonActivePlayers = difference(players, $scope.activePlayers);
+
+        // var ids = [];
+        // games.forEach(function (item) {
+        //     ids.push(item.homeId);
+        //     ids.push(item.awayId)
+        // });
+        // ids = ids.filter(commonService.unique);
+        // $scope.activePlayers = ids.map(function (item) {
+        //     return commonService.findById(players, item);
+        // });
+        // $scope.nonActivePlayers = difference(players, $scope.activePlayers)
+    }
 
     $scope.sortReverse = false;
     $scope.searchName = '';
@@ -3237,12 +3296,25 @@ boxleagueApp.controller('managePlayersCtrl', ['$scope', '$rootScope', '$log', '$
         return (column);
     };
 
-    $scope.delete = function () {
+    $scope.deleteNonActivePlayers = function () {
         console.log("deleting data ...");
-
         $scope.nonActivePlayers.forEach(function (item) {
             $http.delete('/player/' + item._id + '/' + item._rev).then(function () {
-                $rootScope.alerts.push({type: "success", msg: "Deleted " + item.name});
+                $rootScope.alerts.push({type: "success", msg: "Deleted " + item._id});
+            }, function (response) {
+                $rootScope.alerts.push({
+                    type: "danger",
+                    msg: "Delete failed with error '" + response.data + "'. Refresh the page, check and try again."
+                });
+            });
+        })
+    };
+
+    $scope.deleteNonActiveGames = function () {
+        console.log("deleting data ...");
+        $scope.nonActiveGames.forEach(function (item) {
+            $http.delete('/game/' + item._id + '/' + item._rev).then(function () {
+                //$rootScope.alerts.push({type: "success", msg: "Deleted " + item._id});
             }, function (response) {
                 $rootScope.alerts.push({
                     type: "danger",

@@ -1,7 +1,35 @@
 <div class="row">
     <div class="well">
+        <h2>Boxleagues</h2>
+        <generic-table
+                rows="boxleagues"
+                columns="boxleaguesColumns"
+                sort-type="sortType"
+                sort-reverse="sortReverse"
+                search-name="searchName"
+                to-title-case="toTitleCase"
+                sort-column="sortColumn"
+                type="type"
+        >
+        </generic-table>
+    </div>
+    <div class="well">
+        <h2>Active Players</h2>
+        <generic-table
+                rows="activePlayers"
+                columns="playersColumns"
+                sort-type="sortType"
+                sort-reverse="sortReverse"
+                search-name="searchName"
+                to-title-case="toTitleCase"
+                sort-column="sortColumn"
+                type="type"
+        >
+        </generic-table>
+    </div>
+    <div class="well" ng-show="nonActivePlayers.length === 0">
         <form>
-            <button ng-if="admin" type="button" class="btn btn-danger" ng-click="delete()">Delete Non Active Players
+            <button ng-if="admin" type="button" class="btn btn-danger" ng-click="deleteNonActivePlayers()">Delete Non Active Players
             </button>
         </form>
         <h2>Non Active Players</h2>
@@ -17,11 +45,16 @@
         >
         </generic-table>
     </div>
-    <div class="well">
-        <h2>Active Players</h2>
+    <div class="well" ng-hide="nonActiveGames.length === 0">
+        <form>
+            <button ng-if="admin" type="button" class="btn btn-danger" ng-click="deleteNonActiveGames()">Delete Non
+                Active Games
+            </button>
+        </form>
+        <h2>Non Active Games</h2>
         <generic-table
-                rows="activePlayers"
-                columns="playersColumns"
+                rows="nonActiveGames"
+                columns="gamesColumns"
                 sort-type="sortType"
                 sort-reverse="sortReverse"
                 search-name="searchName"
