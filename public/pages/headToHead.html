@@ -65,23 +65,3 @@
         </generic-table>
     </div>
 </div>
-<div class="row" ng-hide="unlinked === []">
-    <div class="well">
-        <h2>Games not linked</h2>
-        <form style="margin-top:10px; margin-bottom:10px">
-            <button ng-if="name === 'Graham Thomas'" type="button" class="btn btn-danger" ng-click="delete()">Delete Unlinked Games
-            </button>
-        </form>
-        <generic-table
-                rows="unlinked"
-                columns="columns"
-                sort-type="sortType"
-                sort-reverse="sortReverse"
-                search-name="searchName"
-                to-title-case="toTitleCase"
-                sort-column="sortColumn"
-                type="type"
-        >
-        </generic-table>
-    </div>
-</div>
