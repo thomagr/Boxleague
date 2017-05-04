@@ -1163,8 +1163,12 @@ boxleagueApp.factory('httpService', function ($rootScope, $http, $filter, $log, 
             text: message.text
         };
         console.log(data);
-        $http.post('message', JSON.stringify(data)).then(function (response) {
-        }, root.httpGetError);
+        if($rootScope.production) {
+            $http.post('message', JSON.stringify(data)).then(function (response) {
+            }, root.httpGetError);
+        } else {
+            $rootScope.alerts.push({type: "success", msg: data.text});
+        }
     };
 
     root.scoreUpdate = function (game, players) {
@@ -1253,8 +1257,12 @@ boxleagueApp.filter('toTitleCase', function () {
 });
 boxleagueApp.filter('leaderboardSort', function ($filter) {
     return function (input) {
-        if (typeof input === "string") {
-            return $filter('orderBy')(input.replace("Box ", ""), ['-box', 'score', 'setsDiff', 'gamesDiff', 'name'], true);
+        if (typeof input === "object" || typeof input === "array" ) {
+            var tmp = input.map(function(item){
+                item.box = item.box.replace("Box ", "");
+                return item;
+            });
+            return $filter('orderBy')(tmp, ['-box', 'score', 'setsDiff', 'gamesDiff', 'name'], true);
         } else {
             return input;
         }
