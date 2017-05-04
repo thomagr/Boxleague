@@ -2345,6 +2345,9 @@ boxleagueApp.controller('headToHeadCtrl', ['$scope', '$log', '$rootScope', '$loc
                     played.push(commonService.findById(players, game.awayId));
                 }
             }
+
+            // Update date to the schedule if not specified
+            game.date = game.date ? game.date : game.schedule;
         });
 
         played = played.map(function (item) {
